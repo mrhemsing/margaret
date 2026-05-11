@@ -1,0 +1,27 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Temporary artifacts
+tmp_*
+
+# Dependencies / builds
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+.cache/
+tsconfig.tsbuildinfo

@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum SubscriptionPlan {
+  ONE_CALL_DAILY
+  TWO_CALLS_DAILY
+  THREE_CALLS_DAILY
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+enum CallAttemptStatus {
+  SCHEDULED
+  IN_PROGRESS
+  ANSWERED_OK
+  NO_RESPONSE
+  HELP_REQUESTED
+  FOLLOW_UP_NEEDED
+  FAILED
+}
+
+model Customer {
+  id               String         @id @default(cuid())
+  supabaseUserId   String?        @unique
+  email            String?        @unique
+  fullName         String
+  phoneNumber      String
+  stripeCustomerId String?        @unique
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  members          Member[]
+  subscriptions    Subscription[]
+  alertContacts    AlertContact[]
+}
+
+model Member {
+  id                  String        @id @default(cuid())
+  customerId          String
+  name                String
+  phoneNumber         String
+  timezone            String        @default("America/Los_Angeles")
+  preferredCallTime   String
+  active              Boolean       @default(true)
+  noResponseAlertMins     Int           @default(15)
+  voicemailRetryCount     Int           @default(1)
+  voicemailRetryDelayMins Int           @default(15)
+  createdAt               DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  customer            Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  callAttempts        CallAttempt[]
+  memory              SeniorMemory?
+}
+
+model AlertContact {
+  id              String   @id @default(cuid())
+  customerId      String
+  name            String
+  phoneNumber     String
+  email           String?
+  receivesReports Boolean  @default(true)
+  receivesAlerts  Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  customerId           String
+  plan                 SubscriptionPlan
+  status               SubscriptionStatus @default(INCOMPLETE)
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  currentPeriodEndsAt  DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  customer             Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model CallAttempt {
+  id                     String            @id @default(cuid())
+  memberId               String
+  scheduledFor           DateTime
+  startedAt              DateTime?
+  completedAt            DateTime?
+  status                 CallAttemptStatus @default(SCHEDULED)
+  providerConversationId String?
+  providerCallSid        String?
+  summary                String?
+  transcript             String?
+  mood                   String?
+  topics                 String[]          @default([])
+  notableMoments         String[]          @default([])
+  followUpSuggested      Boolean           @default(false)
+  followUpReason         String?
+  memoryUpdates          Json?
+  conversationRaw        Json?
+  syncedAt               DateTime?
+  reportSentAt           DateTime?
+  alertSentAt            DateTime?
+  retryAttempt           Int               @default(0)
+  retryOfCallAttemptId   String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  member                 Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId, scheduledFor])
+  @@index([status, scheduledFor])
+}
+
+model SeniorMemory {
+  id                 String   @id @default(cuid())
+  memberId           String   @unique
+  preferredName      String?
+  family             Json?
+  pets               Json?
+  hobbies            String[] @default([])
+  routines           String[] @default([])
+  preferences        Json?
+  healthNotes        String[] @default([])
+  conversationLikes  String[] @default([])
+  conversationAvoids String[] @default([])
+  recentMood         String?
+  topicsToRevisit    String[] @default([])
+  recentTopics       String[] @default([])
+  lastSummary        String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  member             Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
