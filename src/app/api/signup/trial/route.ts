@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db";
-import { getStripePriceIdForPlan, supportedBillingCountries } from "@/lib/plans";
-import { stripe } from "@/lib/stripe";
+import { supportedBillingCountries } from "@/lib/plans";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 function splitList(value: string) {
   return value
@@ -14,8 +14,7 @@ function splitList(value: string) {
     .slice(0, 12);
 }
 
-const checkoutSchema = z.object({
-  supabaseUserId: z.string().optional(),
+const trialSchema = z.object({
   customerName: z.string().min(1),
   customerEmail: z.string().email(),
   customerPhone: z.string().min(8),
@@ -38,13 +37,29 @@ const checkoutSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const parsed = checkoutSchema.safeParse(await request.json().catch(() => null));
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : null;
+
+  if (!token) {
+    return NextResponse.json({ ok: false, error: "Please create or log in to your account first." }, { status: 401 });
+  }
+
+  const parsed = trialSchema.safeParse(await request.json().catch(() => null));
 
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: "Invalid checkout request." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Invalid trial signup request." }, { status: 400 });
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !authData.user) {
+    return NextResponse.json({ ok: false, error: "Your login session expired. Please log in again." }, { status: 401 });
   }
 
   const input = parsed.data;
+  const authEmail = authData.user.email?.toLowerCase();
+  const customerEmail = (authEmail ?? input.customerEmail).toLowerCase();
   const callTimes = (input.preferredCallTimes.length > 0 ? input.preferredCallTimes : input.preferredCallTime ? [input.preferredCallTime] : [])
     .filter(Boolean)
     .slice(0, input.plan === SubscriptionPlan.THREE_CALLS_DAILY ? 3 : 1);
@@ -55,36 +70,22 @@ export async function POST(request: Request) {
 
   const preferredCallSchedule = callTimes.join(", ");
   const questionsToAsk = input.plan === SubscriptionPlan.THREE_CALLS_DAILY ? input.questionsToAsk : "";
-  const priceId = getStripePriceIdForPlan(input.plan, input.customerCountry);
-  const appUrl = process.env.APP_URL ?? "http://localhost:3003";
+  const trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
   try {
-    const stripeCustomer = await stripe.customers.create({
-      name: input.customerName,
-      email: input.customerEmail,
-      phone: input.customerPhone,
-      metadata: {
-        source: "dailycall_signup",
-        billing_country: input.customerCountry,
-        pricing_offer: "introductory_first_year",
-      },
-    });
-
-    const { customer, member, subscription } = await prisma.$transaction(async (tx) => {
+    const { customer, member } = await prisma.$transaction(async (tx) => {
       const customer = await tx.customer.upsert({
-        where: { email: input.customerEmail },
+        where: { email: customerEmail },
         update: {
           fullName: input.customerName,
           phoneNumber: input.customerPhone,
-          supabaseUserId: input.supabaseUserId,
-          stripeCustomerId: stripeCustomer.id,
+          supabaseUserId: authData.user.id,
         },
         create: {
           fullName: input.customerName,
-          email: input.customerEmail,
+          email: customerEmail,
           phoneNumber: input.customerPhone,
-          supabaseUserId: input.supabaseUserId,
-          stripeCustomerId: stripeCustomer.id,
+          supabaseUserId: authData.user.id,
         },
       });
 
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
           customerId: customer.id,
           name: input.customerName,
           phoneNumber: input.customerPhone,
-          email: input.customerEmail,
+          email: customerEmail,
         },
       });
 
@@ -147,53 +148,22 @@ export async function POST(request: Request) {
         },
       });
 
-      const subscription = await tx.subscription.create({
+      await tx.subscription.create({
         data: {
           customerId: customer.id,
           plan: input.plan,
-          stripePriceId: priceId,
+          status: "TRIALING",
+          currentPeriodEndsAt: trialEndsAt,
         },
       });
 
-      return { customer, member, subscription };
+      return { customer, member };
     });
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: stripeCustomer.id,
-      line_items: [{ price: priceId, quantity: 1 }],
-      payment_method_collection: "if_required",
-      success_url: `${appUrl}/dashboard?checkout=success`,
-      cancel_url: `${appUrl}/signup?checkout=cancelled`,
-      customer_update: {
-        address: "auto",
-        name: "auto",
-      },
-      metadata: {
-        customerId: customer.id,
-        memberId: member.id,
-        subscriptionRecordId: subscription.id,
-        plan: input.plan,
-        billingCountry: input.customerCountry,
-        pricingOffer: "introductory_first_year",
-      },
-      subscription_data: {
-        trial_period_days: 30,
-        metadata: {
-          customerId: customer.id,
-          memberId: member.id,
-          subscriptionRecordId: subscription.id,
-          plan: input.plan,
-          billingCountry: input.customerCountry,
-          pricingOffer: "introductory_first_year",
-        },
-      },
-    });
-
-    return NextResponse.json({ ok: true, checkoutUrl: session.url });
+    return NextResponse.json({ ok: true, dashboardUrl: "/dashboard?trial=started", customerId: customer.id, memberId: member.id });
   } catch (error) {
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Checkout failed." },
+      { ok: false, error: error instanceof Error ? error.message : "Could not start trial." },
       { status: 502 },
     );
   }

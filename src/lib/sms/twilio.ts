@@ -53,11 +53,16 @@ export function buildCallReportSms(input: {
   memberName: string;
   status: string;
   summary?: string | null;
+  isDemo?: boolean;
 }) {
   const env = getServerEnv();
   const publicAppUrl = env.PUBLIC_APP_URL ?? env.APP_URL ?? "https://soma3.b-average.com";
-  const dashboardUrl = `${publicAppUrl}/dashboard`;
+  const dashboardUrl = input.isDemo ? `${publicAppUrl}/dashboard/demos` : `${publicAppUrl}/dashboard`;
   const summary = input.summary?.trim() || "The call has been processed. Open the dashboard for details.";
+
+  if (input.isDemo) {
+    return `Dailycall DEMO report for ${input.memberName}: ${input.status.replaceAll("_", " ").toLowerCase()}. This was a 1-minute landing-page demo call, not a scheduled member check-in. ${summary}\n\nDemo logs: ${dashboardUrl}`;
+  }
 
   return `Dailycall report for ${input.memberName}: ${input.status.replaceAll("_", " ").toLowerCase()}. ${summary}\n\nDashboard: ${dashboardUrl}`;
 }
@@ -77,6 +82,7 @@ export async function sendExampleReportSmsToTeam(input: {
   memberName: string;
   status: string;
   summary?: string | null;
+  isDemo?: boolean;
 }) {
   return sendSmsToExampleTeam(buildCallReportSms(input));
 }
@@ -84,11 +90,16 @@ export async function sendExampleReportSmsToTeam(input: {
 export function buildVoicemailAlertSms(input: {
   memberName: string;
   summary?: string | null;
+  isDemo?: boolean;
 }) {
   const env = getServerEnv();
   const publicAppUrl = env.PUBLIC_APP_URL ?? env.APP_URL ?? "https://soma3.b-average.com";
-  const dashboardUrl = `${publicAppUrl}/dashboard`;
+  const dashboardUrl = input.isDemo ? `${publicAppUrl}/dashboard/demos` : `${publicAppUrl}/dashboard`;
   const summary = input.summary?.trim() || "Voicemail or an answering machine was detected. Dailycall hung up without leaving a message.";
+
+  if (input.isDemo) {
+    return `Dailycall DEMO alert for ${input.memberName}: voicemail reached during a 1-minute landing-page demo call. ${summary}\n\nDemo logs: ${dashboardUrl}`;
+  }
 
   return `Dailycall alert for ${input.memberName}: voicemail reached. ${summary}\n\nDashboard: ${dashboardUrl}`;
 }
@@ -96,6 +107,7 @@ export function buildVoicemailAlertSms(input: {
 export async function sendExampleVoicemailAlertSmsToTeam(input: {
   memberName: string;
   summary?: string | null;
+  isDemo?: boolean;
 }) {
   return sendSmsToExampleTeam(buildVoicemailAlertSms(input));
 }

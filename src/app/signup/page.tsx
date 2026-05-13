@@ -1,39 +1,56 @@
 import Image from "next/image";
-import Link from "next/link";
 
+import { SiteHeader } from "@/app/components/site-header";
 import { SignupForm } from "@/app/signup/signup-form";
 
 export default function SignupPage() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-8 md:px-10">
-      <nav className="flex items-center justify-between rounded-full bg-white/75 px-5 py-3 shadow-sm ring-1 ring-black/5">
-        <Link href="/">
-          <Image src="/dailycall-logo.jpg" alt="dailycall" width={632} height={150} priority className="h-auto w-40" />
-        </Link>
-        <Link href="/dashboard" className="text-sm font-semibold text-slate-600 hover:text-ink">Already signed up?</Link>
-      </nav>
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-5 md:px-10">
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
+      <SiteHeader />
 
-      <header className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">signup</p>
-        <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-ink md:text-5xl">Set up daily check-ins for your parent.</h1>
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-          This client-facing signup flow is for the adult child purchasing Dailycall. It captures who should receive reports and no-response alerts, the parent receiving calls, and the daily call schedule.
-        </p>
+      <header className="relative overflow-hidden rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5 md:p-10">
+        <Image
+          src="/signup-calendar-9am-hero.png"
+          alt="Calendar with a 9 AM companion call circled"
+          width={1536}
+          height={864}
+          className="absolute inset-y-0 right-0 hidden h-full w-[48%] object-cover object-center md:block"
+          priority
+        />
+        <div className="absolute inset-y-0 left-[42%] right-0 hidden bg-gradient-to-r from-white via-white/90 to-white/0 md:block" />
+        <div className="relative max-w-3xl md:max-w-[62%]">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">signup</p>
+          <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink md:text-5xl">Let&apos;s schedule your loved one&apos;s first companion call.</h1>
+          <p className="mt-5 text-lg leading-8 text-slate-600">
+            Start your free 30-day trial with no credit card required. Setup takes less than 2 minutes, works with regular phones, and can be canceled anytime.
+          </p>
+          <div className="mt-6 grid gap-3 text-sm font-bold text-ink sm:grid-cols-2">
+            {["No credit card required", "Cancel anytime", "Works with any phone", "No app required"].map((item) => (
+              <div key={item} className="rounded-full bg-brandBlue/10 px-4 py-2 text-center ring-1 ring-brandBlue/15">{item}</div>
+            ))}
+          </div>
+        </div>
       </header>
 
-      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-6 lg:grid-cols-[1.235fr_0.765fr]">
         <SignupForm />
 
         <aside className="rounded-[2rem] bg-ink p-6 text-cream shadow-sm md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-cream/60">Secure checkout</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cream/60">Simple setup</p>
           <h2 className="mt-3 text-2xl font-bold">What happens next</h2>
           <ul className="mt-5 space-y-4 text-sm leading-6 text-cream/80">
-            <li>• Create the care profile for your parent.</li>
-            <li>• Choose the daily call frequency.</li>
-            <li>• Complete subscription payment through Stripe.</li>
-            <li>• Dailycall stores your report and alert contact.</li>
-            <li>• After payment, the account is ready for scheduling and test calls.</li>
+            <li>• Add your loved one&apos;s phone number.</li>
+            <li>• Choose a comfortable call schedule.</li>
+            <li>• Select a simple monthly plan.</li>
+            <li>• Schedule the first companion call.</li>
+            <li>• Your loved one uses their regular phone — no app or password required.</li>
+            <li>• Most families complete setup in under 2 minutes.</li>
           </ul>
+          <p className="mt-6 rounded-2xl bg-white/10 p-4 text-sm font-semibold leading-6 text-cream ring-1 ring-white/10">
+            During the free trial, families can experience Companion Plus features before choosing the plan that fits best.
+          </p>
         </aside>
       </section>
     </main>

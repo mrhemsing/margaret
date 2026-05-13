@@ -6,6 +6,7 @@ type StartOutboundCheckInCallInput = {
   recentTopics?: string[];
   topicsToRevisit?: string[];
   avoidRepeating?: string[];
+  demoMaxDurationSeconds?: number;
 };
 
 type ElevenLabsOutboundCallResponse = {
@@ -34,17 +35,23 @@ type ElevenLabsConversationDetails = {
   [key: string]: unknown;
 };
 
-export function formatConversationTranscript(transcript: ElevenLabsTranscriptTurn[] | undefined) {
+export function formatConversationTranscript(transcript: ElevenLabsTranscriptTurn[] | undefined, memberName = "Member") {
   if (!transcript?.length) return null;
 
   return transcript
     .map((turn) => {
-      const speaker = turn.role === "agent" ? "Dailycall" : turn.role === "user" ? "Parent" : turn.role ?? "Speaker";
+      const speaker = turn.role === "agent" ? "Dailycall" : turn.role === "user" ? memberName : turn.role ?? "Speaker";
       const text = turn.message ?? turn.text ?? "";
       return text.trim() ? `${speaker}: ${text.trim()}` : null;
     })
     .filter(Boolean)
     .join("\n\n");
+}
+
+export function relabelConversationTranscript(transcript: string | null | undefined, memberName: string) {
+  if (!transcript) return transcript ?? null;
+
+  return transcript.replace(/^Parent:/gm, `${memberName}:`);
 }
 
 export function mapConversationStatus(status: string | undefined) {
@@ -96,6 +103,7 @@ export async function startOutboundCheckInCall(input: StartOutboundCheckInCallIn
           recent_topics: input.recentTopics?.join(", ") || "none yet",
           topics_to_revisit: input.topicsToRevisit?.join("; ") || "none yet",
           avoid_repeating: input.avoidRepeating?.join("; ") || "Do not use a generic scripted wellness survey opening.",
+          demo_max_duration_seconds: input.demoMaxDurationSeconds ?? null,
         },
       },
     }),
@@ -108,4 +116,38 @@ export async function startOutboundCheckInCall(input: StartOutboundCheckInCallIn
   }
 
   return payload;
+}
+
+export async function endTwilioCall(callSid: string) {
+  const { getServerEnv } = await import("@/lib/env");
+  const env = getServerEnv();
+
+  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN) {
+    throw new Error("Twilio credentials are not configured.");
+  }
+
+  const auth = Buffer.from(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`).toString("base64");
+  const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Calls/${callSid}.json`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({ Status: "completed" }),
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => "");
+    throw new Error(message || `Twilio call end failed with status ${response.status}`);
+  }
+}
+
+export function scheduleTwilioCallEnd(callSid: string, delayMs: number) {
+  const timer = setTimeout(() => {
+    endTwilioCall(callSid).catch((error) => {
+      console.error("Failed to end capped demo call", error);
+    });
+  }, delayMs);
+
+  timer.unref?.();
 }

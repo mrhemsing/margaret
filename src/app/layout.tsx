@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "dailycall",
-  description: "Daily voice check-ins for elderly people and their caregivers.",
+  description: "A friendly daily call for aging parents — companionship for them and peace of mind for families.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

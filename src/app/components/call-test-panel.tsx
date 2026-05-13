@@ -72,16 +72,14 @@ export function CallTestPanel() {
 
           return (
             <article key={testNumber.number} className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-semibold text-ink">{testNumber.label}</p>
-                  <p className="mt-1 font-mono text-sm text-slate-500">{testNumber.number}</p>
-                </div>
+              <div>
+                <p className="font-semibold text-ink">{testNumber.label}</p>
+                <p className="mt-1 font-mono text-sm text-slate-500">{testNumber.number}</p>
                 <button
                   type="button"
                   onClick={() => startTestCall(testNumber.number, testNumber.label)}
                   disabled={isCalling}
-                  className="rounded-full bg-brandButtonBlue px-5 py-3 text-sm font-semibold text-cream shadow-sm transition hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-400"
+                  className="mt-4 w-full rounded-full bg-brandButtonBlue px-5 py-3 text-sm font-semibold text-cream shadow-sm transition hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto"
                 >
                   {isCalling ? "Calling..." : "Call to test"}
                 </button>

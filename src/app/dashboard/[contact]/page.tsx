@@ -1,8 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SiteHeader } from "@/app/components/site-header";
 import { DashboardActions } from "../dashboard-actions";
 import { prisma } from "@/lib/db";
+import { relabelConversationTranscript } from "@/lib/voice/elevenlabs";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,115 @@ type Contact = "matt" | "chuck";
 const exampleContacts: Record<Contact, { name: string; phone: string; title: string }> = {
   matt: { name: "Matt", phone: "+1 604 313 8398", title: "Matt's Dailycall dashboard" },
   chuck: { name: "Chuck", phone: "+1 306 880 2055", title: "Chuck's Dailycall dashboard" },
+};
+
+const fallbackMetrics = [
+  { label: "Answered rate", value: "83%", helper: "5/6 recent calls" },
+  { label: "Avg. conversation", value: "9 min", helper: "Completed calls only" },
+  { label: "Answered calls", value: "5", helper: "Recent calls" },
+  { label: "Hangups / failed", value: "17%", helper: "1/6 recent calls" },
+];
+
+const fallbackMemoryByContact: Record<Contact, {
+  memberName: string;
+  recentMood: string;
+  hobbies: string[];
+  routines: string[];
+  healthNotes: string[];
+  conversationLikes: string[];
+  conversationAvoids: string[];
+  topicsToRevisit: string[];
+  recentTopics: string[];
+  lastSummary: string;
+  preferredTone: string;
+  ritualPreference: string;
+}> = {
+  matt: {
+    memberName: "Matt",
+    recentMood: "Positive and engaged",
+    hobbies: ["technology", "family updates", "project progress"],
+    routines: ["morning check-in", "quick status recap"],
+    healthNotes: [],
+    conversationLikes: ["direct questions", "practical next steps"],
+    conversationAvoids: ["overly long explanations"],
+    topicsToRevisit: ["Dailycall polish", "dashboard feedback"],
+    recentTopics: ["mobile layout", "call summaries", "pricing"],
+    lastSummary: "Matt responds best to concise check-ins that move the project forward and make the next action clear.",
+    preferredTone: "focused and steady",
+    ritualPreference: "morning project check-in",
+  },
+  chuck: {
+    memberName: "Chuck",
+    recentMood: "Calm and upbeat",
+    hobbies: ["family", "daily routines", "light conversation"],
+    routines: ["morning coffee", "daily check-in"],
+    healthNotes: ["prefers gentle reminders"],
+    conversationLikes: ["warm conversation", "simple questions", "family updates"],
+    conversationAvoids: ["clinical wording", "rushed prompts"],
+    topicsToRevisit: ["how the morning went", "family news", "favorite music"],
+    recentTopics: ["daily routine", "family", "weather"],
+    lastSummary: "Chuck's calls should feel friendly and familiar, with gentle pacing and a short family-friendly summary afterward.",
+    preferredTone: "warm and patient",
+    ritualPreference: "morning coffee chat",
+  },
+};
+
+const fallbackReportsByContact: Record<Contact, Array<{
+  id: string;
+  date: string;
+  status: string;
+  memberName: string;
+  summary: string;
+  transcript: string | null;
+  mood: string;
+  topics: string[];
+  notableMoments: string[];
+  followUpSuggested: boolean;
+  followUpReason: string | null;
+}>> = {
+  matt: [
+    {
+      id: "fallback-matt-1",
+      date: "Demo report",
+      status: "Answered Ok",
+      memberName: "Matt",
+      summary: "Matt answered quickly, sounded focused, and wanted the next dashboard changes kept tight and practical.",
+      transcript: null,
+      mood: "Focused",
+      topics: ["dashboard", "mobile polish", "next steps"],
+      notableMoments: ["Asked for concise, useful progress rather than broad status updates."],
+      followUpSuggested: false,
+      followUpReason: null,
+    },
+  ],
+  chuck: [
+    {
+      id: "fallback-chuck-1",
+      date: "Demo report",
+      status: "Answered Ok",
+      memberName: "Chuck",
+      summary: "Chuck answered the daily call and sounded comfortable. The conversation stayed warm and simple, with a gentle check-in about his morning routine.",
+      transcript: null,
+      mood: "Calm and upbeat",
+      topics: ["morning routine", "family", "weather"],
+      notableMoments: ["Responded well to a slower, friendly pace.", "Family summary should stay short and reassuring."],
+      followUpSuggested: false,
+      followUpReason: null,
+    },
+    {
+      id: "fallback-chuck-2",
+      date: "Previous demo report",
+      status: "Follow Up Needed",
+      memberName: "Chuck",
+      summary: "Chuck mentioned he would appreciate a family call later in the week. No urgent concern was detected.",
+      transcript: null,
+      mood: "Reflective",
+      topics: ["family call", "weekly plans"],
+      notableMoments: ["A family touchpoint later this week may be appreciated."],
+      followUpSuggested: true,
+      followUpReason: "Consider a friendly family call later this week.",
+    },
+  ],
 };
 
 function formatDate(date: Date) {
@@ -55,41 +165,28 @@ async function getMemberSettings(contact: Contact) {
   }
 
   return [
-    { label: "Member", value: member.name },
+    { label: "Member", value: fallback.name },
     { label: "Phone", value: fallback.phone },
     { label: "Call schedule", value: member.preferredCallTime || "On demand test" },
-    { label: "Voicemail retries", value: `${member.voicemailRetryCount} ${member.voicemailRetryCount === 1 ? "retry" : "retries"} · ${member.voicemailRetryDelayMins} min delay` },
+    { label: "Voicemail retries", value: `${member.voicemailRetryCount} ${member.voicemailRetryCount === 1 ? "retry" : "retries"} (${member.voicemailRetryDelayMins} min delay)` },
   ];
 }
 
 async function getMemberMetrics(contact: Contact) {
   const member = await getMember(contact);
-  if (!member) {
-    return [
-      { label: "Answered rate", value: "—", helper: "No calls yet" },
-      { label: "Avg. conversation", value: "—", helper: "No completed calls yet" },
-      { label: "Answered calls", value: "—", helper: "No calls yet" },
-      { label: "Hangups / failed", value: "—", helper: "No calls yet" },
-    ];
-  }
+  if (!member) return fallbackMetrics;
 
   const calls = await prisma.callAttempt.findMany({
     where: {
       memberId: member.id,
       providerConversationId: { not: null },
+      status: { notIn: ["FAILED", "NO_RESPONSE"] },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { scheduledFor: "desc" },
     take: 20,
   });
 
-  if (!calls.length) {
-    return [
-      { label: "Answered rate", value: "—", helper: "No calls yet" },
-      { label: "Avg. conversation", value: "—", helper: "No completed calls yet" },
-      { label: "Answered calls", value: "0", helper: "Recent calls" },
-      { label: "Hangups / failed", value: "—", helper: "No calls yet" },
-    ];
-  }
+  if (!calls.length) return fallbackMetrics;
 
   const answered = calls.filter((call) => call.status === "ANSWERED_OK");
   const failedOrNoResponse = calls.filter((call) => call.status === "FAILED" || call.status === "NO_RESPONSE");
@@ -108,14 +205,14 @@ async function getMemberMetrics(contact: Contact) {
 
 async function getMemberMemory(contact: Contact) {
   const member = await getMember(contact);
-  if (!member) return null;
+  if (!member) return fallbackMemoryByContact[contact];
 
   const memory = await prisma.seniorMemory.findUnique({
     where: { memberId: member.id },
     include: { member: true },
   });
 
-  if (!memory) return null;
+  if (!memory) return fallbackMemoryByContact[contact];
 
   const preferences = memory.preferences && typeof memory.preferences === "object" && !Array.isArray(memory.preferences)
     ? memory.preferences as { favoriteTopics?: string; importantEvents?: string; preferredTone?: string; ritualPreference?: string }
@@ -139,23 +236,23 @@ async function getMemberMemory(contact: Contact) {
 
 async function getMemberReports(contact: Contact) {
   const member = await getMember(contact);
-  if (!member) return [];
+  if (!member) return fallbackReportsByContact[contact];
 
   const calls = await prisma.callAttempt.findMany({
     where: { memberId: member.id },
     include: { member: true },
-    orderBy: { createdAt: "desc" },
-    take: 20,
+    orderBy: { scheduledFor: "desc" },
+    take: 50,
   });
 
   const visibleCalls = calls.filter((call, index) => {
-    const isTechnicalFailedTest = call.status === "FAILED" && !call.providerConversationId && !call.transcript;
-
-    if (isTechnicalFailedTest) return false;
+    if (call.status === "FAILED" || call.status === "NO_RESPONSE") return false;
     if (call.status !== "IN_PROGRESS") return true;
 
     return !calls.slice(0, index).some((newerCall) => newerCall.status === "IN_PROGRESS");
-  }).slice(0, 8);
+  });
+
+  if (!visibleCalls.length) return fallbackReportsByContact[contact];
 
   return visibleCalls.map((call) => ({
     id: call.id,
@@ -163,7 +260,7 @@ async function getMemberReports(contact: Contact) {
     status: formatStatus(call.status),
     memberName: call.member.name,
     summary: call.summary ?? "Conversation is stored. Transcript will appear here after the call finishes processing.",
-    transcript: call.transcript,
+    transcript: relabelConversationTranscript(call.transcript, call.member.name),
     mood: call.mood,
     topics: call.topics,
     notableMoments: call.notableMoments,
@@ -187,31 +284,28 @@ export default async function MemberDashboardPage({ params }: { params: Promise<
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-8 md:px-10">
-      <nav className="flex items-center justify-between rounded-full bg-white/75 px-5 py-3 shadow-sm ring-1 ring-black/5">
-        <Link href="/">
-          <Image src="/dailycall-logo.jpg" alt="dailycall" width={632} height={150} priority className="h-auto w-40" />
-        </Link>
-        <div className="flex items-center gap-3 text-sm font-semibold text-slate-600">
-          <Link href="/dashboard/matt" className={contact === "matt" ? "text-sage" : "hover:text-ink"}>Matt</Link>
-          <Link href="/dashboard/chuck" className={contact === "chuck" ? "text-sage" : "hover:text-ink"}>Chuck</Link>
-        </div>
-      </nav>
+      <SiteHeader
+        links={[
+          { href: "/dashboard/matt", label: "Matt", active: contact === "matt" },
+          { href: "/dashboard/chuck", label: "Chuck", active: contact === "chuck" },
+        ]}
+      />
 
       <header className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">example member dashboard</p>
         <div className="mt-4">
           <h1 className="text-4xl font-bold tracking-tight text-ink md:text-5xl">{profile.title}</h1>
           <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
-            Focused test space for {profile.name}: calls, transcripts, memory, and retention signals without mixing in the other example member.
+            Focused test space for {profile.name}: calls, transcripts, memory, and retention signals.
           </p>
         </div>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         {settings.map((item) => (
-          <article key={item.label} className="rounded-3xl bg-white/80 p-5 shadow-sm ring-1 ring-black/5">
-            <p className="text-sm text-slate-500">{item.label}</p>
-            <p className="mt-2 font-bold text-ink">{item.value}</p>
+          <article key={item.label} className="min-w-0 rounded-3xl bg-white/80 p-4 shadow-sm ring-1 ring-black/5 md:p-5">
+            <p className="break-words text-sm leading-snug text-slate-500">{item.label}</p>
+            <p className="mt-2 break-words text-sm font-bold leading-snug text-ink sm:text-base">{item.value}</p>
           </article>
         ))}
       </section>
@@ -221,7 +315,7 @@ export default async function MemberDashboardPage({ params }: { params: Promise<
       <section className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
         <p className="text-sm font-semibold uppercase tracking-wide text-sage">Retention signals</p>
         <h2 className="mt-2 text-2xl font-bold text-ink">Is {profile.name} building the habit?</h2>
-        <div className="mt-5 grid gap-4 md:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
           {metrics.map((metric) => (
             <article key={metric.label} className="rounded-2xl bg-slate-50 p-4">
               <p className="text-sm text-slate-500">{metric.label}</p>
@@ -272,11 +366,14 @@ export default async function MemberDashboardPage({ params }: { params: Promise<
               <div key={label as string} className="rounded-2xl border border-slate-200 bg-white p-4">
                 <p className="text-sm font-semibold text-ink">{label as string}</p>
                 {(values as string[]).length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
                     {(values as string[]).map((value) => (
-                      <span key={value} className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500 ring-1 ring-slate-200">{value}</span>
+                      <li key={value} className="flex gap-2">
+                        <span className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-brandButtonBlue" />
+                        <span>{value}</span>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 ) : (
                   <p className="mt-2 text-sm text-slate-500">No memory captured yet.</p>
                 )}
@@ -331,11 +428,14 @@ export default async function MemberDashboardPage({ params }: { params: Promise<
                 {report.topics.length > 0 ? (
                   <div className="sm:col-span-2">
                     <p className="font-semibold text-ink">Topics discussed</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
                       {report.topics.map((topic) => (
-                        <span key={topic} className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500 ring-1 ring-slate-200">{topic}</span>
+                        <li key={topic} className="flex gap-2">
+                          <span className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-brandButtonBlue" />
+                          <span>{topic}</span>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </div>
                 ) : null}
                 {report.notableMoments.length > 0 ? (

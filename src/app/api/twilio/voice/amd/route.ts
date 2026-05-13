@@ -25,8 +25,9 @@ export async function POST(request: Request) {
     const summary = "Voicemail or answering machine detected. Dailycall hung up without leaving a voicemail message.";
     const callAttempt = await prisma.callAttempt.findFirst({
       where: { providerCallSid: callSid },
-      include: { member: true },
+      include: { member: { include: { customer: true } } },
     });
+    const isDemoCall = callAttempt?.member.customer.email === "demo-family@dailycall.local" || callAttempt?.member.preferredCallTime === "Landing page demo";
     let alertSentAt = callAttempt?.alertSentAt ?? null;
 
     if (callAttempt && !alertSentAt) {
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
         await sendExampleVoicemailAlertSmsToTeam({
           memberName: callAttempt.member.name,
           summary,
+          isDemo: isDemoCall,
         });
         alertSentAt = new Date();
       } catch (error) {
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
     }
 
     const retryAttempt = callAttempt?.retryAttempt ?? 0;
-    const retryLimit = callAttempt?.member.voicemailRetryCount ?? 0;
+    const retryLimit = isDemoCall ? 0 : callAttempt?.member.voicemailRetryCount ?? 0;
     const retryDelayMins = callAttempt?.member.voicemailRetryDelayMins ?? 15;
     let retryScheduledFor: Date | null = null;
 

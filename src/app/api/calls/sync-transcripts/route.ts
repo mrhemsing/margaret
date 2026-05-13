@@ -20,14 +20,15 @@ export async function POST() {
   for (const call of pendingCalls) {
     try {
       const details = await getConversationDetails(call.providerConversationId!);
-      const transcript = formatConversationTranscript(details.transcript);
       const summary = details.analysis?.transcript_summary ?? call.summary;
       const status = mapConversationStatus(details.status);
 
       const member = await prisma.member.findUnique({
         where: { id: call.memberId },
-        include: { memory: true },
+        include: { memory: true, customer: true },
       });
+      const isDemoCall = member?.customer.email === "demo-family@dailycall.local" || member?.preferredCallTime === "Landing page demo";
+      const transcript = formatConversationTranscript(details.transcript, member?.name ?? "Member");
       const insights = deriveConversationInsights({
         memberName: member?.name ?? "the call recipient",
         summary,
@@ -51,6 +52,7 @@ export async function POST() {
             memberName: member?.name ?? "the call recipient",
             status: finalStatus,
             summary: finalSummary,
+            isDemo: isDemoCall,
           });
         } catch (error) {
           smsError = error instanceof Error ? error.message : "Unknown SMS notification error";
