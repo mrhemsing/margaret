@@ -8,10 +8,12 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const showDevNav = process.env.APP_ENV !== "production";
+
   return (
     <html lang="en">
       <body>
-        <DevNav />
+        {showDevNav ? <DevNav /> : null}
         {children}
       </body>
     </html>

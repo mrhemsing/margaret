@@ -1,6 +1,8 @@
 import { SiteHeader } from "@/app/components/site-header";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 function formatDate(date: Date | null) {
   if (!date) return "Pending";
 
