@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 import { prisma } from "@/lib/db";
-import { stripe } from "@/lib/stripe";
+import { getStripeClient } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -77,6 +77,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
+  const stripe = getStripeClient();
   const subscription = await stripe.subscriptions.retrieve(session.subscription);
   await upsertSubscriptionFromStripe(subscription);
 }
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
   let event: Stripe.Event;
 
   try {
+    const stripe = getStripeClient();
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (error) {
     return NextResponse.json(

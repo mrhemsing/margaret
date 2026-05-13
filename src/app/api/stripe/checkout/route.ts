@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db";
 import { getStripePriceIdForPlan, supportedBillingCountries } from "@/lib/plans";
-import { stripe } from "@/lib/stripe";
+import { getStripeClient } from "@/lib/stripe";
 
 function splitList(value: string) {
   return value
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
   const appUrl = process.env.APP_URL ?? "http://localhost:3003";
 
   try {
+    const stripe = getStripeClient();
     const stripeCustomer = await stripe.customers.create({
       name: input.customerName,
       email: input.customerEmail,
