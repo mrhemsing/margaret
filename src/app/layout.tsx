@@ -3,8 +3,30 @@ import { DevNav } from "@/components/dev-nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "dailycall",
+  metadataBase: new URL(process.env.PUBLIC_APP_URL ?? process.env.APP_URL ?? "https://dailycall.care"),
+  title: "DailyCare: Companion calls",
   description: "A friendly daily call for aging parents — companionship for them and peace of mind for families.",
+  openGraph: {
+    title: "DailyCare: Companion calls",
+    description: "A friendly daily call for aging parents — companionship for them and peace of mind for families.",
+    url: "/",
+    siteName: "DailyCare",
+    images: [
+      {
+        url: "/dailycall-logo.jpg",
+        width: 571,
+        height: 150,
+        alt: "DailyCare logo",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "DailyCare: Companion calls",
+    description: "A friendly daily call for aging parents — companionship for them and peace of mind for families.",
+    images: ["/dailycall-logo.jpg"],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
