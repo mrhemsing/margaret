@@ -139,7 +139,11 @@ export function SignupForm() {
       importantEvents: String(formData.get("importantEvents") ?? ""),
       questionsToAsk: String(formData.get("questionsToAsk") ?? ""),
       preferredTone: String(formData.get("preferredTone") ?? "warm_patient"),
-      ritualPreference: String(formData.get("ritualPreference") ?? "morning_chat"),
+      ritualPreference: formData
+        .getAll("ritualPreference")
+        .map((value) => String(value).trim())
+        .filter(Boolean)
+        .join(", "),
       plan: selectedPlan,
     };
 
@@ -331,17 +335,31 @@ export function SignupForm() {
                 <option value="gentle_spiritual">Gentle / spiritual</option>
               </select>
             </label>
-            <label className="grid gap-2 text-sm font-semibold text-slate-700">
-              Recurring call ritual
-              <select name="ritualPreference" defaultValue="morning_chat" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink">
-                <option value="morning_chat">Morning coffee chat</option>
-                <option value="evening_wind_down">Evening wind-down</option>
-                <option value="memory_lane">Memory lane stories</option>
-                <option value="trivia_games">Trivia or light games</option>
-                <option value="music_chat">Music chat</option>
-                <option value="prayer_reflection">Prayer / reflection</option>
-              </select>
-            </label>
+            <fieldset className="grid gap-2 text-sm font-semibold text-slate-700">
+              <legend>Recurring interests</legend>
+              <div className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 font-normal text-ink">
+                {[
+                  ["Morning coffee chat", "morning_coffee_chat"],
+                  ["Evening wind-down", "evening_wind_down"],
+                  ["Memory lane stories", "memory_lane_stories"],
+                  ["Trivia or light games", "trivia_light_games"],
+                  ["Music chat", "music_chat"],
+                  ["Prayer / reflection", "prayer_reflection"],
+                ].map(([label, value]) => (
+                  <label key={value} className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <input
+                      name="ritualPreference"
+                      type="checkbox"
+                      value={label}
+                      defaultChecked={value === "morning_coffee_chat"}
+                      className="h-4 w-4 shrink-0 rounded border-slate-300 text-brandButtonBlue focus:ring-brandPink"
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+              <span className="text-xs font-normal leading-5 text-slate-500">Choose any recurring topics they may enjoy during calls.</span>
+            </fieldset>
           </div>
         </fieldset>
 
