@@ -110,6 +110,19 @@ const areaCodeTimezones: Record<string, { value: string; label: string }> = {
   902: { value: "America/Halifax", label: "Atlantic Time" },
 };
 
+const timezoneOptions = [
+  { value: "America/St_Johns", label: "Newfoundland Time" },
+  { value: "America/Halifax", label: "Atlantic Time" },
+  { value: "America/Toronto", label: "Eastern Time" },
+  { value: "America/Winnipeg", label: "Central Time" },
+  { value: "America/Regina", label: "Central Time - Saskatchewan" },
+  { value: "America/Denver", label: "Mountain Time" },
+  { value: "America/Phoenix", label: "Mountain Time - Arizona" },
+  { value: "America/Los_Angeles", label: "Pacific Time" },
+  { value: "America/Anchorage", label: "Alaska Time" },
+  { value: "Pacific/Honolulu", label: "Hawaii Time" },
+];
+
 function normalizeNorthAmericanPhone(value: string) {
   const digits = value.replace(/\D/g, "");
 
@@ -150,6 +163,8 @@ export function SignupForm() {
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({ status: "idle" });
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [detectedTimezone, setDetectedTimezone] = useState<{ value: string; label: string } | null>(null);
+  const [selectedTimezone, setSelectedTimezone] = useState("America/Los_Angeles");
+  const [timezoneEdited, setTimezoneEdited] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -233,7 +248,7 @@ export function SignupForm() {
       customerCountry,
       parentName: String(formData.get("parentName") ?? ""),
       parentPhone: normalizeNorthAmericanPhone(String(formData.get("parentPhone") ?? "")),
-      timezone: String(formData.get("timezone") ?? detectedTimezone?.value ?? "America/Los_Angeles"),
+      timezone: String(formData.get("timezone") ?? selectedTimezone),
       preferredCallTime: preferredCallTimes[0] ?? "09:00",
       preferredCallTimes,
       familyContext: String(formData.get("familyContext") ?? ""),
@@ -377,7 +392,12 @@ export function SignupForm() {
               placeholder="(306) 555-0100"
               onChange={(event) => {
                 event.currentTarget.value = formatNorthAmericanPhoneInput(event.currentTarget.value);
-                setDetectedTimezone(detectTimezoneFromNorthAmericanPhone(event.currentTarget.value));
+                const nextTimezone = detectTimezoneFromNorthAmericanPhone(event.currentTarget.value);
+                setDetectedTimezone(nextTimezone);
+
+                if (nextTimezone && !timezoneEdited) {
+                  setSelectedTimezone(nextTimezone.value);
+                }
               }}
             />
           </label>
@@ -565,11 +585,28 @@ export function SignupForm() {
                 </div>
               </label>
             )}
-            <input type="hidden" name="timezone" value={detectedTimezone?.value ?? "America/Los_Angeles"} />
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Call timezone
+              <select
+                name="timezone"
+                value={selectedTimezone}
+                onChange={(event) => {
+                  setSelectedTimezone(event.target.value);
+                  setTimezoneEdited(true);
+                }}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink"
+              >
+                {timezoneOptions.map((timezone) => (
+                  <option key={timezone.value} value={timezone.value}>
+                    {timezone.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <p className="rounded-2xl bg-slate-50 px-4 py-3 text-xs font-semibold leading-5 text-slate-600 ring-1 ring-slate-200">
               {detectedTimezone
-                ? `Detected timezone from loved one's phone number: ${detectedTimezone.label}.`
-                : "Enter the loved one's phone number above and we'll detect the call timezone from the area code."}
+                ? `Detected from loved one's phone number: ${detectedTimezone.label}. Change it above if they travel or live somewhere else seasonally.`
+                : "Enter the loved one's phone number above and we'll suggest a timezone from the area code. You can change it if needed."}
             </p>
           </div>
         </fieldset>
