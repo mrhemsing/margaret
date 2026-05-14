@@ -287,10 +287,20 @@ export function SignupForm() {
         </fieldset>
 
         <fieldset className="grid gap-4">
-          <legend className="mb-2 text-xl font-bold text-ink">5. Call time and plan</legend>
+          <div>
+            <legend className="text-xl font-bold text-ink">5. Choose your trial experience</legend>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Your 30-day trial is free. No credit card today. Choose the experience you want to try — you can change plans before billing starts.
+            </p>
+          </div>
           <div className="grid gap-3 md:grid-cols-2">
             {planOptions.map((plan) => (
-              <label key={plan.value} className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold text-ink">
+              <label
+                key={plan.value}
+                className={`rounded-2xl border bg-white p-4 text-sm font-semibold text-ink transition ${
+                  selectedPlan === plan.value ? "border-brandButtonBlue ring-4 ring-brandBlue/20" : "border-slate-200"
+                }`}
+              >
                 <span className="flex items-center gap-2">
                   <input
                     name="plan"
@@ -301,8 +311,11 @@ export function SignupForm() {
                   />
                   <span>{plan.label}</span>
                 </span>
-                <span className="mt-2 block text-lg font-bold text-ink">{plan.price}<span className="text-xs font-medium text-slate-500"> CAD/USD / mo</span></span>
-                <span className="mt-2 block text-xs font-normal leading-5 text-slate-500">{plan.detail}</span>
+                <span className="mt-2 inline-flex rounded-full bg-sage/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sage">
+                  Free for 30 days
+                </span>
+                <span className="mt-3 block text-xs font-normal leading-5 text-slate-500">{plan.detail}</span>
+                <span className="mt-3 block text-xs font-semibold text-slate-500">After trial: {plan.price} CAD/USD / mo</span>
               </label>
             ))}
           </div>
@@ -360,7 +373,7 @@ export function SignupForm() {
         </fieldset>
 
         <p className="rounded-2xl bg-brandBlue/10 p-4 text-sm font-semibold leading-6 text-ink ring-1 ring-brandBlue/15">
-          Simple monthly pricing. No hidden fees, no pressure, and easy cancellation anytime.
+          Your 30-day trial is free. No credit card today. You can change plans before billing starts.
         </p>
 
         <button
@@ -368,7 +381,7 @@ export function SignupForm() {
           disabled={checkoutState.status === "loading"}
           className="rounded-full bg-brandButtonBlue px-6 py-4 font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          {checkoutState.status === "loading" ? "Opening free trial..." : "Start 30-day free trial"}
+          {checkoutState.status === "loading" ? "Starting free trial..." : "Start free trial"}
         </button>
 
         {checkoutState.message ? (
