@@ -183,9 +183,13 @@ export function SignupForm() {
         <fieldset className="grid gap-4 rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15">
           <h2 className="text-xl font-bold text-ink">1. {accountEmail ? "Dashboard login connected" : "Create your dashboard login"}</h2>
           <p className="text-sm leading-6 text-slate-600">
-            {accountEmail
-              ? `You're signed in as ${accountEmail}. Continue below to start the trial.`
-              : "Use this to access reports, transcripts, call settings, and billing after signup."}
+            {accountEmail ? (
+              <>
+                You&apos;re signed in as <strong className="font-bold text-ink">{accountEmail}</strong>. Continue below to start the trial.
+              </>
+            ) : (
+              "Use this to access reports, transcripts, call settings, and billing after signup."
+            )}
           </p>
           {accountEmail ? <input name="customerEmail" type="hidden" value={accountEmail} /> : null}
           {!accountEmail ? (
