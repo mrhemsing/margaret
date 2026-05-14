@@ -12,6 +12,20 @@ type CheckoutState = {
   message?: string;
 };
 
+function normalizeNorthAmericanPhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `+${digits}`;
+  }
+
+  return value.trim();
+}
+
 export function SignupForm() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(SubscriptionPlan.ONE_CALL_DAILY);
   const [enabledCallTimes, setEnabledCallTimes] = useState([true, true, true]);
@@ -90,14 +104,16 @@ export function SignupForm() {
       .map((value) => String(value).trim())
       .filter(Boolean);
 
+    const customerCountry = String(formData.get("customerCountry") ?? "CA");
+
     const payload = {
       supabaseUserId,
       customerName,
       customerEmail,
-      customerPhone: String(formData.get("customerPhone") ?? ""),
-      customerCountry: String(formData.get("customerCountry") ?? "CA"),
+      customerPhone: normalizeNorthAmericanPhone(String(formData.get("customerPhone") ?? "")),
+      customerCountry,
       parentName: String(formData.get("parentName") ?? ""),
-      parentPhone: String(formData.get("parentPhone") ?? ""),
+      parentPhone: normalizeNorthAmericanPhone(String(formData.get("parentPhone") ?? "")),
       preferredCallTime: preferredCallTimes[0] ?? "09:00",
       preferredCallTimes,
       familyContext: String(formData.get("familyContext") ?? ""),
@@ -184,8 +200,20 @@ export function SignupForm() {
             <input name="customerName" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="Jane Caregiver" />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
-            Mobile number for reports and alerts
-            <input name="customerPhone" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="+1 604 555 0100" />
+            Your mobile number for reports and alerts
+            <input
+              name="customerPhone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              required
+              minLength={10}
+              pattern="[+]?[-().\s\d]{10,}"
+              title="Enter a 10-digit US or Canadian phone number with area code."
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink"
+              placeholder="(604) 555-0100"
+            />
+            <span className="text-xs font-normal leading-5 text-slate-500">Use a 10-digit US or Canadian number with area code. You do not need to enter 1.</span>
           </label>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Billing country
@@ -204,8 +232,20 @@ export function SignupForm() {
             <input name="parentName" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="Eleanor" />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
-            Phone number to call
-            <input name="parentPhone" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="+1 306 555 0100" />
+            Loved one&apos;s phone number to call
+            <input
+              name="parentPhone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              required
+              minLength={10}
+              pattern="[+]?[-().\s\d]{10,}"
+              title="Enter a 10-digit US or Canadian phone number with area code."
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink"
+              placeholder="(306) 555-0100"
+            />
+            <span className="text-xs font-normal leading-5 text-slate-500">Landlines are fine. Enter the area code; we&apos;ll add +1 automatically.</span>
           </label>
         </fieldset>
 
