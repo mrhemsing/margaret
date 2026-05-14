@@ -329,8 +329,8 @@ export function SignupForm() {
             </label>
           ) : null}
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+          <div className="grid gap-4">
+            <label className="grid gap-2 text-sm font-semibold text-slate-700 md:max-w-[calc(50%-0.5rem)]">
               Preferred tone
               <select name="preferredTone" defaultValue="warm_patient" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink">
                 <option value="warm_patient">Warm and patient</option>
@@ -339,9 +339,9 @@ export function SignupForm() {
                 <option value="gentle_spiritual">Gentle / spiritual</option>
               </select>
             </label>
-            <fieldset className="grid gap-2 text-sm font-semibold text-slate-700">
-              <legend>Recurring interests</legend>
-              <div className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 font-normal text-ink">
+            <div className="grid gap-2 text-sm font-semibold text-slate-700">
+              <p>Recurring interests</p>
+              <div className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 font-normal text-ink sm:grid-cols-2">
                 {[
                   ["Morning coffee chat", "morning_coffee_chat"],
                   ["Evening wind-down", "evening_wind_down"],
@@ -350,7 +350,7 @@ export function SignupForm() {
                   ["Music chat", "music_chat"],
                   ["Prayer / reflection", "prayer_reflection"],
                 ].map(([label, value]) => (
-                  <label key={value} className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <label key={value} className="flex min-w-0 items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
                     <input
                       name="ritualPreference"
                       type="checkbox"
@@ -358,12 +358,12 @@ export function SignupForm() {
                       defaultChecked={value === "morning_coffee_chat"}
                       className="h-4 w-4 shrink-0 rounded border-slate-300 text-brandButtonBlue focus:ring-brandPink"
                     />
-                    <span>{label}</span>
+                    <span className="min-w-0">{label}</span>
                   </label>
                 ))}
               </div>
               <span className="text-xs font-normal leading-5 text-slate-500">Choose any recurring topics they may enjoy during calls.</span>
-            </fieldset>
+            </div>
           </div>
         </fieldset>
 
