@@ -611,17 +611,19 @@ export function SignupForm() {
           </div>
         </fieldset>
 
-        <p className="rounded-2xl bg-brandBlue/10 p-4 text-sm font-semibold leading-6 text-ink ring-1 ring-brandBlue/15">
-          Your 30-day trial is free. No credit card today. You can change plans before billing starts.
-        </p>
+        <div className="grid gap-4 md:grid-cols-[auto_1fr] md:items-center">
+          <p className="order-1 rounded-2xl bg-brandBlue/10 p-4 text-sm font-semibold leading-6 text-ink ring-1 ring-brandBlue/15 md:order-2">
+            Your 30-day trial is free. No credit card today. You can change plans before billing starts.
+          </p>
 
-        <button
-          type="submit"
-          disabled={checkoutState.status === "loading"}
-          className="rounded-full bg-brandButtonBlue px-6 py-4 font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-400"
-        >
-          {checkoutState.status === "loading" ? "Starting free trial..." : "Start free trial"}
-        </button>
+          <button
+            type="submit"
+            disabled={checkoutState.status === "loading"}
+            className="order-2 rounded-full bg-brandButtonBlue px-6 py-4 font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-400 md:order-1 md:min-w-48"
+          >
+            {checkoutState.status === "loading" ? "Starting free trial..." : "Start free trial"}
+          </button>
+        </div>
 
         {checkoutState.message ? (
           <p className={`text-sm ${checkoutState.status === "error" ? "text-red-700" : "text-slate-500"}`}>
