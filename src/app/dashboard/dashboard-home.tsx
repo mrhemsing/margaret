@@ -95,7 +95,7 @@ export function DashboardHome() {
   async function signOut() {
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/");
   }
 
   if (state.status === "loading") {

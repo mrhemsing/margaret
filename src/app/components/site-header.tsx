@@ -54,7 +54,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
     setAccountEmail(null);
-    router.push("/login");
+    router.push("/");
   }
 
   return (
