@@ -101,7 +101,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
               {link.label}
             </Link>
           ))}
-          {showTrialButton ? (
+          {showTrialButton && !accountEmail ? (
             <Link href="/signup" className="rounded-full bg-brandButtonBlue px-4 py-2 text-sm font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover">
               <span className="sm:hidden">Start free trial</span>
               <span className="hidden sm:inline">Start free 30-day trial</span>
