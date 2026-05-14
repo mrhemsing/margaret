@@ -278,7 +278,7 @@ export function LandingPage() {
         <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
           <p className="text-sm font-semibold uppercase tracking-wide text-sage">Routine</p>
           <h2 className="mt-3 text-2xl font-bold text-ink">A familiar daily voice.</h2>
-          <p className="mt-3 leading-7 text-slate-600">The goal is not technology for its own sake. It is connection, routine, reassurance, and companionship.</p>
+          <p className="mt-3 leading-7 text-slate-600">The goal is not technology for its own sake. It is connection, routine, reassurance, companionship — and helping keep seniors’ minds active while sparking joy through meaningful conversation.</p>
         </article>
         <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
           <p className="text-sm font-semibold uppercase tracking-wide text-sage">Relief for families</p>
@@ -372,7 +372,7 @@ export function LandingPage() {
         <div className="text-center">
           <p className="text-sm font-semibold uppercase tracking-wide text-sage">Pricing</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Companionship for them. Peace of mind for you.</h2>
-          <p className="mx-auto mt-3 max-w-2xl leading-7 text-slate-600">Introductory first-year pricing for early families. Both plans include a 30-day free trial with no credit card required.</p>
+          <p className="mx-auto mt-3 max-w-2xl leading-7 text-slate-600">Both plans include a 30-day free trial with no credit card required.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
           {plans.map((plan) => (
@@ -525,8 +525,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section data-mobile-reveal className="pb-2">
-        <div className="rounded-[1.5rem] border border-slate-300/80 bg-white/80 p-5 text-sm leading-6 text-slate-600 shadow-sm md:p-6">
+      <section data-mobile-reveal aria-label="Service disclaimer and privacy standards" className="grid gap-8 rounded-[1.5rem] border border-slate-300/80 bg-white/80 p-5 text-base leading-7 text-slate-600 shadow-sm md:p-6 lg:grid-cols-[minmax(0,1fr)_max-content] lg:items-start lg:gap-12">
+        <div>
           <p className="font-semibold text-ink">Service disclaimer</p>
           <div className="mt-3 grid gap-3">
             <p>
@@ -538,9 +538,35 @@ export function LandingPage() {
             <p>
               Human relationships and social connection are deeply important. Our service is not intended to replace family interaction, caregiving, friendship, or socialization — but rather to support and enhance everyday connection, comfort, safety, and peace of mind for everyone involved.
             </p>
+            <p>
+              We follow industry-standard privacy and security practices designed to support Canadian privacy requirements, including Personal Information Protection and Electronic Documents Act (PIPEDA), as well as U.S. healthcare privacy standards associated with Health Insurance Portability and Accountability Act (HIPAA).
+            </p>
           </div>
         </div>
+
+        <div className="grid justify-center gap-5 lg:mt-[2.3rem] lg:justify-start">
+          <div className="flex items-center justify-center gap-4 lg:justify-start">
+            <Image src="/trust/pipeda.webp" alt="PIPEDA privacy standards" width={625} height={625} className="h-auto w-20 rounded-2xl sm:w-24" />
+            <Image src="/trust/hipaa.png" alt="HIPAA privacy standards" width={1455} height={677} className="h-auto w-36 rounded-2xl sm:w-40" />
+          </div>
+          <ul className="grid gap-y-1 text-sm font-semibold leading-6 text-slate-600">
+            <li>• HIPAA Ready</li>
+            <li>• PIPEDA Aligned</li>
+            <li>• Encrypted Calls &amp; Data</li>
+            <li>• We Never Sell Your Data</li>
+            <li>• Secure Payments by Stripe</li>
+            <li>• Trusted by Families Across North America</li>
+          </ul>
+        </div>
       </section>
+
+      <footer className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pb-6 text-sm font-semibold text-slate-600">
+        <Link href="/terms-and-conditions" className="hover:text-ink">Terms &amp; Conditions</Link>
+        <Link href="/privacy-policy" className="hover:text-ink">Privacy Policy</Link>
+        <Link href="/cookie-policy" className="hover:text-ink">Cookie Policy</Link>
+        <Link href="/cookie-preferences" className="hover:text-ink">Cookies Preferences</Link>
+        <Link href="/support" className="hover:text-ink">Support</Link>
+      </footer>
     </main>
   );
 }
