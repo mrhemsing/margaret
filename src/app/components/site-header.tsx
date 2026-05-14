@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -19,7 +20,10 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({ showLoginLink = true, showTrialButton = false, links = [] }: SiteHeaderProps) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const isDashboardPage = pathname?.startsWith("/dashboard") ?? false;
 
   useEffect(() => {
     let cancelled = false;
@@ -46,14 +50,27 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
     };
   }, []);
 
+  async function signOut() {
+    const supabase = createBrowserSupabaseClient();
+    await supabase.auth.signOut();
+    setAccountEmail(null);
+    router.push("/login");
+  }
+
   return (
     <div className="flex flex-col gap-1">
       <div className="flex min-h-5 justify-end px-2 text-sm font-semibold text-slate-600">
         {accountEmail ? (
           <div className="flex items-center gap-2">
-            <Link href="/dashboard" className="whitespace-nowrap text-sm font-bold text-ink hover:text-brandButtonBlue">
-              My dashboard
-            </Link>
+            {isDashboardPage ? (
+              <button type="button" onClick={signOut} className="whitespace-nowrap text-sm font-bold text-ink hover:text-brandButtonBlue">
+                Logout
+              </button>
+            ) : (
+              <Link href="/dashboard" className="whitespace-nowrap text-sm font-bold text-ink hover:text-brandButtonBlue">
+                My dashboard
+              </Link>
+            )}
             <Link
               href="/dashboard"
               className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-ink shadow-sm ring-1 ring-black/5 hover:bg-white hover:text-brandButtonBlue"
