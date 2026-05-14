@@ -12,7 +12,11 @@
   box-sizing: border-box;
 }
 
-html,
+html {
+  overflow-x: clip;
+  overflow-y: scroll;
+}
+
 body {
   overflow-x: clip;
 }
