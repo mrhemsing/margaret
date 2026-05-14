@@ -321,13 +321,19 @@ export function SignupForm() {
             <textarea name="importantEvents" rows={3} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="Ask how Sam’s hockey tournament went. Doctor appointment next Tuesday. Birthday on June 4." />
           </label>
 
-          {selectedPlan === SubscriptionPlan.THREE_CALLS_DAILY ? (
-            <label className="grid gap-2 text-sm font-semibold text-slate-700">
-              Custom questions you wish someone would ask them
-              <textarea name="questionsToAsk" rows={3} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="Ask about her childhood in Winnipeg. Ask what music she played with Robert." />
-              <span className="text-xs font-normal leading-5 text-slate-500">Included with Companion Plus.</span>
-            </label>
-          ) : null}
+          <label className={`grid gap-2 text-sm font-semibold ${selectedPlan === SubscriptionPlan.THREE_CALLS_DAILY ? "text-slate-700" : "text-slate-500"}`}>
+            Custom questions you wish someone would ask them
+            <textarea
+              name="questionsToAsk"
+              rows={3}
+              disabled={selectedPlan !== SubscriptionPlan.THREE_CALLS_DAILY}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink disabled:bg-slate-100 disabled:text-slate-400 disabled:placeholder:text-slate-400"
+              placeholder="Ask about her childhood in Winnipeg. Ask what music she played with Robert."
+            />
+            <span className="text-xs font-normal leading-5 text-slate-500">
+              {selectedPlan === SubscriptionPlan.THREE_CALLS_DAILY ? "Included with Companion Plus." : "Available with Companion Plus."}
+            </span>
+          </label>
 
           <div className="grid gap-4">
             <label className="grid gap-2 text-sm font-semibold text-slate-700 md:max-w-[calc(50%-0.5rem)]">
