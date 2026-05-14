@@ -112,12 +112,18 @@ const areaCodeTimezones: Record<string, { value: string; label: string }> = {
 
 const timezoneOptions = [
   { value: "America/St_Johns", label: "Newfoundland Time" },
+  { value: "America/Moncton", label: "Atlantic Time" },
   { value: "America/Halifax", label: "Atlantic Time" },
+  { value: "America/New_York", label: "Eastern Time" },
+  { value: "America/Detroit", label: "Eastern Time" },
   { value: "America/Toronto", label: "Eastern Time" },
+  { value: "America/Chicago", label: "Central Time" },
   { value: "America/Winnipeg", label: "Central Time" },
   { value: "America/Regina", label: "Central Time - Saskatchewan" },
+  { value: "America/Edmonton", label: "Mountain Time" },
   { value: "America/Denver", label: "Mountain Time" },
   { value: "America/Phoenix", label: "Mountain Time - Arizona" },
+  { value: "America/Vancouver", label: "Pacific Time" },
   { value: "America/Los_Angeles", label: "Pacific Time" },
   { value: "America/Anchorage", label: "Alaska Time" },
   { value: "Pacific/Honolulu", label: "Hawaii Time" },
