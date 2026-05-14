@@ -1,7 +1,7 @@
 "use client";
 
 import { SubscriptionPlan } from "@prisma/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { planOptions } from "@/lib/plans";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -16,13 +16,33 @@ export function SignupForm() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(SubscriptionPlan.ONE_CALL_DAILY);
   const [enabledCallTimes, setEnabledCallTimes] = useState([true, true, true]);
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({ status: "idle" });
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCurrentUser() {
+      const supabase = createBrowserSupabaseClient();
+      const user = await supabase.auth.getUser();
+
+      if (!cancelled) {
+        setAccountEmail(user.data.user?.email ?? null);
+      }
+    }
+
+    loadCurrentUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function startCheckout(formData: FormData) {
     setCheckoutState({ status: "loading", message: "Creating your free trial..." });
 
     let supabaseUserId: string | undefined;
     const accountPassword = String(formData.get("accountPassword") ?? "");
-    const customerEmail = String(formData.get("customerEmail") ?? "");
+    const customerEmail = String(formData.get("customerEmail") ?? accountEmail ?? "");
     const customerName = String(formData.get("customerName") ?? "");
 
     try {
@@ -127,27 +147,34 @@ export function SignupForm() {
     <form action={startCheckout} className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
       <div className="grid gap-6">
         <fieldset className="grid gap-4 rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15">
-          <h2 className="text-xl font-bold text-ink">1. Create your dashboard login</h2>
+          <h2 className="text-xl font-bold text-ink">1. {accountEmail ? "Dashboard login connected" : "Create your dashboard login"}</h2>
           <p className="text-sm leading-6 text-slate-600">
-            Use this to access reports, transcripts, call settings, and billing after signup.
+            {accountEmail
+              ? `You're signed in as ${accountEmail}. Continue below to start the trial.`
+              : "Use this to access reports, transcripts, call settings, and billing after signup."}
           </p>
-          <SocialSigninButtons />
-          <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-slate-400">
-            <span className="h-px flex-1 bg-slate-200" />
-            or use email
-            <span className="h-px flex-1 bg-slate-200" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm font-semibold text-slate-700">
-              Email for login and billing
-              <input name="customerEmail" type="email" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="jane@example.com" />
-            </label>
-            <label className="grid gap-2 text-sm font-semibold text-slate-700">
-              Password
-              <input name="accountPassword" type="password" minLength={8} autoComplete="new-password" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="8+ characters" />
-            </label>
-          </div>
-          <p className="text-xs leading-5 text-slate-500">No credit card is needed for the 30-day trial. Password is only needed if you are not using Google, Apple, or Facebook.</p>
+          {accountEmail ? <input name="customerEmail" type="hidden" value={accountEmail} /> : null}
+          {!accountEmail ? (
+            <>
+              <SocialSigninButtons />
+              <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-slate-400">
+                <span className="h-px flex-1 bg-slate-200" />
+                or use email
+                <span className="h-px flex-1 bg-slate-200" />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                  Email for login and billing
+                  <input name="customerEmail" type="email" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="jane@example.com" />
+                </label>
+                <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                  Password
+                  <input name="accountPassword" type="password" minLength={8} autoComplete="new-password" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="8+ characters" />
+                </label>
+              </div>
+              <p className="text-xs leading-5 text-slate-500">No credit card is needed for the 30-day trial. Password is only needed if you are not using Google.</p>
+            </>
+          ) : null}
         </fieldset>
 
         <fieldset className="grid gap-4">
