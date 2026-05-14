@@ -20,7 +20,7 @@ export async function POST() {
       const result = await startAmdProtectedCheckInCall({
         toNumber: call.member.phoneNumber,
         memberName: call.member.name,
-        caregiverName: "Dailycall team",
+        caregiverName: "DailyCall team",
       });
 
       const updated = await prisma.callAttempt.update({

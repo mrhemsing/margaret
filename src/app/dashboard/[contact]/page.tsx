@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
 type Contact = "matt" | "chuck";
 
 const exampleContacts: Record<Contact, { name: string; phone: string; title: string }> = {
-  matt: { name: "Matt", phone: "+1 604 313 8398", title: "Matt's Dailycall dashboard" },
-  chuck: { name: "Chuck", phone: "+1 306 880 2055", title: "Chuck's Dailycall dashboard" },
+  matt: { name: "Matt", phone: "+1 604 313 8398", title: "Matt's DailyCall dashboard" },
+  chuck: { name: "Chuck", phone: "+1 306 880 2055", title: "Chuck's DailyCall dashboard" },
 };
 
 const fallbackMetrics = [
@@ -42,7 +42,7 @@ const fallbackMemoryByContact: Record<Contact, {
     healthNotes: [],
     conversationLikes: ["direct questions", "practical next steps"],
     conversationAvoids: ["overly long explanations"],
-    topicsToRevisit: ["Dailycall polish", "dashboard feedback"],
+    topicsToRevisit: ["DailyCall polish", "dashboard feedback"],
     recentTopics: ["mobile layout", "call summaries", "pricing"],
     lastSummary: "Matt responds best to concise check-ins that move the project forward and make the next action clear.",
     preferredTone: "focused and steady",
@@ -332,7 +332,7 @@ export default async function MemberDashboardPage({ params }: { params: Promise<
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-sage">Personalization memory</p>
-              <h2 className="mt-2 text-2xl font-bold text-ink">What Dailycall remembers about {memory.memberName}</h2>
+              <h2 className="mt-2 text-2xl font-bold text-ink">What DailyCall remembers about {memory.memberName}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
                 This is the companion profile powering warmer calls, better callbacks, and less repetition.
               </p>

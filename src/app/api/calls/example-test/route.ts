@@ -8,12 +8,12 @@ const exampleContacts = {
   matt: {
     memberName: "Matt",
     toNumber: "+16043138398",
-    caregiverName: "Dailycall team",
+    caregiverName: "DailyCall team",
   },
   chuck: {
     memberName: "Chuck",
     toNumber: "+13068802055",
-    caregiverName: "Dailycall team",
+    caregiverName: "DailyCall team",
   },
 } as const;
 

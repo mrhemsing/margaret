@@ -63,7 +63,7 @@ function inferMood(text: string) {
 function extractNotableMoments(text: string, memberName: string) {
   const parentText = text
     .split("\n")
-    .filter((line) => !line.trim().startsWith("Dailycall:"))
+    .filter((line) => !line.trim().startsWith("DailyCall:"))
     .join(" ");
   const sentences = sentenceSplit(parentText || text);
   const notable = sentences.filter((sentence) => {

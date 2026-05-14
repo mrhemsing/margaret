@@ -97,7 +97,7 @@ export async function POST(request: Request) {
       caregiverName: "your family",
       demoMaxDurationSeconds: DEMO_MAX_DURATION_SECONDS,
       companionContext:
-        "This is a short landing-page demo call. Keep it warm and natural, explain that this is a one-minute sample of Dailycall, ask one simple friendly check-in question, then wrap up politely before one minute.",
+        "This is a short landing-page demo call. Keep it warm and natural, explain that this is a one-minute sample of DailyCall, ask one simple friendly check-in question, then wrap up politely before one minute.",
       avoidRepeating: ["Do not run a full daily check-in during this demo.", "Do not continue beyond the one-minute demo window."],
     });
 

@@ -15,7 +15,7 @@ const heroProof = [
 
 const steps = [
   { title: "Choose a call schedule", copy: "Pick the time of day that feels natural for your loved one." },
-  { title: "They receive friendly calls", copy: "Dailycall becomes a familiar voice for connection, routine, and encouragement." },
+  { title: "They receive friendly calls", copy: "DailyCall becomes a familiar voice for connection, routine, and encouragement." },
   { title: "You get peace-of-mind updates", copy: "Family-friendly text message summaries and missed-call alerts help you know when to follow up." },
 ];
 
@@ -140,15 +140,15 @@ const pricingComparisonRows = [
 ];
 
 const faqs = [
-  ["Does my parent need an app?", "No. Dailycall works by phone and can call landlines."],
+  ["Does my parent need an app?", "No. DailyCall works by phone and can call landlines."],
   ["Is this hard to set up?", "No. Families can sign up and start calls in just a few minutes."],
-  ["What does Dailycall talk about?", "Dailycall can chat about daily life, memories, family, hobbies, music, routines, and more."],
+  ["What does DailyCall talk about?", "DailyCall can chat about daily life, memories, family, hobbies, music, routines, and more."],
   ["Can I see how my loved one is doing?", "Yes. Family accounts include helpful insights into engagement, mood trends, missed calls, and changes in routine."],
-  ["Is Dailycall replacing human contact?", "No. Dailycall is designed to support connection, not replace family, friends, caregivers, or emergency services."],
+  ["Is DailyCall replacing human contact?", "No. DailyCall is designed to support connection, not replace family, friends, caregivers, or emergency services."],
   ["Can I change how often it calls?", "Yes. Call timing and routines can be adjusted as your loved one's needs change."],
   [
-    "How does Dailycalls protect my parent's privacy?",
-    "Dailycalls keeps calls protected under our privacy policy. We use conversation details only to provide the service, improve quality, and create helpful family insights like mood, engagement, and positive topics. We do not sell personal data, and we protect it with strong security practices.",
+    "How does DailyCall protect my parent's privacy?",
+    "DailyCall keeps calls protected under our privacy policy. We use conversation details only to provide the service, improve quality, and create helpful family insights like mood, engagement, and positive topics. We do not sell personal data, and we protect it with strong security practices.",
   ],
 ];
 
@@ -168,7 +168,7 @@ export function LandingPage() {
         <div className="relative sm:min-h-[600px] md:min-h-[540px]">
           <Image
             src="/home-splash-mobile-senior-call-straight-phone.png"
-            alt="Smiling senior on a phone call for a Dailycall check-in"
+            alt="Smiling senior on a phone call for a DailyCall check-in"
             width={1024}
             height={828}
             priority
@@ -176,7 +176,7 @@ export function LandingPage() {
           />
           <Image
             src="/home-splash-desktop-phone-smile.jpg"
-            alt="Smiling senior on the phone for a Dailycall check-in"
+            alt="Smiling senior on the phone for a DailyCall check-in"
             width={1280}
             height={1099}
             priority
@@ -246,9 +246,9 @@ export function LandingPage() {
         <div className="grid gap-6 p-6 md:grid-cols-[0.95fr_1.05fr] md:items-end md:p-10">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-sage">Try a demo call</p>
-            <h2 className="mt-3 text-3xl font-bold text-ink">Hear what a Dailycall feels like.</h2>
+            <h2 className="mt-3 text-3xl font-bold text-ink">Hear what a DailyCall feels like.</h2>
             <p className="mt-4 leading-7 text-slate-600">
-              Enter your phone number and Dailycall will place a one-minute demo call so families can experience the tone, pacing, and simplicity before setting up a loved one.
+              Enter your phone number and DailyCall will place a one-minute demo call so families can experience the tone, pacing, and simplicity before setting up a loved one.
             </p>
             <div className="mt-5 grid gap-2 text-sm font-semibold text-ink sm:grid-cols-3">
               {["1-minute sample", "Calls your phone", "No app needed"].map((item) => (
@@ -258,7 +258,7 @@ export function LandingPage() {
             <div className="mt-6 rounded-[2rem] bg-ink p-5 text-cream shadow-sm md:flex md:min-h-[360px] md:flex-col md:justify-center">
               <p className="text-xs font-semibold uppercase tracking-wide text-cream/50">Sample conversation</p>
               <div className="mt-4 grid gap-3 text-sm leading-6">
-                <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Hi, this is Dailycall. I am calling for a quick friendly check-in. How is your morning going?</p>
+                <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Hi, this is DailyCall. I am calling for a quick friendly check-in. How is your morning going?</p>
                 <p className="ml-auto max-w-[88%] rounded-2xl bg-brandPink p-3 font-semibold text-white">Pretty good. I just finished coffee.</p>
                 <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">That sounds nice. A little music can be a lovely way to start the day — have you listened to anything this morning?</p>
               </div>
@@ -282,7 +282,7 @@ export function LandingPage() {
         <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
           <p className="text-sm font-semibold uppercase tracking-wide text-sage">Relief for families</p>
           <h2 className="mt-3 text-2xl font-bold text-ink">A little less worry.</h2>
-          <p className="mt-3 leading-7 text-slate-600">For adult children balancing distance, guilt, and caregiver stress, Dailycall adds a steady touchpoint.</p>
+          <p className="mt-3 leading-7 text-slate-600">For adult children balancing distance, guilt, and caregiver stress, DailyCall adds a steady touchpoint.</p>
         </article>
       </section>
 
@@ -313,7 +313,7 @@ export function LandingPage() {
             <p className="text-sm font-semibold uppercase tracking-wide text-sage">Memory and personalization</p>
             <h2 className="mt-3 text-3xl font-bold text-ink">Conversations feel continuous, not repetitive.</h2>
             <p className="mt-4 leading-7 text-slate-600">
-              Dailycall remembers what matters - family members, routines, interests, pets, hobbies, and ongoing conversations - so every call feels more personal over time.
+              DailyCall remembers what matters - family members, routines, interests, pets, hobbies, and ongoing conversations - so every call feels more personal over time.
             </p>
           </div>
           <div className="grid gap-3">
@@ -330,7 +330,7 @@ export function LandingPage() {
         <article className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-wide text-sage">Rituals and routine</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Humans bond through ritual.</h2>
-          <p className="mt-4 leading-7 text-slate-600">Dailycall becomes part of your loved one&apos;s daily rhythm: a call after coffee, an evening wind-down, a trivia game, or a familiar music conversation.</p>
+          <p className="mt-4 leading-7 text-slate-600">DailyCall becomes part of your loved one&apos;s daily rhythm: a call after coffee, an evening wind-down, a trivia game, or a familiar music conversation.</p>
         </article>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {rituals.map((ritual) => (
@@ -349,7 +349,7 @@ export function LandingPage() {
         <p className="text-sm font-semibold uppercase tracking-wide text-sage">Family dashboard</p>
         <h2 className="mt-3 text-3xl font-bold text-ink">Helpful insight, carefully framed.</h2>
         <p className="mt-4 max-w-3xl leading-7 text-slate-600">
-          Get helpful insights into mood, engagement, missed calls, and routine changes - without making the experience feel clinical. Dailycall is companionship first, with family reassurance in the background.
+          Get helpful insights into mood, engagement, missed calls, and routine changes - without making the experience feel clinical. DailyCall is companionship first, with family reassurance in the background.
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {["Mood trends", "Wellness indicators", "Loneliness risk signals", "Missed-call alerts", "Cognitive change indicators", "Emergency escalation options"].map((item) => (
@@ -484,7 +484,7 @@ export function LandingPage() {
             <div key={item} className="rounded-2xl bg-brandBlue/10 p-4 text-sm font-bold leading-6 text-ink ring-1 ring-brandBlue/15">{item}</div>
           ))}
         </div>
-        <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">Dailycall is a family reassurance service. Summaries and alerts are meant to help families stay connected, not make seniors feel monitored.</p>
+        <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">DailyCall is a family reassurance service. Summaries and alerts are meant to help families stay connected, not make seniors feel monitored.</p>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">

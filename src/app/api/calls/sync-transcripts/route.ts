@@ -38,7 +38,7 @@ export async function POST() {
       const isStuckInProgress = status === "IN_PROGRESS" && Boolean(call.startedAt) && Date.now() - call.startedAt!.getTime() > 15 * 60 * 1000;
       const finalStatus = isStuckInProgress ? "FAILED" : status;
       const finalSummary = isStuckInProgress
-        ? "Call processing timed out after 15 minutes. Dailycall marked this attempt as failed so it does not linger in progress."
+        ? "Call processing timed out after 15 minutes. DailyCall marked this attempt as failed so it does not linger in progress."
         : summary;
       const completedAt = finalStatus === "ANSWERED_OK" || finalStatus === "FAILED" ? call.completedAt ?? new Date() : call.completedAt;
       let smsResults: Awaited<ReturnType<typeof sendExampleReportSmsToTeam>> | null = null;

@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   const answeredBy = String(formData.get("AnsweredBy") ?? "");
 
   if (callSid && isMachine(answeredBy)) {
-    const summary = "Voicemail or answering machine detected. Dailycall hung up without leaving a voicemail message.";
+    const summary = "Voicemail or answering machine detected. DailyCall hung up without leaving a voicemail message.";
     const callAttempt = await prisma.callAttempt.findFirst({
       where: { providerCallSid: callSid },
       include: { member: { include: { customer: true } } },
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       data: {
         status: "IN_PROGRESS",
         startedAt: new Date(),
-        summary: "Human answer detected. Dailycall is connecting the call to the voice agent.",
+        summary: "Human answer detected. DailyCall is connecting the call to the voice agent.",
         conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
         syncedAt: new Date(),
       },
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
     }
 
     return twiml(
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Say>Dailycall is not fully configured yet. Goodbye.</Say><Hangup /></Response>",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Say>DailyCall is not fully configured yet. Goodbye.</Say><Hangup /></Response>",
     );
   }
 

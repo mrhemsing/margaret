@@ -42,7 +42,7 @@ export function LoginForm() {
   return (
     <div className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Log in to Dailycall</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-ink">Log in to DailyCall</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">Open your family dashboard, reports, transcripts, and call settings.</p>
       </div>
 
@@ -73,7 +73,7 @@ export function LoginForm() {
       {state.status === "error" ? <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{state.message}</p> : null}
 
       <p className="mt-6 text-center text-sm text-slate-600">
-        New to Dailycall? <Link href="/signup" className="font-bold text-brandButtonBlue hover:text-brandButtonBlueHover">Start your free trial</Link>
+        New to DailyCall? <Link href="/signup" className="font-bold text-brandButtonBlue hover:text-brandButtonBlueHover">Start your free trial</Link>
       </p>
     </div>
   );

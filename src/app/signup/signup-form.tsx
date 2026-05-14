@@ -441,7 +441,7 @@ export function SignupForm() {
               <option value="CA">Canada</option>
               <option value="US">United States</option>
             </select>
-            <span className="text-xs font-normal leading-5 text-slate-500">Dailycall is initially available only in Canada and the United States.</span>
+            <span className="text-xs font-normal leading-5 text-slate-500">DailyCall is initially available only in Canada and the United States.</span>
           </label>
         </fieldset>
 

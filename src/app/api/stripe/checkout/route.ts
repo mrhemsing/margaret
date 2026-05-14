@@ -126,7 +126,7 @@ export async function POST(request: Request) {
           conversationAvoids: splitList(input.topicsToAvoid),
           topicsToRevisit: splitList(`${input.importantEvents}\n${questionsToAsk}`),
           recentTopics: splitList(input.favoriteTopics),
-          lastSummary: questionsToAsk ? `Family wants Dailycall to ask: ${questionsToAsk}` : null,
+          lastSummary: questionsToAsk ? `Family wants DailyCall to ask: ${questionsToAsk}` : null,
         },
         update: {
           preferredName: input.parentName,
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
           conversationAvoids: { set: splitList(input.topicsToAvoid) },
           topicsToRevisit: { set: splitList(`${input.importantEvents}\n${questionsToAsk}`) },
           recentTopics: { set: splitList(input.favoriteTopics) },
-          lastSummary: questionsToAsk ? `Family wants Dailycall to ask: ${questionsToAsk}` : null,
+          lastSummary: questionsToAsk ? `Family wants DailyCall to ask: ${questionsToAsk}` : null,
         },
       });
 

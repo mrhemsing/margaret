@@ -61,10 +61,10 @@ export function buildCallReportSms(input: {
   const summary = input.summary?.trim() || "The call has been processed. Open the dashboard for details.";
 
   if (input.isDemo) {
-    return `Dailycall DEMO report for ${input.memberName}: ${input.status.replaceAll("_", " ").toLowerCase()}. This was a 1-minute landing-page demo call, not a scheduled member check-in. ${summary}\n\nDemo logs: ${dashboardUrl}`;
+    return `DailyCall DEMO report for ${input.memberName}: ${input.status.replaceAll("_", " ").toLowerCase()}. This was a 1-minute landing-page demo call, not a scheduled member check-in. ${summary}\n\nDemo logs: ${dashboardUrl}`;
   }
 
-  return `Dailycall report for ${input.memberName}: ${input.status.replaceAll("_", " ").toLowerCase()}. ${summary}\n\nDashboard: ${dashboardUrl}`;
+  return `DailyCall report for ${input.memberName}: ${input.status.replaceAll("_", " ").toLowerCase()}. ${summary}\n\nDashboard: ${dashboardUrl}`;
 }
 
 async function sendSmsToExampleTeam(body: string) {
@@ -95,13 +95,13 @@ export function buildVoicemailAlertSms(input: {
   const env = getServerEnv();
   const publicAppUrl = env.PUBLIC_APP_URL ?? env.APP_URL ?? "https://soma3.b-average.com";
   const dashboardUrl = input.isDemo ? `${publicAppUrl}/dashboard/demos` : `${publicAppUrl}/dashboard`;
-  const summary = input.summary?.trim() || "Voicemail or an answering machine was detected. Dailycall hung up without leaving a message.";
+  const summary = input.summary?.trim() || "Voicemail or an answering machine was detected. DailyCall hung up without leaving a message.";
 
   if (input.isDemo) {
-    return `Dailycall DEMO alert for ${input.memberName}: voicemail reached during a 1-minute landing-page demo call. ${summary}\n\nDemo logs: ${dashboardUrl}`;
+    return `DailyCall DEMO alert for ${input.memberName}: voicemail reached during a 1-minute landing-page demo call. ${summary}\n\nDemo logs: ${dashboardUrl}`;
   }
 
-  return `Dailycall alert for ${input.memberName}: voicemail reached. ${summary}\n\nDashboard: ${dashboardUrl}`;
+  return `DailyCall alert for ${input.memberName}: voicemail reached. ${summary}\n\nDashboard: ${dashboardUrl}`;
 }
 
 export async function sendExampleVoicemailAlertSmsToTeam(input: {

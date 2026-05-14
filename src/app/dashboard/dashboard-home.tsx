@@ -111,7 +111,7 @@ export function DashboardHome() {
     return (
       <section className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">No trial yet</p>
-        <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink md:text-5xl">Finish setting up Dailycall.</h1>
+        <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink md:text-5xl">Finish setting up DailyCall.</h1>
         <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">Your login works. Start the 30-day trial to add a loved one and schedule calls. No credit card required.</p>
         <Link href="/signup" className="mt-6 inline-flex rounded-full bg-brandButtonBlue px-6 py-3 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover">
           Start free trial
@@ -129,7 +129,7 @@ export function DashboardHome() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">Family dashboard</p>
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink md:text-5xl">Welcome, {state.customer.fullName}.</h1>
-            <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">Manage your Dailycall trial, loved one profile, reports, and call history.</p>
+            <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">Manage your DailyCall trial, loved one profile, reports, and call history.</p>
           </div>
           <button type="button" onClick={signOut} className="w-fit rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-black/5 hover:text-ink">
             Sign out

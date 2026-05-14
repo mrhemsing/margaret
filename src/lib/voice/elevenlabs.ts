@@ -40,7 +40,7 @@ export function formatConversationTranscript(transcript: ElevenLabsTranscriptTur
 
   return transcript
     .map((turn) => {
-      const speaker = turn.role === "agent" ? "Dailycall" : turn.role === "user" ? memberName : turn.role ?? "Speaker";
+      const speaker = turn.role === "agent" ? "DailyCall" : turn.role === "user" ? memberName : turn.role ?? "Speaker";
       const text = turn.message ?? turn.text ?? "";
       return text.trim() ? `${speaker}: ${text.trim()}` : null;
     })

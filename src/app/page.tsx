@@ -9,10 +9,10 @@ function ComingSoonPage() {
       <SiteHeader showLoginLink={false} />
       <section className="flex flex-1 items-center justify-center py-16 text-center">
         <div className="max-w-2xl rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5 md:p-12">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">Dailycall</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">DailyCall</p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink md:text-6xl">Coming soon.</h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            We&apos;re getting Dailycall ready: friendly companion calls for aging parents and peace of mind for families.
+            We&apos;re getting DailyCall ready: friendly companion calls for aging parents and peace of mind for families.
           </p>
         </div>
       </section>
