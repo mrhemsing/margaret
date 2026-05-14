@@ -1,16 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MobileScrollReveal } from "@/app/components/mobile-scroll-reveal";
 import { SiteHeader } from "@/app/components/site-header";
 import { DemoCallForm } from "./demo-call-form";
 import { TestimonialsCarousel } from "./testimonials-carousel";
 
 const heroProof = [
-  "No app required",
   "Works with regular phones",
-  "No credit card required",
   "Setup in under 2 minutes",
-  "Cancel anytime",
 ];
 
 const steps = [
@@ -141,7 +137,7 @@ const pricingComparisonRows = [
 
 const faqs = [
   ["Does my parent need an app?", "No. DailyCall works by phone and can call landlines."],
-  ["Is this hard to set up?", "No. Families can sign up and start calls in just a few minutes."],
+  ["Is this hard to set up?", "No. Families can sign up and start calls in just a few minutes. No credit card required."],
   ["What does DailyCall talk about?", "DailyCall can chat about daily life, memories, family, hobbies, music, routines, and more."],
   ["Can I see how my loved one is doing?", "Yes. Family accounts include helpful insights into engagement, mood trends, missed calls, and changes in routine."],
   ["Is DailyCall replacing human contact?", "No. DailyCall is designed to support connection, not replace family, friends, caregivers, or emergency services."],
@@ -161,11 +157,10 @@ export function LandingPage() {
     <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-5 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
-      <MobileScrollReveal />
       <SiteHeader showTrialButton />
 
       <header className="overflow-hidden rounded-[2rem] bg-white/75 shadow-sm ring-1 ring-black/5">
-        <div className="relative sm:min-h-[600px] md:min-h-[540px]">
+        <div className="relative">
           <Image
             src="/home-splash-mobile-senior-call-straight-phone.png"
             alt="Smiling senior on a phone call for a DailyCall check-in"

@@ -49,7 +49,7 @@ export default function SignupPage() {
             <li>• Most families complete setup in under 2 minutes.</li>
           </ul>
           <p className="mt-6 rounded-2xl bg-white/10 p-4 text-sm font-semibold leading-6 text-cream ring-1 ring-white/10">
-            During the free trial, families can experience Companion Plus features before choosing the plan that fits best.
+            Your privacy matters. We never sell or share your personal data. Calls are securely protected and used only to provide and improve the service.
           </p>
         </aside>
       </section>

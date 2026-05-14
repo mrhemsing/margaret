@@ -37,23 +37,6 @@ a {
   text-decoration: none;
 }
 
-@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
-  [data-mobile-reveal] {
-    opacity: 0;
-    transform: translateY(18px) scale(0.985);
-    transition:
-      opacity 650ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
-    transition-delay: var(--mobile-reveal-delay, 0ms);
-    will-change: opacity, transform;
-  }
-
-  [data-mobile-reveal].is-visible {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 .bullet-dot {
   margin-top: calc((1lh - 0.5rem) / 2);
 }
