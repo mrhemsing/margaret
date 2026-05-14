@@ -50,9 +50,18 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
     <div className="flex flex-col gap-1">
       <div className="flex min-h-5 justify-end px-2 text-sm font-semibold text-slate-600">
         {accountEmail ? (
-          <Link href="/dashboard" className="max-w-full truncate whitespace-nowrap hover:text-ink" title={`Logged in as ${accountEmail}`}>
-            <span className="hidden sm:inline">Logged in as </span>
-            <span className="font-bold text-ink">{accountEmail}</span>
+          <Link
+            href="/dashboard"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-ink shadow-sm ring-1 ring-black/5 hover:bg-white hover:text-brandButtonBlue"
+            title={`Logged in as ${accountEmail}. Go to dashboard.`}
+            aria-label={`Logged in as ${accountEmail}. Go to dashboard.`}
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+              <path
+                fill="currentColor"
+                d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"
+              />
+            </svg>
           </Link>
         ) : showLoginLink ? (
           <Link href="/login" className="whitespace-nowrap hover:text-ink">
