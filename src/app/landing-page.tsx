@@ -147,7 +147,7 @@ const faqs = [
   ["Can I change how often it calls?", "Yes. Call timing and routines can be adjusted as your loved one's needs change."],
   [
     "How does DailyCall protect my parent's privacy?",
-    "DailyCall keeps calls protected under our privacy policy. We use conversation details only to provide the service, improve quality, and create helpful family insights like mood, engagement, and positive topics. We do not sell personal data, and we protect it with strong security practices.",
+    "DailyCall keeps calls protected under our privacy policy, and we take your privacy very seriously. We use conversation details only to provide the service, improve quality, and create helpful family insights like mood, engagement, and positive topics. We do not sell personal data, and we protect it with strong security practice",
   ],
 ];
 
@@ -198,7 +198,7 @@ export function LandingPage() {
                 <span className="mx-1 sm:mx-0" aria-hidden="true">•</span>
                 <span className="whitespace-nowrap">NO APP NEEDED</span>
               </p>
-              <div className="mt-6 grid gap-2 text-sm font-semibold text-ink sm:max-w-xl sm:grid-cols-2">
+              <div className="mt-6 grid gap-2 text-base md:text-sm font-semibold text-ink sm:max-w-xl sm:grid-cols-2">
                 {heroProof.map((item) => (
                   <div
                     key={item.label}
@@ -225,7 +225,7 @@ export function LandingPage() {
       <section data-mobile-reveal id="how-it-works" className="rounded-[2rem] bg-ink p-8 text-cream shadow-sm md:p-10">
         <div className="grid gap-8 md:grid-cols-[0.75fr_1fr] md:items-center">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-brandPink">How it works</p>
+            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-brandPink">How it works</p>
             <h2 className="mt-3 text-3xl font-bold">Simple support, without new technology to learn.</h2>
             <p className="mt-4 leading-7 text-cream/75">Choose a daily call schedule, your loved one receives friendly calls, and you receive peace-of-mind updates by text message. No app. No passwords. No complicated setup.</p>
           </div>
@@ -246,19 +246,19 @@ export function LandingPage() {
       <section data-mobile-reveal id="demo" className="overflow-hidden rounded-[2rem] bg-brandBlue/10 shadow-sm ring-1 ring-brandBlue/15">
         <div className="grid gap-6 p-6 md:grid-cols-[0.95fr_1.05fr] md:items-end md:p-10">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-sage">Try a demo call</p>
+            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Try a demo call</p>
             <h2 className="mt-3 text-3xl font-bold text-ink">Hear what a DailyCall feels like.</h2>
             <p className="mt-4 leading-7 text-slate-600">
               Enter your phone number and DailyCall will place a one-minute demo call so families can experience the tone, pacing, and simplicity before setting up a loved one.
             </p>
-            <div className="mt-5 grid gap-2 text-sm font-semibold text-ink sm:grid-cols-3">
+            <div className="mt-5 grid gap-2 text-base md:text-sm font-semibold text-ink sm:grid-cols-3">
               {["1-minute sample", "Calls your phone", "No app needed"].map((item) => (
                 <div key={item} className="rounded-full bg-white/80 px-4 py-2 text-center shadow-sm ring-1 ring-black/5">{item}</div>
               ))}
             </div>
             <div className="mt-6 rounded-[2rem] bg-ink p-5 text-cream shadow-sm md:flex md:min-h-[360px] md:flex-col md:justify-center">
               <p className="text-sm md:text-xs font-semibold uppercase tracking-wide text-cream/50">Sample conversation</p>
-              <div className="mt-4 grid gap-3 text-sm leading-6">
+              <div className="mt-4 grid gap-3 text-base md:text-sm leading-6">
                 <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Hi, this is DailyCall. I am calling for a quick friendly check-in. How is your morning going?</p>
                 <p className="ml-auto max-w-[88%] rounded-2xl bg-brandPink p-3 font-semibold text-white">Pretty good. I just finished coffee.</p>
                 <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">That sounds nice. A little music can be a lovely way to start the day — have you listened to anything this morning?</p>
@@ -271,17 +271,17 @@ export function LandingPage() {
 
       <section data-mobile-reveal className="grid gap-4 md:grid-cols-3">
         <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-          <p className="text-sm font-semibold uppercase tracking-wide text-sage">Connection</p>
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Connection</p>
           <h2 className="mt-3 text-2xl font-bold text-ink">Someone to talk to when you can&apos;t be there.</h2>
           <p className="mt-3 leading-7 text-slate-600">Life gets busy. Companion calls help loved ones feel connected even when families can&apos;t call every day.</p>
         </article>
         <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-          <p className="text-sm font-semibold uppercase tracking-wide text-sage">Routine</p>
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Routine</p>
           <h2 className="mt-3 text-2xl font-bold text-ink">A familiar daily voice.</h2>
           <p className="mt-3 leading-7 text-slate-600">The goal is not technology for its own sake. It is connection, routine, reassurance, companionship — and helping keep seniors’ minds active while sparking joy through meaningful conversation.</p>
         </article>
         <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-          <p className="text-sm font-semibold uppercase tracking-wide text-sage">Relief for families</p>
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Relief for families</p>
           <h2 className="mt-3 text-2xl font-bold text-ink">A little less worry.</h2>
           <p className="mt-3 leading-7 text-slate-600">For adult children balancing distance, guilt, and caregiver stress, DailyCall adds a steady touchpoint.</p>
         </article>
@@ -289,18 +289,18 @@ export function LandingPage() {
 
       <section data-mobile-reveal className="grid gap-4 lg:grid-cols-2">
         <article className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-sage">Why seniors love it</p>
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Why seniors love it</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">A familiar voice, not another piece of software.</h2>
-          <ul className="mt-5 grid gap-3 text-sm leading-6 text-slate-600">
+          <ul className="mt-5 grid gap-3 text-base md:text-sm leading-6 text-slate-600">
             {seniorBenefits.map((item) => (
               <li key={item} className="flex gap-3"><CheckIcon /><span>{item}</span></li>
             ))}
           </ul>
         </article>
         <article className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-sage">Why families choose it</p>
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Why families choose it</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Peace of mind without surveillance.</h2>
-          <ul className="mt-5 grid gap-3 text-sm leading-6 text-slate-600">
+          <ul className="mt-5 grid gap-3 text-base md:text-sm leading-6 text-slate-600">
             {familyBenefits.map((item) => (
               <li key={item} className="flex gap-3"><CheckIcon /><span>{item}</span></li>
             ))}
@@ -311,7 +311,7 @@ export function LandingPage() {
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
         <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-sage">Memory and personalization</p>
+            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Memory and personalization</p>
             <h2 className="mt-3 text-3xl font-bold text-ink">Conversations feel continuous, not repetitive.</h2>
             <p className="mt-4 leading-7 text-slate-600">
               DailyCall remembers what matters - family members, routines, interests, pets, hobbies, and ongoing conversations - so every call feels more personal over time.
@@ -329,7 +329,7 @@ export function LandingPage() {
 
       <section data-mobile-reveal className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
         <article className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-sage">Rituals and routine</p>
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Rituals and routine</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Humans bond through ritual.</h2>
           <p className="mt-4 leading-7 text-slate-600">DailyCall becomes part of your loved one&apos;s daily rhythm: a call after coffee, an evening wind-down, a trivia game, or a familiar music conversation.</p>
         </article>
@@ -347,21 +347,21 @@ export function LandingPage() {
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-brandBlue/10 p-6 shadow-sm ring-1 ring-brandBlue/15 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-wide text-sage">Family dashboard</p>
+        <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Family dashboard</p>
         <h2 className="mt-3 text-3xl font-bold text-ink">Helpful insight, carefully framed.</h2>
         <p className="mt-4 max-w-3xl leading-7 text-slate-600">
           Get helpful insights into mood, engagement, missed calls, and routine changes - without making the experience feel clinical. DailyCall is companionship first, with family reassurance in the background.
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {["Mood trends", "Wellness indicators", "Loneliness risk signals", "Missed-call alerts", "Cognitive change indicators", "Emergency escalation options"].map((item) => (
-            <div key={item} className="rounded-2xl bg-white/80 p-4 text-sm font-semibold text-ink shadow-sm ring-1 ring-black/5">{item}</div>
+            <div key={item} className="rounded-2xl bg-white/80 p-4 text-base md:text-sm font-semibold text-ink shadow-sm ring-1 ring-black/5">{item}</div>
           ))}
         </div>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/70 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
         <div className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-wide text-sage">What families are saying</p>
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">What families are saying</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Warm, comforting, and emotionally safe.</h2>
           <p className="mt-4 leading-7 text-slate-600">The strongest stories are simple: more peace of mind, less loneliness, and an easier daily routine for everyone involved.</p>
         </div>
@@ -370,7 +370,7 @@ export function LandingPage() {
 
       <section data-mobile-reveal id="plans" className="grid gap-5">
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-sage">Pricing</p>
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Pricing</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Companionship for them. Peace of mind for you.</h2>
           <p className="mx-auto mt-3 max-w-2xl leading-7 text-slate-600">Both plans include a 30-day free trial with no credit card required.</p>
         </div>
@@ -378,18 +378,18 @@ export function LandingPage() {
           {plans.map((plan) => (
             <article key={plan.name} className={`flex flex-col rounded-3xl p-6 shadow-sm ring-1 md:h-full ${plan.featured ? "bg-ink text-cream ring-ink" : "bg-white/80 text-ink ring-black/5"}`}>
               <div className="flex items-center justify-between gap-3">
-                <p className={`text-sm font-semibold uppercase tracking-wide ${plan.featured ? "text-cream/60" : "text-sage"}`}>{plan.name}</p>
+                <p className={`text-base md:text-sm font-semibold uppercase tracking-wide ${plan.featured ? "text-cream/60" : "text-sage"}`}>{plan.name}</p>
                 {plan.featured ? <span className="rounded-full bg-brandPink px-3 py-1 text-sm md:text-xs font-bold text-white">Most popular</span> : null}
               </div>
               <p className="mt-3 text-4xl font-bold">{plan.price}<span className={`text-base font-medium ${plan.featured ? "text-cream/60" : "text-slate-500"}`}> CAD/USD / mo</span></p>
               <p className={`mt-1 text-sm md:text-xs font-semibold uppercase tracking-wide ${plan.featured ? "text-cream/50" : "text-slate-500"}`}>Introductory first-year price</p>
-              <p className={`mt-2 text-sm font-bold ${plan.featured ? "text-cream" : "text-ink"}`}>{plan.eyebrow}</p>
-              <p className={`mt-3 min-h-12 text-sm leading-6 ${plan.featured ? "text-cream/75" : "text-slate-600"}`}>{plan.bestFor}</p>
-              <ul className={`mt-5 grid gap-2 text-sm leading-6 ${plan.featured ? "text-cream/80" : "text-slate-600"}`}>
+              <p className={`mt-2 text-base md:text-sm font-bold ${plan.featured ? "text-cream" : "text-ink"}`}>{plan.eyebrow}</p>
+              <p className={`mt-3 min-h-12 text-base md:text-sm leading-6 ${plan.featured ? "text-cream/75" : "text-slate-600"}`}>{plan.bestFor}</p>
+              <ul className={`mt-5 grid gap-2 text-base md:text-sm leading-6 ${plan.featured ? "text-cream/80" : "text-slate-600"}`}>
                 {plan.includes.map((item) => <li key={item} className="flex gap-3"><CheckIcon /><span>{item}</span></li>)}
               </ul>
               <div className={plan.featured ? "grow min-h-10" : "grow min-h-6"} />
-              <Link href="/signup" className={`inline-flex rounded-full px-5 py-3 text-sm font-semibold shadow-sm md:w-fit md:translate-y-0 ${plan.featured ? "bg-cream text-ink hover:bg-white" : "bg-brandButtonBlue text-cream hover:bg-brandButtonBlueHover"}`}>
+              <Link href="/signup" className={`inline-flex rounded-full px-5 py-3 text-base md:text-sm font-semibold shadow-sm md:w-fit md:translate-y-0 ${plan.featured ? "bg-cream text-ink hover:bg-white" : "bg-brandButtonBlue text-cream hover:bg-brandButtonBlueHover"}`}>
                 {plan.cta}
               </Link>
             </article>
@@ -410,9 +410,9 @@ export function LandingPage() {
           style={{ background: "linear-gradient(to right, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 18%, rgba(255, 255, 255, 0.52) 50%, rgba(255, 255, 255, 0.1) 62%)" }}
         />
         <div className="relative p-2 md:p-4 xl:max-w-[68%]">
-          <p className="text-sm font-semibold uppercase tracking-wide text-sage">Plan comparison</p>
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Plan comparison</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Choose the daily rhythm that fits.</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600 md:hidden">A compact view of the biggest differences. The full comparison appears on larger screens.</p>
+          <p className="mt-3 text-base md:text-sm leading-6 text-slate-600 md:hidden">A compact view of the biggest differences. The full comparison appears on larger screens.</p>
         </div>
 
         <div className="relative grid gap-4 md:hidden">
@@ -421,13 +421,13 @@ export function LandingPage() {
               <p className="text-sm md:text-xs font-bold uppercase tracking-wide text-sage">Daily</p>
               <p className="mt-2 text-2xl font-bold text-ink">$14.95</p>
               <p className="text-sm md:text-xs text-slate-500">CAD/USD / month</p>
-              <p className="mt-3 text-sm font-semibold leading-5 text-ink">1 caring call per day</p>
+              <p className="mt-3 text-base md:text-sm font-semibold leading-5 text-ink">1 caring call per day</p>
             </article>
             <article className="rounded-3xl bg-ink p-4 text-cream shadow-sm ring-1 ring-ink">
               <p className="text-sm md:text-xs font-bold uppercase tracking-wide text-cream/60">Plus</p>
               <p className="mt-2 text-2xl font-bold">$29.95</p>
               <p className="text-sm md:text-xs text-cream/60">CAD/USD / month</p>
-              <p className="mt-3 text-sm font-semibold leading-5">Up to 3 calls per day</p>
+              <p className="mt-3 text-base md:text-sm font-semibold leading-5">Up to 3 calls per day</p>
             </article>
           </div>
 
@@ -449,13 +449,13 @@ export function LandingPage() {
           </div>
 
           <div className="rounded-3xl bg-brandBlue/10 p-4 shadow-sm ring-1 ring-brandBlue/15">
-            <p className="text-sm font-bold text-ink">Plus is best when they&apos;d benefit from extra connection during the day.</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">It adds more calls, more alert contacts, custom questions, unlimited conversation time, and advanced daily planning support.</p>
+            <p className="text-base md:text-sm font-bold text-ink">Plus is best when they&apos;d benefit from extra connection during the day.</p>
+            <p className="mt-2 text-base md:text-sm leading-6 text-slate-600">It adds more calls, more alert contacts, custom questions, unlimited conversation time, and advanced daily planning support.</p>
           </div>
         </div>
 
         <div className="relative hidden overflow-x-auto md:block xl:max-w-[68%]">
-          <table className="min-w-[680px] border-separate border-spacing-0 text-left text-sm">
+          <table className="min-w-[680px] border-separate border-spacing-0 text-left text-base md:text-sm">
             <thead>
               <tr className="text-ink">
                 <th className="rounded-l-2xl bg-brandBlue/10 p-4 font-bold">Feature</th>
@@ -474,22 +474,22 @@ export function LandingPage() {
             </tbody>
           </table>
         </div>
-        <p className="relative p-4 text-sm font-semibold leading-6 text-ink xl:max-w-[68%]">A simple call. A familiar voice. A little more peace of mind.</p>
+        <p className="relative p-4 text-base md:text-sm font-semibold leading-6 text-ink xl:max-w-[68%]">A simple call. A familiar voice. A little more peace of mind.</p>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-wide text-sage">Trust & privacy</p>
+        <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Trust & privacy</p>
         <h2 className="mt-3 text-3xl font-bold text-ink">Designed to feel supportive, not intrusive.</h2>
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {trustItems.map((item) => (
-            <div key={item} className="rounded-2xl bg-brandBlue/10 p-4 text-sm font-bold leading-6 text-ink ring-1 ring-brandBlue/15">{item}</div>
+            <div key={item} className="rounded-2xl bg-brandBlue/10 p-4 text-base md:text-sm font-bold leading-6 text-ink ring-1 ring-brandBlue/15">{item}</div>
           ))}
         </div>
-        <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">DailyCall is a family reassurance service. Summaries and alerts are meant to help families stay connected, not make seniors feel monitored.</p>
+        <p className="mt-5 max-w-3xl text-base md:text-sm leading-7 text-slate-600">DailyCall is a family reassurance service. Summaries and alerts are meant to help families stay connected, not make seniors feel monitored.</p>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-wide text-sage">FAQ</p>
+        <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">FAQ</p>
         <h2 className="mt-3 text-3xl font-bold text-ink">Simple answers for families.</h2>
         <div className="mt-6 grid gap-3 xl:grid-cols-2">
           {faqs.map(([question, answer]) => (
@@ -498,7 +498,7 @@ export function LandingPage() {
                 <span>{question}</span>
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brandBlue/10 text-lg leading-none text-brandButtonBlue transition group-open:rotate-45">+</span>
               </summary>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">{answer}</p>
+              <p className="mt-3 max-w-3xl text-base md:text-sm leading-6 text-slate-600">{answer}</p>
             </details>
           ))}
         </div>
@@ -549,7 +549,7 @@ export function LandingPage() {
             <Image src="/trust/pipeda.webp" alt="PIPEDA privacy standards" width={625} height={625} className="h-auto w-20 rounded-2xl sm:w-24" />
             <Image src="/trust/hipaa.png" alt="HIPAA privacy standards" width={1455} height={677} className="h-auto w-36 rounded-2xl sm:w-40" />
           </div>
-          <ul className="grid gap-y-1 text-sm font-semibold leading-6 text-slate-600">
+          <ul className="grid gap-y-1 text-base md:text-sm font-semibold leading-6 text-slate-600">
             <li>• HIPAA Ready</li>
             <li>• PIPEDA Aligned</li>
             <li>• Encrypted Calls &amp; Data</li>
@@ -560,7 +560,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pb-6 text-sm font-semibold text-slate-600">
+      <footer className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pb-6 text-base md:text-sm font-semibold text-slate-600">
         <Link href="/terms-and-conditions" className="hover:text-ink">Terms &amp; Conditions</Link>
         <Link href="/privacy-policy" className="hover:text-ink">Privacy Policy</Link>
         <Link href="/cookie-policy" className="hover:text-ink">Cookie Policy</Link>
