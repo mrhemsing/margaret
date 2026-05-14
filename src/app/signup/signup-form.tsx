@@ -26,6 +26,20 @@ function normalizeNorthAmericanPhone(value: string) {
   return value.trim();
 }
 
+function formatNorthAmericanPhoneInput(value: string) {
+  const digits = value.replace(/\D/g, "").replace(/^1(?=\d{10})/, "").slice(0, 10);
+
+  if (digits.length <= 3) {
+    return digits ? `(${digits}` : "";
+  }
+
+  if (digits.length <= 6) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  }
+
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 export function SignupForm() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(SubscriptionPlan.ONE_CALL_DAILY);
   const [enabledCallTimes, setEnabledCallTimes] = useState([true, true, true]);
@@ -212,6 +226,9 @@ export function SignupForm() {
               title="Enter a 10-digit US or Canadian phone number with area code."
               className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink"
               placeholder="(604) 555-0100"
+              onChange={(event) => {
+                event.currentTarget.value = formatNorthAmericanPhoneInput(event.currentTarget.value);
+              }}
             />
             <span className="text-xs font-normal leading-5 text-slate-500">Use a 10-digit US or Canadian number with area code. You do not need to enter 1.</span>
           </label>
@@ -244,8 +261,10 @@ export function SignupForm() {
               title="Enter a 10-digit US or Canadian phone number with area code."
               className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink"
               placeholder="(306) 555-0100"
+              onChange={(event) => {
+                event.currentTarget.value = formatNorthAmericanPhoneInput(event.currentTarget.value);
+              }}
             />
-            <span className="text-xs font-normal leading-5 text-slate-500">Landlines are fine. Enter the area code; we&apos;ll add +1 automatically.</span>
           </label>
         </fieldset>
 
