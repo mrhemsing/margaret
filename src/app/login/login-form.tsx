@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -78,16 +77,9 @@ export function LoginForm() {
           New to DailyCall? <Link href="/signup" className="font-bold text-brandButtonBlue hover:text-brandButtonBlueHover">Start your free trial</Link>
         </p>
       </div>
-      <div className="relative hidden min-h-[34rem] lg:block">
-        <Image
-          src="/elderly-man-phone-cta.jpg"
-          alt="Older adult smiling while using the phone"
-          width={1200}
-          height={800}
-          className="absolute inset-0 h-full w-full object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/5 to-transparent" />
+      <div className="relative hidden min-h-[34rem] overflow-hidden bg-brandNavy lg:block">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(90,167,223,0.55),transparent_34%),radial-gradient(circle_at_78%_72%,rgba(223,49,154,0.28),transparent_30%)]" />
+        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white/20 to-transparent" />
       </div>
     </div>
   );
