@@ -54,5 +54,21 @@ export async function GET(request: Request) {
     });
   }
 
-  return NextResponse.json({ ok: true, customer });
+  const completedCalls = await prisma.callAttempt.findMany({
+    where: {
+      member: { customerId: customer.id },
+      startedAt: { not: null },
+      completedAt: { not: null },
+    },
+    select: { startedAt: true, completedAt: true },
+  });
+
+  const minutesUsed = Math.ceil(
+    completedCalls.reduce((total, call) => {
+      if (!call.startedAt || !call.completedAt) return total;
+      return total + Math.max(0, call.completedAt.getTime() - call.startedAt.getTime()) / 60000;
+    }, 0),
+  );
+
+  return NextResponse.json({ ok: true, customer: { ...customer, minutesUsed } });
 }

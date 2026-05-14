@@ -11,6 +11,7 @@ type DashboardCustomer = {
   fullName: string;
   email: string | null;
   phoneNumber: string;
+  minutesUsed: number;
   members: Array<{
     id: string;
     name: string;
@@ -148,9 +149,9 @@ export function DashboardHome() {
           <p className="mt-1 text-sm text-slate-600">No credit card on file for trial signup.</p>
         </article>
         <article className="rounded-3xl bg-white/80 p-5 shadow-sm ring-1 ring-black/5">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Loved ones</p>
-          <p className="mt-2 text-2xl font-bold text-ink">{state.customer.members.length}</p>
-          <p className="mt-1 text-sm text-slate-600">Profiles connected to this account.</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Minutes used</p>
+          <p className="mt-2 text-2xl font-bold text-ink">{state.customer.minutesUsed}</p>
+          <p className="mt-1 text-sm text-slate-600">Total completed call time this trial.</p>
         </article>
       </section>
 
