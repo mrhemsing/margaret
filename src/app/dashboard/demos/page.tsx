@@ -60,7 +60,6 @@ export default async function DemoLogsDashboardPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-8 md:px-10">
       <SiteHeader
-        showLoginLink={false}
         links={[
           { href: "/dashboard", label: "All dashboards" },
           { href: "/dashboard/demos", label: "Demo logs", active: true },
