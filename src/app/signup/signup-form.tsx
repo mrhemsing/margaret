@@ -12,6 +12,104 @@ type CheckoutState = {
   message?: string;
 };
 
+const areaCodeTimezones: Record<string, { value: string; label: string }> = {
+  // Pacific
+  206: { value: "America/Los_Angeles", label: "Pacific Time" },
+  209: { value: "America/Los_Angeles", label: "Pacific Time" },
+  213: { value: "America/Los_Angeles", label: "Pacific Time" },
+  236: { value: "America/Vancouver", label: "Pacific Time" },
+  250: { value: "America/Vancouver", label: "Pacific Time" },
+  253: { value: "America/Los_Angeles", label: "Pacific Time" },
+  310: { value: "America/Los_Angeles", label: "Pacific Time" },
+  323: { value: "America/Los_Angeles", label: "Pacific Time" },
+  360: { value: "America/Los_Angeles", label: "Pacific Time" },
+  408: { value: "America/Los_Angeles", label: "Pacific Time" },
+  415: { value: "America/Los_Angeles", label: "Pacific Time" },
+  425: { value: "America/Los_Angeles", label: "Pacific Time" },
+  503: { value: "America/Los_Angeles", label: "Pacific Time" },
+  604: { value: "America/Vancouver", label: "Pacific Time" },
+  619: { value: "America/Los_Angeles", label: "Pacific Time" },
+  650: { value: "America/Los_Angeles", label: "Pacific Time" },
+  702: { value: "America/Los_Angeles", label: "Pacific Time" },
+  778: { value: "America/Vancouver", label: "Pacific Time" },
+  805: { value: "America/Los_Angeles", label: "Pacific Time" },
+  818: { value: "America/Los_Angeles", label: "Pacific Time" },
+  858: { value: "America/Los_Angeles", label: "Pacific Time" },
+  971: { value: "America/Los_Angeles", label: "Pacific Time" },
+
+  // Mountain
+  303: { value: "America/Denver", label: "Mountain Time" },
+  306: { value: "America/Regina", label: "Central Time (Saskatchewan)" },
+  403: { value: "America/Edmonton", label: "Mountain Time" },
+  406: { value: "America/Denver", label: "Mountain Time" },
+  435: { value: "America/Denver", label: "Mountain Time" },
+  480: { value: "America/Phoenix", label: "Mountain Time (Arizona)" },
+  520: { value: "America/Phoenix", label: "Mountain Time (Arizona)" },
+  602: { value: "America/Phoenix", label: "Mountain Time (Arizona)" },
+  623: { value: "America/Phoenix", label: "Mountain Time (Arizona)" },
+  780: { value: "America/Edmonton", label: "Mountain Time" },
+  801: { value: "America/Denver", label: "Mountain Time" },
+  825: { value: "America/Edmonton", label: "Mountain Time" },
+  928: { value: "America/Phoenix", label: "Mountain Time (Arizona)" },
+
+  // Central
+  204: { value: "America/Winnipeg", label: "Central Time" },
+  214: { value: "America/Chicago", label: "Central Time" },
+  224: { value: "America/Chicago", label: "Central Time" },
+  281: { value: "America/Chicago", label: "Central Time" },
+  312: { value: "America/Chicago", label: "Central Time" },
+  314: { value: "America/Chicago", label: "Central Time" },
+  316: { value: "America/Chicago", label: "Central Time" },
+  361: { value: "America/Chicago", label: "Central Time" },
+  414: { value: "America/Chicago", label: "Central Time" },
+  469: { value: "America/Chicago", label: "Central Time" },
+  512: { value: "America/Chicago", label: "Central Time" },
+  612: { value: "America/Chicago", label: "Central Time" },
+  615: { value: "America/Chicago", label: "Central Time" },
+  651: { value: "America/Chicago", label: "Central Time" },
+  713: { value: "America/Chicago", label: "Central Time" },
+  737: { value: "America/Chicago", label: "Central Time" },
+  773: { value: "America/Chicago", label: "Central Time" },
+  817: { value: "America/Chicago", label: "Central Time" },
+  832: { value: "America/Chicago", label: "Central Time" },
+  847: { value: "America/Chicago", label: "Central Time" },
+  901: { value: "America/Chicago", label: "Central Time" },
+  952: { value: "America/Chicago", label: "Central Time" },
+
+  // Eastern
+  201: { value: "America/New_York", label: "Eastern Time" },
+  202: { value: "America/New_York", label: "Eastern Time" },
+  212: { value: "America/New_York", label: "Eastern Time" },
+  215: { value: "America/New_York", label: "Eastern Time" },
+  226: { value: "America/Toronto", label: "Eastern Time" },
+  289: { value: "America/Toronto", label: "Eastern Time" },
+  305: { value: "America/New_York", label: "Eastern Time" },
+  313: { value: "America/Detroit", label: "Eastern Time" },
+  321: { value: "America/New_York", label: "Eastern Time" },
+  343: { value: "America/Toronto", label: "Eastern Time" },
+  404: { value: "America/New_York", label: "Eastern Time" },
+  416: { value: "America/Toronto", label: "Eastern Time" },
+  437: { value: "America/Toronto", label: "Eastern Time" },
+  514: { value: "America/Toronto", label: "Eastern Time" },
+  518: { value: "America/New_York", label: "Eastern Time" },
+  519: { value: "America/Toronto", label: "Eastern Time" },
+  561: { value: "America/New_York", label: "Eastern Time" },
+  613: { value: "America/Toronto", label: "Eastern Time" },
+  647: { value: "America/Toronto", label: "Eastern Time" },
+  705: { value: "America/Toronto", label: "Eastern Time" },
+  716: { value: "America/New_York", label: "Eastern Time" },
+  718: { value: "America/New_York", label: "Eastern Time" },
+  781: { value: "America/New_York", label: "Eastern Time" },
+  905: { value: "America/Toronto", label: "Eastern Time" },
+  917: { value: "America/New_York", label: "Eastern Time" },
+
+  // Atlantic / Newfoundland
+  506: { value: "America/Moncton", label: "Atlantic Time" },
+  709: { value: "America/St_Johns", label: "Newfoundland Time" },
+  782: { value: "America/Halifax", label: "Atlantic Time" },
+  902: { value: "America/Halifax", label: "Atlantic Time" },
+};
+
 function normalizeNorthAmericanPhone(value: string) {
   const digits = value.replace(/\D/g, "");
 
@@ -40,11 +138,18 @@ function formatNorthAmericanPhoneInput(value: string) {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
+function detectTimezoneFromNorthAmericanPhone(value: string) {
+  const digits = value.replace(/\D/g, "").replace(/^1(?=\d{10})/, "");
+  const areaCode = digits.slice(0, 3);
+  return areaCode.length === 3 ? areaCodeTimezones[areaCode] ?? null : null;
+}
+
 export function SignupForm() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(SubscriptionPlan.ONE_CALL_DAILY);
   const [enabledCallTimes, setEnabledCallTimes] = useState([true, true, true]);
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({ status: "idle" });
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const [detectedTimezone, setDetectedTimezone] = useState<{ value: string; label: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,6 +233,7 @@ export function SignupForm() {
       customerCountry,
       parentName: String(formData.get("parentName") ?? ""),
       parentPhone: normalizeNorthAmericanPhone(String(formData.get("parentPhone") ?? "")),
+      timezone: String(formData.get("timezone") ?? detectedTimezone?.value ?? "America/Los_Angeles"),
       preferredCallTime: preferredCallTimes[0] ?? "09:00",
       preferredCallTimes,
       familyContext: String(formData.get("familyContext") ?? ""),
@@ -271,6 +377,7 @@ export function SignupForm() {
               placeholder="(306) 555-0100"
               onChange={(event) => {
                 event.currentTarget.value = formatNorthAmericanPhoneInput(event.currentTarget.value);
+                setDetectedTimezone(detectTimezoneFromNorthAmericanPhone(event.currentTarget.value));
               }}
             />
           </label>
@@ -407,56 +514,64 @@ export function SignupForm() {
             ))}
           </div>
 
-          {selectedPlan === SubscriptionPlan.THREE_CALLS_DAILY ? (
-            <div className="grid gap-3 rounded-3xl bg-brandBlue/10 p-4 ring-1 ring-brandBlue/15 xl:grid-cols-3">
-              {[
-                { label: "Call 1", defaultValue: "09:00" },
-                { label: "Call 2", defaultValue: "13:00" },
-                { label: "Call 3", defaultValue: "17:00" },
-              ].map((callTime, index) => (
-                <div key={callTime.label} className={`min-w-0 rounded-2xl bg-white p-3 ring-1 ring-slate-200 ${enabledCallTimes[index] ? "" : "opacity-60"}`}>
-                  <label className="mb-2 flex items-center gap-2 text-sm font-bold text-ink">
-                    <input
-                      type="checkbox"
-                      checked={enabledCallTimes[index]}
-                      onChange={(event) => {
-                        const nextEnabled = [...enabledCallTimes];
-                        nextEnabled[index] = event.target.checked;
-                        setEnabledCallTimes(nextEnabled);
-                      }}
-                      className="h-4 w-4 shrink-0 rounded border-slate-300 text-brandButtonBlue focus:ring-brandPink"
-                    />
-                    <span>{callTime.label}</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      name="preferredCallTimes"
-                      type="time"
-                      defaultValue={callTime.defaultValue}
-                      disabled={!enabledCallTimes[index]}
-                      required={enabledCallTimes[index] && enabledCallTimes.filter(Boolean).length === 1}
-                      aria-label={`${callTime.label} preferred time`}
-                      className="time-input w-full min-w-0 rounded-2xl border border-slate-200 bg-white py-3 pl-4 pr-12 text-base font-normal text-ink outline-none focus:border-brandPink disabled:bg-slate-100 disabled:text-slate-400"
-                    />
-                    <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink">
-                      <path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm.75-13h-1.5v5.25l4.35 2.61.75-1.23-3.6-2.13V7Z" />
-                    </svg>
+          <div className="grid gap-3">
+            {selectedPlan === SubscriptionPlan.THREE_CALLS_DAILY ? (
+              <div className="grid gap-3 rounded-3xl bg-brandBlue/10 p-4 ring-1 ring-brandBlue/15 xl:grid-cols-3">
+                {[
+                  { label: "Call 1", defaultValue: "09:00" },
+                  { label: "Call 2", defaultValue: "13:00" },
+                  { label: "Call 3", defaultValue: "17:00" },
+                ].map((callTime, index) => (
+                  <div key={callTime.label} className={`min-w-0 rounded-2xl bg-white p-3 ring-1 ring-slate-200 ${enabledCallTimes[index] ? "" : "opacity-60"}`}>
+                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-ink">
+                      <input
+                        type="checkbox"
+                        checked={enabledCallTimes[index]}
+                        onChange={(event) => {
+                          const nextEnabled = [...enabledCallTimes];
+                          nextEnabled[index] = event.target.checked;
+                          setEnabledCallTimes(nextEnabled);
+                        }}
+                        className="h-4 w-4 shrink-0 rounded border-slate-300 text-brandButtonBlue focus:ring-brandPink"
+                      />
+                      <span>{callTime.label}</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        name="preferredCallTimes"
+                        type="time"
+                        defaultValue={callTime.defaultValue}
+                        disabled={!enabledCallTimes[index]}
+                        required={enabledCallTimes[index] && enabledCallTimes.filter(Boolean).length === 1}
+                        aria-label={`${callTime.label} preferred time`}
+                        className="time-input w-full min-w-0 rounded-2xl border border-slate-200 bg-white py-3 pl-4 pr-12 text-base font-normal text-ink outline-none focus:border-brandPink disabled:bg-slate-100 disabled:text-slate-400"
+                      />
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink">
+                        <path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm.75-13h-1.5v5.25l4.35 2.61.75-1.23-3.6-2.13V7Z" />
+                      </svg>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <p className="text-xs font-normal leading-5 text-slate-500 xl:col-span-3">Companion Plus can include up to three preferred daily call windows. Uncheck any call slots you do not want.</p>
-            </div>
-          ) : (
-            <label className="grid gap-2 text-sm font-semibold text-slate-700">
-              Preferred call time
-              <div className="relative">
-                <input name="preferredCallTimes" type="time" defaultValue="09:00" required className="time-input w-full rounded-2xl border border-slate-200 bg-white py-3 pl-4 pr-12 font-normal text-ink outline-none focus:border-brandPink" />
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink">
-                  <path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm.75-13h-1.5v5.25l4.35 2.61.75-1.23-3.6-2.13V7Z" />
-                </svg>
+                ))}
+                <p className="text-xs font-normal leading-5 text-slate-500 xl:col-span-3">Companion Plus can include up to three preferred daily call windows. Uncheck any call slots you do not want.</p>
               </div>
-            </label>
-          )}
+            ) : (
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                Preferred call time
+                <div className="relative">
+                  <input name="preferredCallTimes" type="time" defaultValue="09:00" required className="time-input w-full rounded-2xl border border-slate-200 bg-white py-3 pl-4 pr-12 font-normal text-ink outline-none focus:border-brandPink" />
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink">
+                    <path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm.75-13h-1.5v5.25l4.35 2.61.75-1.23-3.6-2.13V7Z" />
+                  </svg>
+                </div>
+              </label>
+            )}
+            <input type="hidden" name="timezone" value={detectedTimezone?.value ?? "America/Los_Angeles"} />
+            <p className="rounded-2xl bg-slate-50 px-4 py-3 text-xs font-semibold leading-5 text-slate-600 ring-1 ring-slate-200">
+              {detectedTimezone
+                ? `Detected timezone from loved one's phone number: ${detectedTimezone.label}.`
+                : "Enter the loved one's phone number above and we'll detect the call timezone from the area code."}
+            </p>
+          </div>
         </fieldset>
 
         <p className="rounded-2xl bg-brandBlue/10 p-4 text-sm font-semibold leading-6 text-ink ring-1 ring-brandBlue/15">

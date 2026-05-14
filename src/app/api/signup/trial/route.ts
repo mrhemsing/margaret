@@ -21,6 +21,7 @@ const trialSchema = z.object({
   customerCountry: z.enum(supportedBillingCountries),
   parentName: z.string().min(1),
   parentPhone: z.string().min(8),
+  timezone: z.string().min(1).optional().default("America/Los_Angeles"),
   preferredCallTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   preferredCallTimes: z.array(z.string().regex(/^\d{2}:\d{2}$/)).optional().default([]),
   familyContext: z.string().optional().default(""),
@@ -94,6 +95,7 @@ export async function POST(request: Request) {
           customerId: customer.id,
           name: input.parentName,
           phoneNumber: input.parentPhone,
+          timezone: input.timezone,
           preferredCallTime: preferredCallSchedule,
         },
       });
