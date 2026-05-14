@@ -5,8 +5,11 @@ import { DemoCallForm } from "./demo-call-form";
 import { TestimonialsCarousel } from "./testimonials-carousel";
 
 const heroProof = [
-  "Works with regular phones",
-  "Setup in under 2 minutes",
+  { label: "No app required", mobileOnly: true },
+  { label: "Works with regular phones" },
+  { label: "No credit card required", mobileOnly: true },
+  { label: "Setup in under 2 minutes" },
+  { label: "Cancel anytime", mobileOnly: true },
 ];
 
 const steps = [
@@ -197,9 +200,12 @@ export function LandingPage() {
               </p>
               <div className="mt-6 grid gap-2 text-sm font-semibold text-ink sm:max-w-xl sm:grid-cols-2">
                 {heroProof.map((item) => (
-                  <div key={item} className="flex items-center gap-3 rounded-full bg-white/80 px-4 py-2 shadow-sm ring-1 ring-black/5">
+                  <div
+                    key={item.label}
+                    className={`items-center gap-3 rounded-full bg-white/80 px-4 py-2 shadow-sm ring-1 ring-black/5 ${item.mobileOnly ? "flex sm:hidden" : "flex"}`}
+                  >
                     <span className="h-2 w-2 shrink-0 rounded-full bg-brandPink" aria-hidden="true" />
-                    <span>{item}</span>
+                    <span>{item.label}</span>
                   </div>
                 ))}
               </div>
