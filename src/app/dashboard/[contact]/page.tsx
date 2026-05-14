@@ -284,6 +284,7 @@ export default async function MemberDashboardPage({ params }: { params: Promise<
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-8 md:px-10">
       <SiteHeader
+        showLoginLink={false}
         links={[
           { href: "/dashboard/matt", label: "Matt", active: contact === "matt" },
           { href: "/dashboard/chuck", label: "Chuck", active: contact === "chuck" },
