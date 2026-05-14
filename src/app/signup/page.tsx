@@ -24,7 +24,7 @@ export default function SignupPage() {
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">signup</p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink md:text-5xl">Let&apos;s schedule your loved one&apos;s first companion call.</h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            Start your free 30-day trial with no credit card required. Setup takes less than 2 minutes, works with regular phones, and can be canceled anytime.
+            Start your free 30-day trial. <span className="hidden md:block" />No credit card required. Setup takes less than 2 minutes, works with regular phones, and can be canceled anytime.
           </p>
           <div className="mt-6 grid gap-3 text-sm font-bold text-ink sm:grid-cols-2">
             {["No credit card required", "Cancel anytime", "Works with any phone", "No app required"].map((item) => (
