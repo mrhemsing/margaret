@@ -59,9 +59,9 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex min-h-5 justify-end px-2 text-sm font-semibold text-slate-600">
+      <div className="relative h-5 min-h-5 px-2 text-sm font-semibold text-slate-600">
         {accountEmail ? (
-          <div className="flex items-center gap-2">
+          <div className="absolute right-2 top-0 flex items-center gap-2">
             {isDashboardPage ? (
               <button type="button" onClick={signOut} className="whitespace-nowrap text-sm font-bold text-ink hover:text-brandButtonBlue">
                 Logout
@@ -86,7 +86,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
             </Link>
           </div>
         ) : showLoginLink ? (
-          <Link href="/login" className="whitespace-nowrap hover:text-ink">
+          <Link href="/login" className="absolute right-2 top-0 whitespace-nowrap hover:text-ink">
             Existing user? Login
           </Link>
         ) : null}
