@@ -23,9 +23,9 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
           </Link>
         ) : null}
       </div>
-      <nav className="flex items-center justify-between py-1">
-        <Link href="/" className="sm:-mt-4" aria-label="Dailycall home">
-          <Image src="/dailycall-logo.svg" alt="dailycall" width={632} height={150} priority className="ml-[5px] mt-[-0.2rem] h-auto w-[12.35rem] sm:ml-[10px] sm:mt-0 sm:w-56" />
+      <nav className="flex min-h-[3.25rem] items-center justify-between py-1 sm:min-h-[3.5rem]">
+        <Link href="/" className="block h-[2.95rem] w-[12.35rem] sm:-mt-4 sm:h-[3.32rem] sm:w-56" aria-label="Dailycall home">
+          <Image src="/dailycall-logo.svg" alt="dailycall" width={632} height={150} priority className="h-full w-full object-contain object-left" />
         </Link>
         <div className="flex items-center gap-3 text-sm font-semibold text-slate-600">
           {links.map((link) => (
