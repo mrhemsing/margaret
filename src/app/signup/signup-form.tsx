@@ -1,6 +1,7 @@
 "use client";
 
 import { SubscriptionPlan } from "@prisma/client";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -174,6 +175,7 @@ export function SignupForm() {
   const [detectedTimezone, setDetectedTimezone] = useState<{ value: string; label: string } | null>(null);
   const [selectedTimezone, setSelectedTimezone] = useState("America/Los_Angeles");
   const [timezoneEdited, setTimezoneEdited] = useState(false);
+  const existingAccount = Boolean(accountEmail && hasExistingAccount);
 
   useEffect(() => {
     let cancelled = false;
@@ -335,7 +337,7 @@ export function SignupForm() {
   }
 
   return (
-    <form action={startCheckout} className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
+    <form action={startCheckout} className={`rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8 ${existingAccount ? "lg:col-span-2" : ""}`}>
       <div className="grid gap-6">
         {accountEmail && accountCheckStatus === "checking" ? (
           <section className="rounded-3xl bg-brandBlue/10 p-5 text-sm font-semibold text-slate-600 ring-1 ring-brandBlue/15">
@@ -343,20 +345,32 @@ export function SignupForm() {
           </section>
         ) : null}
 
-        {accountEmail && accountCheckStatus === "checking" ? null : accountEmail && hasExistingAccount ? (
-          <section className="grid gap-4 rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">Account connected</p>
-            <h2 className="text-2xl font-bold text-ink">You&apos;re already signed up.</h2>
-            <p className="text-sm leading-6 text-slate-600">
-              You&apos;re logged in as <strong className="font-bold text-ink">{accountEmail}</strong>. Go to your dashboard to manage your trial, loved one profile, and call settings.
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/dashboard" className="rounded-full bg-brandButtonBlue px-6 py-3 text-center text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover">
-                Go to dashboard
-              </Link>
-              <button type="button" onClick={signOutForNewSignup} className="rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-black/5 hover:text-ink">
-                Log out to start a different signup
-              </button>
+        {accountEmail && accountCheckStatus === "checking" ? null : existingAccount ? (
+          <section className="grid overflow-hidden rounded-3xl bg-brandBlue/10 ring-1 ring-brandBlue/15 md:grid-cols-[minmax(0,0.95fr)_minmax(280px,0.8fr)]">
+            <div className="grid max-w-2xl gap-4 p-5 md:p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">Account connected</p>
+              <h2 className="text-2xl font-bold text-ink md:text-3xl">You&apos;re already signed up.</h2>
+              <p className="text-sm leading-6 text-slate-600 md:text-base md:leading-7">
+                You&apos;re logged in as <strong className="font-bold text-ink">{accountEmail}</strong>. Go to your dashboard to manage your trial, loved one profile, and call settings.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link href="/dashboard" className="rounded-full bg-brandButtonBlue px-6 py-3 text-center text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover">
+                  Go to dashboard
+                </Link>
+                <button type="button" onClick={signOutForNewSignup} className="rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-black/5 hover:text-ink">
+                  Log out to start a different signup
+                </button>
+              </div>
+            </div>
+            <div className="relative hidden min-h-72 md:block">
+              <Image
+                src="/elderly-man-phone-cta.jpg"
+                alt="Older adult smiling while using the phone"
+                width={1200}
+                height={800}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-brandBlue/10 via-white/5 to-transparent" />
             </div>
           </section>
         ) : (
