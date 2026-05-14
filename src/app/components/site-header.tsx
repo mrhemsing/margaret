@@ -1,5 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export type SiteHeaderLink = {
   href: string;
@@ -14,10 +19,42 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({ showLoginLink = true, showTrialButton = false, links = [] }: SiteHeaderProps) {
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadUser() {
+      const supabase = createBrowserSupabaseClient();
+      const user = await supabase.auth.getUser();
+
+      if (!cancelled) {
+        setAccountEmail(user.data.user?.email ?? null);
+      }
+    }
+
+    loadUser();
+
+    const supabase = createBrowserSupabaseClient();
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccountEmail(session?.user.email ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+      data.subscription.unsubscribe();
+    };
+  }, []);
+
   return (
     <div className="flex flex-col gap-1">
       <div className="flex min-h-5 justify-end px-2 text-sm font-semibold text-slate-600">
-        {showLoginLink ? (
+        {accountEmail ? (
+          <Link href="/dashboard" className="max-w-full truncate whitespace-nowrap hover:text-ink" title={`Logged in as ${accountEmail}`}>
+            <span className="hidden sm:inline">Logged in as </span>
+            <span className="font-bold text-ink">{accountEmail}</span>
+          </Link>
+        ) : showLoginLink ? (
           <Link href="/login" className="whitespace-nowrap hover:text-ink">
             Existing user? Login
           </Link>
