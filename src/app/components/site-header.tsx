@@ -22,8 +22,9 @@ type SiteHeaderProps = {
 export function SiteHeader({ showLoginLink = true, showTrialButton = false, links = [] }: SiteHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const [accountEmail, setAccountEmail] = useState<string | null | undefined>(undefined);
   const isDashboardPage = pathname?.startsWith("/dashboard") ?? false;
+  const authChecked = accountEmail !== undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -85,7 +86,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
               </svg>
             </Link>
           </div>
-        ) : showLoginLink ? (
+        ) : authChecked && showLoginLink ? (
           <Link href="/login" className="absolute right-2 top-0 whitespace-nowrap hover:text-ink">
             Existing user? Login
           </Link>
@@ -101,7 +102,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
               {link.label}
             </Link>
           ))}
-          {showTrialButton && !accountEmail ? (
+          {authChecked && showTrialButton && !accountEmail ? (
             <Link href="/signup" className="rounded-full bg-brandButtonBlue px-4 py-2 text-sm font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover">
               <span className="sm:hidden">Start free trial</span>
               <span className="hidden sm:inline">Start free 30-day trial</span>
