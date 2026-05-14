@@ -51,10 +51,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
       <div className="flex min-h-5 justify-end px-2 text-sm font-semibold text-slate-600">
         {accountEmail ? (
           <div className="flex items-center gap-2">
-            <Link
-              href="/dashboard"
-              className="rounded-full bg-brandButtonBlue px-4 py-2 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover"
-            >
+            <Link href="/dashboard" className="whitespace-nowrap text-sm font-bold text-ink hover:text-brandButtonBlue">
               My dashboard
             </Link>
             <Link
