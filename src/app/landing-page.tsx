@@ -555,7 +555,7 @@ export function LandingPage() {
             <li>• Encrypted Calls &amp; Data</li>
             <li>• We Never Sell Your Data</li>
             <li>• Secure Payments by Stripe</li>
-            <li>• Trusted by Families Across North America</li>
+            <li>• Trusted by North American Families</li>
           </ul>
         </div>
       </section>
