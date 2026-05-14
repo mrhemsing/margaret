@@ -611,7 +611,7 @@ export function SignupForm() {
             </label>
             <p className="rounded-2xl bg-slate-50 px-4 py-3 text-xs font-semibold leading-5 text-slate-600 ring-1 ring-slate-200">
               {detectedTimezone
-                ? `Detected from loved one's phone number: ${detectedTimezone.label}. Change it above if they travel or live somewhere else seasonally.`
+                ? `Detected from loved one's phone number: ${detectedTimezone.label}`
                 : "Enter the loved one's phone number above and we'll suggest a timezone from the area code. You can change it if needed."}
             </p>
           </div>
