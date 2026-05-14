@@ -3,6 +3,10 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Demo Calls",
+};
+
 function formatDate(date: Date | null) {
   if (!date) return "Pending";
 

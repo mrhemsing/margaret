@@ -65,7 +65,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
           <div className="absolute right-2 top-0 flex items-center gap-2">
             {isDashboardPage ? (
               <button type="button" onClick={signOut} className="whitespace-nowrap text-sm font-bold text-ink hover:text-brandButtonBlue">
-                Logout
+                Sign out
               </button>
             ) : (
               <Link href="/dashboard" className="whitespace-nowrap text-sm font-bold text-ink hover:text-brandButtonBlue">
@@ -93,7 +93,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
         ) : null}
       </div>
       <nav className="flex min-h-[3.25rem] items-end justify-between py-1 sm:min-h-[3.5rem]">
-        <Link href="/" className="block h-[2.95rem] w-[12.35rem] sm:-mt-4 sm:h-[3.32rem] sm:w-56" aria-label="DailyCall home">
+        <Link href="/" className="block h-[3.25rem] w-[13.6rem] sm:-mt-4 sm:h-[3.32rem] sm:w-56" aria-label="DailyCall home">
           <Image src="/dailycall-logo.svg" alt="DailyCall" width={632} height={150} priority className="h-full w-full object-contain object-left" />
         </Link>
         <div className="flex items-center gap-3 text-sm font-semibold text-slate-600">

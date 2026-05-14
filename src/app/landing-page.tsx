@@ -527,7 +527,7 @@ export function LandingPage() {
 
       <section data-mobile-reveal aria-label="Service disclaimer and privacy standards" className="grid gap-8 rounded-[1.5rem] border border-slate-300/80 bg-white/80 p-5 text-base leading-7 text-slate-600 shadow-sm md:p-6 lg:grid-cols-[minmax(0,1fr)_max-content] lg:items-start lg:gap-12">
         <div>
-          <p className="font-semibold text-ink">Service disclaimer</p>
+          <p className="font-semibold text-ink">Our Approach to Care</p>
           <div className="mt-3 grid gap-3">
             <p>
               Our companion calls are designed to provide daily reassurance, wellness check-ins, conversation, routine, companionship, and a warm sense of connection for loved ones and families.
@@ -560,7 +560,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pb-6 text-base md:text-sm font-semibold text-slate-600">
+      <footer className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pb-6 text-base md:text-sm font-semibold text-brandButtonBlue">
         <Link href="/terms-and-conditions" className="hover:text-ink">Terms &amp; Conditions</Link>
         <Link href="/privacy-policy" className="hover:text-ink">Privacy Policy</Link>
         <Link href="/cookie-policy" className="hover:text-ink">Cookie Policy</Link>

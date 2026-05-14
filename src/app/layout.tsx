@@ -3,7 +3,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.PUBLIC_APP_URL ?? process.env.APP_URL ?? "https://dailycall.care"),
-  title: "DailyCall",
+  title: {
+    default: "DailyCall",
+    template: "DailyCall: %s",
+  },
   description: "A friendly daily call for aging parents — companionship for them and peace of mind for families.",
   openGraph: {
     title: "DailyCall",

@@ -3,6 +3,10 @@ import { Suspense } from "react";
 import { SiteHeader } from "@/app/components/site-header";
 import { LoginForm } from "./login-form";
 
+export const metadata = {
+  title: "Log In",
+};
+
 function LoginFallback() {
   return <div className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5">Loading login...</div>;
 }

@@ -8,6 +8,15 @@ export const dynamic = "force-dynamic";
 
 type Contact = "matt" | "chuck";
 
+export async function generateMetadata({ params }: { params: Promise<{ contact: string }> }) {
+  const { contact } = await params;
+  const name = contact === "matt" ? "Matt" : contact === "chuck" ? "Chuck" : "Member";
+
+  return {
+    title: `${name}'s Dashboard`,
+  };
+}
+
 const exampleContacts: Record<Contact, { name: string; phone: string; title: string }> = {
   matt: { name: "Matt", phone: "+1 604 313 8398", title: "Matt's DailyCall dashboard" },
   chuck: { name: "Chuck", phone: "+1 306 880 2055", title: "Chuck's DailyCall dashboard" },

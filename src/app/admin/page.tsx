@@ -6,7 +6,15 @@ import { sampleCallAttempts, sampleMembers } from "@/lib/sample-data";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Admin",
+};
+
 type AdminData = Awaited<ReturnType<typeof getAdminData>>;
+
+const VOICE_AI_COST_PER_MINUTE_USD = 0.08;
+const TELEPHONY_COST_PER_MINUTE_USD = 0.02;
+const ESTIMATED_COST_PER_MINUTE_USD = VOICE_AI_COST_PER_MINUTE_USD + TELEPHONY_COST_PER_MINUTE_USD;
 
 async function getAdminData() {
   try {
@@ -15,11 +23,31 @@ async function getAdminData() {
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(now);
     endOfDay.setHours(23, 59, 59, 999);
+    const subscriptionStatuses = [SubscriptionStatus.TRIALING, SubscriptionStatus.ACTIVE];
+    const registeredCustomerWhere = {
+      supabaseUserId: { not: null },
+      subscriptions: { some: { status: { in: subscriptionStatuses } } },
+    };
+    const demoMemberWhere = {
+      OR: [
+        { preferredCallTime: "Landing page demo" },
+        { customer: { email: "demo-family@dailycall.local" } },
+        { customer: { subscriptions: { none: {} }, supabaseUserId: null } },
+      ],
+    };
 
-    const [customers, subscriptions, activeMembers, callsDueToday, textsMade, recentCalls] = await Promise.all([
+    const [customers, subscriptions, activeMembers, demoMembers, callsDueToday, textsMade, recentCalls] = await Promise.all([
       prisma.customer.findMany({
+        where: registeredCustomerWhere,
         include: {
-          members: { orderBy: { createdAt: "desc" } },
+          members: {
+            include: {
+              callAttempts: {
+                select: { startedAt: true, completedAt: true },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          },
           subscriptions: { orderBy: { createdAt: "desc" }, take: 1 },
           alertContacts: true,
         },
@@ -27,11 +55,18 @@ async function getAdminData() {
         take: 50,
       }),
       prisma.subscription.findMany({
+        where: { customer: registeredCustomerWhere },
         include: { customer: { include: { members: true } } },
         orderBy: { createdAt: "desc" },
         take: 50,
       }),
-      prisma.member.count({ where: { active: true } }),
+      prisma.member.count({ where: { active: true, customer: registeredCustomerWhere } }),
+      prisma.member.findMany({
+        where: demoMemberWhere,
+        include: { customer: true },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      }),
       prisma.callAttempt.count({ where: { scheduledFor: { gte: startOfDay, lte: endOfDay } } }),
       prisma.callAttempt.count({ where: { reportSentAt: { not: null } } }),
       prisma.callAttempt.findMany({
@@ -41,13 +76,14 @@ async function getAdminData() {
       }),
     ]);
 
-    return { ok: true as const, customers, subscriptions, activeMembers, callsDueToday, textsMade, recentCalls, error: null };
+    return { ok: true as const, customers, subscriptions, activeMembers, demoMembers, callsDueToday, textsMade, recentCalls, error: null };
   } catch (error) {
     return {
       ok: false as const,
       customers: [],
       subscriptions: [],
       activeMembers: sampleMembers.length,
+      demoMembers: sampleMembers,
       callsDueToday: 3,
       textsMade: 3,
       recentCalls: [],
@@ -74,6 +110,31 @@ const formatDate = (date: Date | string | null | undefined) => {
   if (!date) return "Not set";
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(date));
 };
+
+const formatMoney = (value: number) => `$${value.toFixed(2)}`;
+
+const formatMinutes = (value: number) => {
+  if (value === 0) return "0 min";
+  if (value < 1) return `${value.toFixed(1)} min`;
+  return `${Math.round(value)} min`;
+};
+
+const callDurationMinutes = (startedAt?: Date | string | null, completedAt?: Date | string | null) => {
+  if (!startedAt || !completedAt) return 0;
+
+  const durationMs = new Date(completedAt).getTime() - new Date(startedAt).getTime();
+  return Math.max(0, durationMs / 60_000);
+};
+
+function memberCostSummary(member: { createdAt?: Date | string; callAttempts?: { startedAt?: Date | string | null; completedAt?: Date | string | null }[] }) {
+  const totalMinutes = member.callAttempts?.reduce((total, attempt) => total + callDurationMinutes(attempt.startedAt, attempt.completedAt), 0) ?? 0;
+  const createdAt = member.createdAt ? new Date(member.createdAt) : new Date();
+  const daysActive = Math.max(1, Math.ceil((Date.now() - createdAt.getTime()) / 86_400_000));
+  const averageMinutesPerDay = totalMinutes / daysActive;
+  const estimatedCost = totalMinutes * ESTIMATED_COST_PER_MINUTE_USD;
+
+  return { totalMinutes, averageMinutesPerDay, estimatedCost };
+}
 
 function TrialBillingSection({ data }: { data: AdminData }) {
   const trialing = data.subscriptions.filter((subscription) => subscription.status === SubscriptionStatus.TRIALING);
@@ -148,31 +209,6 @@ function TrialBillingSection({ data }: { data: AdminData }) {
         </div>
       </article>
 
-      <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-        <h2 className="text-xl font-bold text-ink">Recent customers</h2>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          {data.customers.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">No customers yet.</div>
-          ) : (
-            data.customers.slice(0, 8).map((customer) => {
-              const member = customer.members[0];
-              const subscription = customer.subscriptions[0];
-              return (
-                <div key={customer.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-semibold text-ink">{customer.fullName}</p>
-                      <p className="mt-1 text-sm text-slate-500">{customer.email ?? "No email"} · {customer.phoneNumber}</p>
-                      <p className="mt-2 text-sm text-slate-600">Loved one: {member?.name ?? "Not set"} {member?.preferredCallTime ? `at ${member.preferredCallTime}` : ""}</p>
-                    </div>
-                    {subscription ? <span className={statusClassName(subscription.status)}>{subscription.status.replaceAll("_", " ")}</span> : null}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </article>
     </section>
   );
 }
@@ -189,16 +225,20 @@ function MetricCard({ label, value, dark = false }: { label: string; value: stri
 export default async function AdminPage() {
   const data = await getAdminData();
 
+  const memberRows = data.ok
+    ? data.customers.flatMap((customer) => customer.members.map((member) => ({ ...member, customerName: customer.fullName }))).slice(0, 8)
+    : sampleMembers.map((member) => ({ ...member, customerName: "Sample", createdAt: new Date(), callAttempts: [] }));
+  const totalEstimatedCost = memberRows.reduce((total, member) => total + memberCostSummary(member).estimatedCost, 0);
+  const averageCostPerUser = data.activeMembers > 0 ? totalEstimatedCost / data.activeMembers : 0;
+
   const stats = [
     { label: "Active members", value: data.activeMembers.toString() },
+    { label: "Total costs", value: formatMoney(totalEstimatedCost) },
+    { label: "Avg cost/user", value: formatMoney(averageCostPerUser) },
     { label: "Calls due today", value: data.callsDueToday.toString() },
     { label: "Texts made", value: data.textsMade.toString() },
     { label: "Trialing users", value: data.subscriptions.filter((subscription) => subscription.status === SubscriptionStatus.TRIALING).length.toString() },
   ];
-
-  const memberRows = data.ok
-    ? data.customers.flatMap((customer) => customer.members.map((member) => ({ ...member, customerName: customer.fullName }))).slice(0, 8)
-    : sampleMembers.map((member) => ({ ...member, customerName: "Sample" }));
 
   const allReportRows = data.ok && data.recentCalls.length > 0
     ? data.recentCalls.map((attempt) => ({
@@ -228,7 +268,7 @@ export default async function AdminPage() {
         ) : null}
       </header>
 
-      <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
         {stats.map((stat) => <MetricCard key={stat.label} label={stat.label} value={stat.value} />)}
       </section>
 
@@ -238,16 +278,57 @@ export default async function AdminPage() {
 
           <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
             <h2 className="text-xl font-bold text-ink">Members</h2>
+            <p className="mt-1 text-sm text-slate-500">Registered customers with an active plan or trial. Cost estimate uses ${ESTIMATED_COST_PER_MINUTE_USD.toFixed(2)}/call minute.</p>
             <div className="mt-5 space-y-4">
-              {memberRows.map((member) => (
-                <div key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="font-semibold text-ink">{member.name}</p>
-                      <p className="mt-1 text-sm text-slate-500">Daily call at {member.preferredCallTime} · {member.timezone}</p>
+              {memberRows.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">No active subscribed members yet.</div>
+              ) : memberRows.map((member) => {
+                const costSummary = memberCostSummary(member);
+
+                return (
+                  <div key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="font-semibold text-ink">{member.name}</p>
+                        <p className="mt-1 text-sm text-slate-500">Daily call at {member.preferredCallTime} · {member.timezone}</p>
+                        <span className="mt-2 inline-flex rounded-full bg-sage/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sage">active</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-right text-xs sm:min-w-72">
+                        <div className="rounded-xl bg-slate-50 p-2">
+                          <p className="text-slate-500">Total min</p>
+                          <p className="mt-1 font-bold text-ink">{formatMinutes(costSummary.totalMinutes)}</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-2">
+                          <p className="text-slate-500">Min/day</p>
+                          <p className="mt-1 font-bold text-ink">{costSummary.averageMinutesPerDay.toFixed(1)}</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-2">
+                          <p className="text-slate-500">Est. cost</p>
+                          <p className="mt-1 font-bold text-ink">{formatMoney(costSummary.estimatedCost)}</p>
+                        </div>
+                      </div>
                     </div>
-                    <span className="rounded-full bg-sage/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sage">active</span>
                   </div>
+                );
+              })}
+            </div>
+          </article>
+
+          <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-ink">Demo users</h2>
+                <p className="mt-1 text-sm text-slate-500">Landing-page demo callers, kept separate from trials and subscriptions.</p>
+              </div>
+              <span className="rounded-full bg-brandBlue/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brandButtonBlue">demo</span>
+            </div>
+            <div className="mt-5 space-y-4">
+              {data.demoMembers.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">No demo users yet.</div>
+              ) : data.demoMembers.map((member) => (
+                <div key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="font-semibold text-ink">{member.name}</p>
+                  <p className="mt-1 text-sm text-slate-500">{member.phoneNumber}</p>
                 </div>
               ))}
             </div>

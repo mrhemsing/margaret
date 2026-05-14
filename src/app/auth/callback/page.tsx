@@ -2,6 +2,10 @@ import { Suspense } from "react";
 
 import { AuthCallbackClient } from "./auth-callback-client";
 
+export const metadata = {
+  title: "Finishing Login",
+};
+
 function AuthCallbackFallback() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col items-center justify-center px-6 text-center">

@@ -3,6 +3,10 @@ import Image from "next/image";
 import { SiteHeader } from "@/app/components/site-header";
 import { SignupForm } from "@/app/signup/signup-form";
 
+export const metadata = {
+  title: "Sign Up",
+};
+
 export default function SignupPage() {
   return (
     <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-5 md:px-10">

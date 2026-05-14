@@ -1,6 +1,10 @@
 import { SiteHeader } from "@/app/components/site-header";
 import { LandingPage } from "./landing-page";
 
+export const metadata = {
+  title: "Home",
+};
+
 function ComingSoonPage() {
   return (
     <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-5 md:px-10">

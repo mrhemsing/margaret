@@ -8,5 +8,12 @@ export function createBrowserSupabaseClient() {
     throw new Error("Missing Supabase public environment variables.");
   }
 
-  return createClient(supabaseUrl, supabasePublishableKey);
+  return createClient(supabaseUrl, supabasePublishableKey, {
+    auth: {
+      detectSessionInUrl: false,
+      flowType: "pkce",
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  });
 }
