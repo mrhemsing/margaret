@@ -257,7 +257,7 @@ export function LandingPage() {
               ))}
             </div>
             <div className="mt-6 rounded-[2rem] bg-ink p-5 text-cream shadow-sm md:flex md:min-h-[360px] md:flex-col md:justify-center">
-              <p className="text-xs font-semibold uppercase tracking-wide text-cream/50">Sample conversation</p>
+              <p className="text-sm md:text-xs font-semibold uppercase tracking-wide text-cream/50">Sample conversation</p>
               <div className="mt-4 grid gap-3 text-sm leading-6">
                 <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Hi, this is DailyCall. I am calling for a quick friendly check-in. How is your morning going?</p>
                 <p className="ml-auto max-w-[88%] rounded-2xl bg-brandPink p-3 font-semibold text-white">Pretty good. I just finished coffee.</p>
@@ -379,10 +379,10 @@ export function LandingPage() {
             <article key={plan.name} className={`flex flex-col rounded-3xl p-6 shadow-sm ring-1 md:h-full ${plan.featured ? "bg-ink text-cream ring-ink" : "bg-white/80 text-ink ring-black/5"}`}>
               <div className="flex items-center justify-between gap-3">
                 <p className={`text-sm font-semibold uppercase tracking-wide ${plan.featured ? "text-cream/60" : "text-sage"}`}>{plan.name}</p>
-                {plan.featured ? <span className="rounded-full bg-brandPink px-3 py-1 text-xs font-bold text-white">Most popular</span> : null}
+                {plan.featured ? <span className="rounded-full bg-brandPink px-3 py-1 text-sm md:text-xs font-bold text-white">Most popular</span> : null}
               </div>
               <p className="mt-3 text-4xl font-bold">{plan.price}<span className={`text-base font-medium ${plan.featured ? "text-cream/60" : "text-slate-500"}`}> CAD/USD / mo</span></p>
-              <p className={`mt-1 text-xs font-semibold uppercase tracking-wide ${plan.featured ? "text-cream/50" : "text-slate-500"}`}>Introductory first-year price</p>
+              <p className={`mt-1 text-sm md:text-xs font-semibold uppercase tracking-wide ${plan.featured ? "text-cream/50" : "text-slate-500"}`}>Introductory first-year price</p>
               <p className={`mt-2 text-sm font-bold ${plan.featured ? "text-cream" : "text-ink"}`}>{plan.eyebrow}</p>
               <p className={`mt-3 min-h-12 text-sm leading-6 ${plan.featured ? "text-cream/75" : "text-slate-600"}`}>{plan.bestFor}</p>
               <ul className={`mt-5 grid gap-2 text-sm leading-6 ${plan.featured ? "text-cream/80" : "text-slate-600"}`}>
@@ -418,15 +418,15 @@ export function LandingPage() {
         <div className="relative grid gap-4 md:hidden">
           <div className="grid grid-cols-2 gap-3">
             <article className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-              <p className="text-xs font-bold uppercase tracking-wide text-sage">Daily</p>
+              <p className="text-sm md:text-xs font-bold uppercase tracking-wide text-sage">Daily</p>
               <p className="mt-2 text-2xl font-bold text-ink">$14.95</p>
-              <p className="text-xs text-slate-500">CAD/USD / month</p>
+              <p className="text-sm md:text-xs text-slate-500">CAD/USD / month</p>
               <p className="mt-3 text-sm font-semibold leading-5 text-ink">1 caring call per day</p>
             </article>
             <article className="rounded-3xl bg-ink p-4 text-cream shadow-sm ring-1 ring-ink">
-              <p className="text-xs font-bold uppercase tracking-wide text-cream/60">Plus</p>
+              <p className="text-sm md:text-xs font-bold uppercase tracking-wide text-cream/60">Plus</p>
               <p className="mt-2 text-2xl font-bold">$29.95</p>
-              <p className="text-xs text-cream/60">CAD/USD / month</p>
+              <p className="text-sm md:text-xs text-cream/60">CAD/USD / month</p>
               <p className="mt-3 text-sm font-semibold leading-5">Up to 3 calls per day</p>
             </article>
           </div>
@@ -441,9 +441,9 @@ export function LandingPage() {
               ["Daily planning", "Basic", "Advanced"],
             ].map(([feature, daily, plus]) => (
               <div key={feature} className="grid grid-cols-[1.25fr_0.75fr_0.75fr] items-center gap-2 border-b border-slate-100 py-2 last:border-b-0">
-                <span className="text-xs font-semibold leading-5 text-slate-600">{feature}</span>
-                <span className="rounded-full bg-brandBlue/10 px-3 py-1.5 text-center text-xs font-bold leading-5 text-brandButtonBlue">{daily}</span>
-                <span className="rounded-full bg-ink px-3 py-1.5 text-center text-xs font-bold leading-5 text-cream">{plus}</span>
+                <span className="text-sm md:text-xs font-semibold leading-5 text-slate-600">{feature}</span>
+                <span className="rounded-full bg-brandBlue/10 px-3 py-1.5 text-center text-sm md:text-xs font-bold leading-5 text-brandButtonBlue">{daily}</span>
+                <span className="rounded-full bg-ink px-3 py-1.5 text-center text-sm md:text-xs font-bold leading-5 text-cream">{plus}</span>
               </div>
             ))}
           </div>
@@ -544,5 +544,4 @@ export function LandingPage() {
     </main>
   );
 }
-
 
