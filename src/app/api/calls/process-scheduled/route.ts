@@ -1,12 +1,40 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
+import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
+
+const PROCESSING_WINDOW_MS = 30 * 60 * 1000;
 
 export async function POST() {
+  const now = new Date();
+  const processingWindowStart = new Date(now.getTime() - PROCESSING_WINDOW_MS);
+  const activeMembers = await prisma.member.findMany({
+    where: { active: true },
+    select: { id: true, active: true, preferredCallTime: true, timezone: true },
+  });
+
+  await ensureUpcomingScheduledCalls(prisma, activeMembers);
+
+  const expiredCalls = await prisma.callAttempt.updateMany({
+    where: {
+      status: "SCHEDULED",
+      scheduledFor: { lt: processingWindowStart },
+    },
+    data: {
+      status: "FAILED",
+      completedAt: now,
+      summary: "Scheduled call was missed because the call processor did not run in time.",
+      syncedAt: now,
+    },
+  });
+
   const dueCalls = await prisma.callAttempt.findMany({
     where: {
       status: "SCHEDULED",
-      scheduledFor: { lte: new Date() },
+      scheduledFor: {
+        gte: processingWindowStart,
+        lte: now,
+      },
     },
     include: { member: true },
     orderBy: { scheduledFor: "asc" },
@@ -29,7 +57,7 @@ export async function POST() {
           status: "IN_PROGRESS",
           startedAt: new Date(),
           providerCallSid: result.sid ?? null,
-          summary: `Retry ${call.retryAttempt} started after voicemail detection.`,
+          summary: call.retryAttempt > 0 ? `Retry ${call.retryAttempt} started after voicemail detection.` : "Scheduled daily call started.",
           syncedAt: new Date(),
         },
       });
@@ -50,5 +78,5 @@ export async function POST() {
     }
   }
 
-  return NextResponse.json({ ok: true, processed: results.length, results });
+  return NextResponse.json({ ok: true, expired: expiredCalls.count, processed: results.length, results });
 }

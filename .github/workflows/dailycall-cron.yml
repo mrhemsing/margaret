@@ -1,0 +1,17 @@
+name: DailyCall cron
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  process-calls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Process scheduled calls
+        run: curl -fsS -X POST https://soma3.b-average.com/api/calls/process-scheduled
+
+      - name: Sync transcripts
+        run: curl -fsS -X POST https://soma3.b-average.com/api/calls/sync-transcripts
