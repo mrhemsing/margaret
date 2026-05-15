@@ -2,6 +2,7 @@ import { SubscriptionPlan } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
 import { supportedBillingCountries } from "@/lib/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -161,6 +162,8 @@ export async function POST(request: Request) {
 
       return { customer, member };
     });
+
+    await ensureUpcomingScheduledCalls(prisma, [member]);
 
     return NextResponse.json({ ok: true, dashboardUrl: "/dashboard?trial=started", customerId: customer.id, memberId: member.id });
   } catch (error) {

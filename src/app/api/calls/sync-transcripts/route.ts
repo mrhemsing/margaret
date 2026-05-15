@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
+import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
 import { sendExampleReportSmsToTeam } from "@/lib/sms/twilio";
 import { deriveConversationInsights } from "@/lib/voice/conversation-insights";
@@ -87,6 +88,10 @@ export async function POST() {
             healthNotes: { set: mergeList(existingMemory?.healthNotes, insights.memoryUpdates.possibleHealthNotes) },
           },
         });
+      }
+
+      if (member && completedAt && !isDemoCall) {
+        await ensureUpcomingScheduledCalls(prisma, [member]);
       }
 
       const updated = await prisma.callAttempt.update({

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -54,6 +55,19 @@ export async function GET(request: Request) {
     });
   }
 
+  await ensureUpcomingScheduledCalls(prisma, customer.members);
+
+  const refreshedMembers = await prisma.member.findMany({
+    where: { customerId: customer.id },
+    include: {
+      memory: true,
+      callAttempts: {
+        orderBy: { scheduledFor: "desc" },
+        take: 5,
+      },
+    },
+  });
+
   const completedCalls = await prisma.callAttempt.findMany({
     where: {
       member: { customerId: customer.id },
@@ -70,5 +84,5 @@ export async function GET(request: Request) {
     }, 0),
   );
 
-  return NextResponse.json({ ok: true, customer: { ...customer, minutesUsed } });
+  return NextResponse.json({ ok: true, customer: { ...customer, members: refreshedMembers, minutesUsed } });
 }

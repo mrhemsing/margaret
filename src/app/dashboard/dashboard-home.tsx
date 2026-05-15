@@ -50,6 +50,11 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
 }
 
+function formatDateTime(value: string | null) {
+  if (!value) return "Pending";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+}
+
 function formatDateWithDaysRemaining(value: string | null) {
   if (!value) return "Pending";
 
@@ -221,7 +226,7 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
         {member.callAttempts.length > 0 ? (
           <ul className="mt-3 space-y-2 text-sm text-slate-600">
             {member.callAttempts.map((call) => (
-              <li key={call.id}>{formatDate(call.scheduledFor)} · {formatPlan(call.status)}{call.summary ? ` — ${call.summary}` : ""}</li>
+              <li key={call.id}>{formatDateTime(call.scheduledFor)} · {formatPlan(call.status)}{call.summary ? ` — ${call.summary}` : ""}</li>
             ))}
           </ul>
         ) : (
