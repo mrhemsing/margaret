@@ -162,7 +162,7 @@ export function LandingPage() {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <SiteHeader showTrialButton />
 
-      <header className="overflow-hidden rounded-[2rem] bg-white/75 shadow-sm ring-1 ring-black/5">
+      <header className="-mt-2 overflow-hidden rounded-[2rem] bg-white/75 shadow-sm ring-1 ring-black/5">
         <div className="relative">
           <Image
             src="/home-splash-mobile-senior-call-straight-phone.png"
