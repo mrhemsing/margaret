@@ -243,8 +243,9 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section data-mobile-reveal id="demo" className="overflow-hidden rounded-[2rem] bg-brandBlue/10 shadow-sm ring-1 ring-brandBlue/15">
-        <div className="grid gap-6 p-6 md:grid-cols-[0.95fr_1.05fr] md:items-end md:p-10">
+      <section data-mobile-reveal id="demo" className="relative overflow-hidden rounded-[2rem] bg-brandBlue/10 shadow-sm ring-1 ring-brandBlue/15">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/90 to-transparent" />
+        <div className="relative grid gap-6 p-6 md:grid-cols-[0.95fr_1.05fr] md:items-end md:p-10">
           <div>
             <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Try a demo call</p>
             <h2 className="mt-3 text-3xl font-bold text-ink">Hear what a DailyCall feels like.</h2>
@@ -270,20 +271,23 @@ export function LandingPage() {
       </section>
 
       <section data-mobile-reveal className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Connection</p>
-          <h2 className="mt-3 text-2xl font-bold text-ink">Someone to talk to when you can&apos;t be there.</h2>
-          <p className="mt-3 leading-7 text-slate-600">Life gets busy. Companion calls help loved ones feel connected even when families can&apos;t call every day.</p>
+        <article className="relative overflow-hidden rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-brandPink/20 to-transparent" />
+          <p className="relative text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Connection</p>
+          <h2 className="relative mt-3 text-2xl font-bold text-ink">Someone to talk to when you can&apos;t be there.</h2>
+          <p className="relative mt-3 leading-7 text-slate-600">Life gets busy. Companion calls help loved ones feel connected even when families can&apos;t call every day.</p>
         </article>
-        <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Routine</p>
-          <h2 className="mt-3 text-2xl font-bold text-ink">A familiar daily voice.</h2>
-          <p className="mt-3 leading-7 text-slate-600">The goal is not technology for its own sake. It is connection, routine, reassurance, companionship — and helping keep seniors’ minds active while sparking joy through meaningful conversation.</p>
+        <article className="relative overflow-hidden rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-brandPink/20 to-transparent" />
+          <p className="relative text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Routine</p>
+          <h2 className="relative mt-3 text-2xl font-bold text-ink">A familiar daily voice.</h2>
+          <p className="relative mt-3 leading-7 text-slate-600">The goal is not technology for its own sake. It is connection, routine, reassurance, companionship — and helping keep seniors’ minds active while sparking joy through meaningful conversation.</p>
         </article>
-        <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Relief for families</p>
-          <h2 className="mt-3 text-2xl font-bold text-ink">A little less worry.</h2>
-          <p className="mt-3 leading-7 text-slate-600">For adult children balancing distance, guilt, and caregiver stress, DailyCall adds a steady touchpoint.</p>
+        <article className="relative overflow-hidden rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-brandPink/20 to-transparent" />
+          <p className="relative text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Relief for families</p>
+          <h2 className="relative mt-3 text-2xl font-bold text-ink">A little less worry.</h2>
+          <p className="relative mt-3 leading-7 text-slate-600">For adult children balancing distance, guilt, and caregiver stress, DailyCall adds a steady touchpoint.</p>
         </article>
       </section>
 
@@ -485,7 +489,7 @@ export function LandingPage() {
             <div key={item} className="rounded-2xl bg-brandBlue/10 p-4 text-base md:text-sm font-bold leading-6 text-ink ring-1 ring-brandBlue/15">{item}</div>
           ))}
         </div>
-        <p className="mt-5 max-w-3xl text-base md:text-sm leading-7 text-slate-600">DailyCall is a family reassurance service. Summaries and alerts are meant to help families stay connected, not make seniors feel monitored.</p>
+        <p className="mt-5 max-w-3xl text-base md:text-sm leading-7 text-slate-600">DailyCall is a family reassurance service.<br className="hidden md:block" /> Summaries and alerts are meant to help families stay connected, not make seniors feel monitored.</p>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
@@ -560,13 +564,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pb-6 text-base md:text-sm font-semibold text-brandButtonBlue">
-        <Link href="/terms-and-conditions" className="hover:text-ink">Terms &amp; Conditions</Link>
-        <Link href="/privacy-policy" className="hover:text-ink">Privacy Policy</Link>
-        <Link href="/cookie-policy" className="hover:text-ink">Cookie Policy</Link>
-        <Link href="/cookie-preferences" className="hover:text-ink">Cookies Preferences</Link>
-        <Link href="/support" className="hover:text-ink">Support</Link>
-      </footer>
     </main>
   );
 }

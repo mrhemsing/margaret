@@ -80,15 +80,15 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
         className="flex snap-x gap-4 overflow-x-auto scroll-smooth pb-4 [-ms-overflow-style:none] [scrollbar-width:none] md:gap-5 md:px-12 md:pb-3 [&::-webkit-scrollbar]:hidden"
       >
         {testimonials.map((testimonial) => (
-          <blockquote key={testimonial.quote} className="flex min-w-[82%] snap-center flex-col rounded-[2rem] bg-white/90 p-5 shadow-sm ring-1 ring-black/5 transition duration-300 hover:-translate-y-1 hover:shadow-md sm:min-w-[360px] md:min-w-[420px] lg:min-w-[460px]">
-            <div className="flex items-center gap-4">
+          <blockquote key={testimonial.quote} className="relative flex min-w-[82%] snap-center flex-col overflow-hidden rounded-[2rem] bg-white/90 p-5 shadow-sm ring-1 ring-black/5 transition duration-300 hover:-translate-y-1 hover:shadow-md md:w-[calc((100%_-_1.25rem)/2)] md:min-w-[calc((100%_-_1.25rem)/2)] md:flex-none md:snap-start">
+            <div className="relative flex items-center gap-4">
               <Image src={testimonial.image} alt={`Portrait for ${testimonial.name}`} width={88} height={88} className="h-20 w-20 rounded-3xl object-cover shadow-sm ring-1 ring-black/10" />
               <div>
                 <p className="font-bold text-ink">{testimonial.name}</p>
                 <p className="text-sm font-semibold text-sage">{testimonial.location}</p>
               </div>
             </div>
-            <p className="mt-5 grow text-lg font-bold leading-8 text-ink">&quot;{testimonial.quote}&quot;</p>
+            <p className="relative mt-5 grow text-lg font-bold leading-8 text-ink">&quot;{testimonial.quote}&quot;</p>
           </blockquote>
         ))}
       </div>

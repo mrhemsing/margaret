@@ -91,7 +91,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
       memory: true,
       callAttempts: {
         orderBy: { scheduledFor: "desc" },
-        take: 5,
+        take: 20,
       },
     },
   });

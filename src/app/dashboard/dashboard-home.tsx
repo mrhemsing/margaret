@@ -100,6 +100,15 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const now = Date.now();
+  const upcomingCalls = member.callAttempts
+    .filter((call) => call.status === "SCHEDULED" && new Date(call.scheduledFor).getTime() >= now)
+    .sort((first, second) => new Date(first.scheduledFor).getTime() - new Date(second.scheduledFor).getTime());
+  const nextCall = upcomingCalls[0] ?? null;
+  const pastCalls = member.callAttempts
+    .filter((call) => call.id !== nextCall?.id && (call.status !== "SCHEDULED" || new Date(call.scheduledFor).getTime() < now))
+    .sort((first, second) => new Date(second.scheduledFor).getTime() - new Date(first.scheduledFor).getTime());
+
   async function saveMember(payload: { profile?: typeof profileForm; questionsToAsk?: string[] }, panel: Exclude<EditPanel, null>) {
     setSaving(panel);
     setMessage(null);
@@ -221,17 +230,32 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
       {message ? <p className="mt-4 rounded-2xl bg-sage/10 p-3 text-sm font-semibold text-sage">{message}</p> : null}
       {error ? <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
 
-      <div className="mt-5 rounded-2xl bg-white p-4 ring-1 ring-black/5">
-        <p className="text-sm font-bold text-ink">Recent calls</p>
-        {member.callAttempts.length > 0 ? (
-          <ul className="mt-3 space-y-2 text-sm text-slate-600">
-            {member.callAttempts.map((call) => (
-              <li key={call.id}>{formatDateTime(call.scheduledFor)} · {formatPlan(call.status)}{call.summary ? ` — ${call.summary}` : ""}</li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-sm text-slate-600">No calls yet. Scheduled calls will appear here once the trial is running.</p>
-        )}
+      <div className="mt-5 grid gap-4">
+        <section className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
+          <p className="text-sm font-bold text-ink">Next upcoming call</p>
+          {nextCall ? (
+            <div className="mt-3 rounded-2xl bg-brandBlue/10 p-4 ring-1 ring-brandBlue/10">
+              <p className="text-xl font-bold text-ink">{formatDateTime(nextCall.scheduledFor)}</p>
+              <p className="mt-1 text-sm text-slate-600">Status: {formatPlan(nextCall.status)}</p>
+              {nextCall.summary ? <p className="mt-2 text-sm text-slate-600">{nextCall.summary}</p> : null}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-slate-600">No upcoming call is scheduled yet. DailyCall will add one when your schedule is active.</p>
+          )}
+        </section>
+
+        <section className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
+          <p className="text-sm font-bold text-ink">Call history</p>
+          {pastCalls.length > 0 ? (
+            <ul className="mt-3 space-y-2 text-sm text-slate-600">
+              {pastCalls.map((call) => (
+                <li key={call.id}>{formatDateTime(call.scheduledFor)} · {formatPlan(call.status)}{call.summary ? ` — ${call.summary}` : ""}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-slate-600">No past calls yet. Completed calls will appear here with the most recent at the top.</p>
+          )}
+        </section>
       </div>
     </article>
   );
