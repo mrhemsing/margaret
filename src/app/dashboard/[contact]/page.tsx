@@ -153,6 +153,16 @@ function formatMetricPercent(value: number) {
 }
 
 async function getMember(contact: Contact) {
+  if (contact === "matt") {
+    return prisma.member.findFirst({
+      where: {
+        name: exampleContacts.matt.name,
+        phoneNumber: exampleContacts.matt.phone.replaceAll(" ", ""),
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   return prisma.member.findFirst({
     where: { phoneNumber: exampleContacts[contact].phone.replaceAll(" ", "") },
     orderBy: { createdAt: "desc" },
