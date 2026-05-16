@@ -21,8 +21,42 @@ const requestSchema = z.object({
   contact: z.enum(["matt", "chuck"]),
 });
 
+async function getMattFamilyMember() {
+  const target = exampleContacts.matt;
+  const customer = await prisma.customer.findUnique({
+    where: { email: "mhemsing@hprodev.com" },
+  });
+
+  if (!customer) return null;
+
+  const existingMember = await prisma.member.findFirst({
+    where: {
+      customerId: customer.id,
+      phoneNumber: target.toNumber,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (existingMember) return existingMember;
+
+  return prisma.member.create({
+    data: {
+      customerId: customer.id,
+      name: target.memberName,
+      phoneNumber: target.toNumber,
+      timezone: "America/Los_Angeles",
+      preferredCallTime: "On demand test",
+    },
+  });
+}
+
 async function ensureExampleMember(contact: keyof typeof exampleContacts) {
   const target = exampleContacts[contact];
+
+  if (contact === "matt") {
+    const mattFamilyMember = await getMattFamilyMember();
+    if (mattFamilyMember) return mattFamilyMember;
+  }
 
   const customer = await prisma.customer.upsert({
     where: { email: "example-family@dailycall.local" },
@@ -100,13 +134,14 @@ export async function POST(request: Request) {
       }),
     ]);
     const companionContext = buildCompanionContext({
-      memberName: target.memberName,
+      memberName: member.name,
       memory,
       recentCalls,
     });
 
     const result = await startOutboundCheckInCall({
       ...target,
+      memberName: member.name,
       ...companionContext,
     });
 
@@ -122,7 +157,7 @@ export async function POST(request: Request) {
         status: "IN_PROGRESS",
         providerConversationId: result.conversation_id ?? null,
         providerCallSid: result.callSid ?? null,
-        summary: `Test call started for ${target.memberName}. Transcript will appear after ElevenLabs finishes processing the conversation.`,
+        summary: `Test call started for ${member.name}. Transcript will appear after ElevenLabs finishes processing the conversation.`,
       },
     });
 

@@ -20,6 +20,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    const normalizedPhone = parsed.data.toNumber.replaceAll(" ", "");
+    const realFamilyMember = await prisma.member.findFirst({
+      where: {
+        phoneNumber: normalizedPhone,
+        customer: { email: "mhemsing@hprodev.com" },
+      },
+      orderBy: { createdAt: "desc" },
+    });
     const customer = await prisma.customer.upsert({
       where: { email: "example-family@dailycall.local" },
       update: { fullName: "Example Family", phoneNumber: "+16043138398" },
@@ -29,12 +37,15 @@ export async function POST(request: Request) {
         phoneNumber: "+16043138398",
       },
     });
-    const normalizedPhone = parsed.data.toNumber.replaceAll(" ", "");
-    const existingMember = await prisma.member.findFirst({ where: { phoneNumber: normalizedPhone } });
-    const member = existingMember
+    const existingExampleMember = await prisma.member.findFirst({
+      where: { customerId: customer.id, phoneNumber: normalizedPhone },
+    });
+    const member = realFamilyMember
+      ? realFamilyMember
+      : existingExampleMember
       ? await prisma.member.update({
-          where: { id: existingMember.id },
-          data: { customerId: customer.id, name: parsed.data.memberName ?? existingMember.name },
+          where: { id: existingExampleMember.id },
+          data: { name: parsed.data.memberName ?? existingExampleMember.name },
         })
       : await prisma.member.create({
           data: {
@@ -46,7 +57,7 @@ export async function POST(request: Request) {
           },
         });
 
-    const result = await startOutboundCheckInCall(parsed.data);
+    const result = await startOutboundCheckInCall({ ...parsed.data, memberName: member.name });
 
     if (!result) {
       throw new Error("ElevenLabs did not return a call result.");
