@@ -4,12 +4,16 @@ import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 
 const PROCESSING_WINDOW_MS = 30 * 60 * 1000;
+const EXCLUDED_CRON_CUSTOMER_EMAILS = ["demo-family@dailycall.local", "example-family@dailycall.local"];
 
 export async function POST() {
   const now = new Date();
   const processingWindowStart = new Date(now.getTime() - PROCESSING_WINDOW_MS);
   const activeMembers = await prisma.member.findMany({
-    where: { active: true },
+    where: {
+      active: true,
+      customer: { email: { notIn: EXCLUDED_CRON_CUSTOMER_EMAILS } },
+    },
     select: { id: true, active: true, preferredCallTime: true, timezone: true },
   });
 
@@ -19,6 +23,7 @@ export async function POST() {
     where: {
       status: "SCHEDULED",
       scheduledFor: { lt: processingWindowStart },
+      member: { customer: { email: { notIn: EXCLUDED_CRON_CUSTOMER_EMAILS } } },
     },
     data: {
       status: "FAILED",
@@ -31,6 +36,7 @@ export async function POST() {
   const dueCalls = await prisma.callAttempt.findMany({
     where: {
       status: "SCHEDULED",
+      member: { customer: { email: { notIn: EXCLUDED_CRON_CUSTOMER_EMAILS } } },
       scheduledFor: {
         gte: processingWindowStart,
         lte: now,
