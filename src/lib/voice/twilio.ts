@@ -12,6 +12,8 @@ type TwilioCallResponse = {
   message?: string;
 };
 
+const DEFAULT_ELEVENLABS_BRIDGE_NUMBER = "+12362058677";
+
 function getPublicBaseUrl() {
   return (process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://soma3.b-average.com").replace(/\/$/, "");
 }
@@ -62,5 +64,5 @@ export async function startAmdProtectedCheckInCall(input: StartAmdProtectedCallI
 }
 
 export function getElevenLabsBridgeNumber() {
-  return process.env.ELEVENLABS_TWILIO_BRIDGE_NUMBER || null;
+  return process.env.ELEVENLABS_TWILIO_BRIDGE_NUMBER || DEFAULT_ELEVENLABS_BRIDGE_NUMBER;
 }
