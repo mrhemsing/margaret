@@ -511,7 +511,10 @@ export function DashboardHome() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">Family dashboard</p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink md:text-5xl">Welcome, {state.customer.fullName}.</h1>
+            <h1 className="mt-4 font-bold tracking-tight text-ink">
+              <span className="block text-4xl md:text-5xl">Welcome,</span>
+              <span className="mt-1 block text-3xl md:text-4xl">{state.customer.fullName}</span>
+            </h1>
             <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">Manage your DailyCall trial, loved one profile, reports, and call history.</p>
             <div className="mt-8 grid gap-4">
               {state.customer.members.map((member) => (
