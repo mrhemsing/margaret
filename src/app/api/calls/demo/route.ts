@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { scheduleTwilioCallEnd, startOutboundCheckInCall } from "@/lib/voice/elevenlabs";
+import { scheduleTwilioCallEnd } from "@/lib/voice/elevenlabs";
+import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 
 const requestSchema = z.object({
   phoneNumber: z.string().min(8).max(30),
@@ -91,22 +92,18 @@ export async function POST(request: Request) {
           },
         });
 
-    const result = await startOutboundCheckInCall({
+    const result = await startAmdProtectedCheckInCall({
       toNumber: phoneNumber,
       memberName,
       caregiverName: "your family",
-      demoMaxDurationSeconds: DEMO_MAX_DURATION_SECONDS,
-      companionContext:
-        "This is a short landing-page demo call. Keep it warm and natural, explain that this is a one-minute sample of DailyCall, ask one simple friendly check-in question, then wrap up politely before one minute.",
-      avoidRepeating: ["Do not run a full daily check-in during this demo.", "Do not continue beyond the one-minute demo window."],
     });
 
     if (!result) {
       throw new Error("Demo call provider did not return a result.");
     }
 
-    if (result.callSid) {
-      scheduleTwilioCallEnd(result.callSid, DEMO_MAX_DURATION_SECONDS * 1000);
+    if (result.sid) {
+      scheduleTwilioCallEnd(result.sid, DEMO_MAX_DURATION_SECONDS * 1000);
     }
 
     await prisma.callAttempt.create({
@@ -115,8 +112,7 @@ export async function POST(request: Request) {
         scheduledFor: new Date(),
         startedAt: new Date(),
         status: "IN_PROGRESS",
-        providerConversationId: result.conversation_id ?? null,
-        providerCallSid: result.callSid ?? null,
+        providerCallSid: result.sid ?? null,
         summary: `Landing page demo call started for ${member.name}.`,
       },
     });

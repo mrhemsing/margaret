@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { buildCompanionContext } from "@/lib/voice/companion-context";
-import { startOutboundCheckInCall } from "@/lib/voice/elevenlabs";
+import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 
 const exampleContacts = {
   matt: {
@@ -112,37 +111,19 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: true,
         reused: true,
-        provider: "elevenlabs_twilio",
+        provider: "twilio_amd_bridge",
         member,
         callAttempt: recentInProgressCall,
         result: {
           conversation_id: recentInProgressCall.providerConversationId,
-          callSid: recentInProgressCall.providerCallSid,
+          sid: recentInProgressCall.providerCallSid,
         },
       });
     }
 
-    const [memory, recentCalls] = await Promise.all([
-      prisma.seniorMemory.findUnique({ where: { memberId: member.id } }),
-      prisma.callAttempt.findMany({
-        where: {
-          memberId: member.id,
-          summary: { not: null },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      }),
-    ]);
-    const companionContext = buildCompanionContext({
-      memberName: member.name,
-      memory,
-      recentCalls,
-    });
-
-    const result = await startOutboundCheckInCall({
+    const result = await startAmdProtectedCheckInCall({
       ...target,
       memberName: member.name,
-      ...companionContext,
     });
 
     if (!result) {
@@ -155,15 +136,14 @@ export async function POST(request: Request) {
         scheduledFor: new Date(),
         startedAt: new Date(),
         status: "IN_PROGRESS",
-        providerConversationId: result.conversation_id ?? null,
-        providerCallSid: result.callSid ?? null,
+        providerCallSid: result.sid ?? null,
         summary: `Test call started for ${member.name}. Transcript will appear after ElevenLabs finishes processing the conversation.`,
       },
     });
 
     return NextResponse.json({
       ok: true,
-      provider: "elevenlabs_twilio",
+      provider: "twilio_amd_bridge",
       member,
       callAttempt,
       result,

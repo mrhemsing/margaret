@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { startOutboundCheckInCall } from "@/lib/voice/elevenlabs";
+import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 
 const requestSchema = z.object({
   toNumber: z.string().min(8),
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
           },
         });
 
-    const result = await startOutboundCheckInCall({ ...parsed.data, memberName: member.name });
+    const result = await startAmdProtectedCheckInCall({ ...parsed.data, memberName: member.name });
 
     if (!result) {
       throw new Error("ElevenLabs did not return a call result.");
@@ -69,15 +69,14 @@ export async function POST(request: Request) {
         scheduledFor: new Date(),
         startedAt: new Date(),
         status: "IN_PROGRESS",
-        providerConversationId: result.conversation_id ?? null,
-        providerCallSid: result.callSid ?? null,
+        providerCallSid: result.sid ?? null,
         summary: `Test call started for ${member.name}. Transcript will appear after ElevenLabs finishes processing the conversation.`,
       },
     });
 
     return NextResponse.json({
       ok: true,
-      provider: "elevenlabs_twilio",
+      provider: "twilio_amd_bridge",
       member,
       callAttempt,
       result,
