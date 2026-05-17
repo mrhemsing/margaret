@@ -23,7 +23,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
   const pathname = usePathname();
   const router = useRouter();
   const [accountEmail, setAccountEmail] = useState<string | null | undefined>(undefined);
-  const [dashboardReady, setDashboardReady] = useState(false);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
   const isDashboardPage = pathname?.startsWith("/dashboard") ?? false;
   const authChecked = accountEmail !== undefined;
 
@@ -53,16 +53,16 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
   }, []);
 
   useEffect(() => {
-    setDashboardReady(!isDashboardPage);
+    setDashboardLoading(isDashboardPage);
 
-    function markDashboardReady() {
-      setDashboardReady(true);
+    function handleDashboardLoading(event: Event) {
+      setDashboardLoading(Boolean((event as CustomEvent<{ loading?: boolean }>).detail?.loading));
     }
 
-    window.addEventListener("dailycall:dashboard-ready", markDashboardReady);
+    window.addEventListener("dailycall:dashboard-loading", handleDashboardLoading);
 
     return () => {
-      window.removeEventListener("dailycall:dashboard-ready", markDashboardReady);
+      window.removeEventListener("dailycall:dashboard-loading", handleDashboardLoading);
     };
   }, [isDashboardPage]);
 
@@ -79,14 +79,14 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
         {accountEmail ? (
           <div className="absolute right-2 top-0 flex items-center gap-2">
             {isDashboardPage ? (
-              dashboardReady ? (
-                <button type="button" onClick={signOut} className="w-20 whitespace-nowrap text-right text-sm font-bold text-ink hover:text-brandButtonBlue">
-                  Sign out
-                </button>
-              ) : (
+              dashboardLoading ? (
                 <span className="inline-flex w-20 items-center justify-end whitespace-nowrap text-sm font-bold text-ink" aria-live="polite">
                   Loading<span className="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
                 </span>
+              ) : (
+                <button type="button" onClick={signOut} className="w-20 whitespace-nowrap text-right text-sm font-bold text-ink hover:text-brandButtonBlue">
+                  Sign out
+                </button>
               )
             ) : (
               <Link href="/dashboard" className="whitespace-nowrap text-sm font-bold text-ink hover:text-brandButtonBlue">

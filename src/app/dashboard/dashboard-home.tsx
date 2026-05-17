@@ -425,6 +425,10 @@ export function DashboardHome() {
   const [state, setState] = useState<DashboardState>({ status: "loading" });
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent("dailycall:dashboard-loading", { detail: { loading: state.status === "loading" } }));
+  }, [state.status]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function loadDashboard() {
@@ -461,12 +465,6 @@ export function DashboardHome() {
       cancelled = true;
     };
   }, [router]);
-
-  useEffect(() => {
-    if (state.status !== "loading") {
-      window.dispatchEvent(new Event("dailycall:dashboard-ready"));
-    }
-  }, [state.status]);
 
   if (state.status === "loading") {
     return <DashboardSkeleton />;
