@@ -53,10 +53,17 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
   }, []);
 
   useEffect(() => {
-    setDashboardLoading(isDashboardPage);
+    if (!isDashboardPage) {
+      setDashboardLoading(false);
+      return;
+    }
+
+    setDashboardLoading(document.body.dataset.dailycallDashboardLoading !== "false");
 
     function handleDashboardLoading(event: Event) {
-      setDashboardLoading(Boolean((event as CustomEvent<{ loading?: boolean }>).detail?.loading));
+      const loading = Boolean((event as CustomEvent<{ loading?: boolean }>).detail?.loading);
+      document.body.dataset.dailycallDashboardLoading = loading ? "true" : "false";
+      setDashboardLoading(loading);
     }
 
     window.addEventListener("dailycall:dashboard-loading", handleDashboardLoading);

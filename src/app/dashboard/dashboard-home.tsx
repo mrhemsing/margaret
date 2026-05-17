@@ -425,7 +425,9 @@ export function DashboardHome() {
   const [state, setState] = useState<DashboardState>({ status: "loading" });
 
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent("dailycall:dashboard-loading", { detail: { loading: state.status === "loading" } }));
+    const loading = state.status === "loading";
+    document.body.dataset.dailycallDashboardLoading = loading ? "true" : "false";
+    window.dispatchEvent(new CustomEvent("dailycall:dashboard-loading", { detail: { loading } }));
   }, [state.status]);
 
   useEffect(() => {
