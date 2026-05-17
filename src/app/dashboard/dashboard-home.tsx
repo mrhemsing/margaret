@@ -80,9 +80,8 @@ function formatSubscriptionPlan(value: string) {
   return value === "ONE_CALL_DAILY" ? "Companion Daily" : "Companion Plus";
 }
 
-function splitQuestions(value: string) {
+function normalizeQuestions(value: string[]) {
   return value
-    .split("\n")
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 10);
@@ -95,10 +94,19 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
     phoneNumber: member.phoneNumber,
     preferredCallTime: member.preferredCallTime,
   });
-  const [questionsText, setQuestionsText] = useState(member.memory?.topicsToRevisit.join("\n") ?? "");
+  const [questions, setQuestions] = useState(() => {
+    const storedQuestions = normalizeQuestions(member.memory?.topicsToRevisit ?? []);
+    return storedQuestions.length > 0 ? storedQuestions : [""];
+  });
   const [saving, setSaving] = useState<EditPanel>(null);
+  const [calling, setCalling] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedQuestions = normalizeQuestions(member.memory?.topicsToRevisit ?? []);
+    setQuestions(storedQuestions.length > 0 ? storedQuestions : [""]);
+  }, [member.memory?.topicsToRevisit]);
 
   const now = Date.now();
   const upcomingCalls = member.callAttempts
@@ -136,12 +144,47 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
       }
 
       onUpdated(result.member);
+      if (panel === "questions") {
+        const storedQuestions = normalizeQuestions(result.member.memory?.topicsToRevisit ?? []);
+        setQuestions(storedQuestions.length > 0 ? storedQuestions : [""]);
+      }
       setMessage(panel === "profile" ? "Profile updated." : "Questions updated.");
       setEditPanel(null);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Could not save changes.");
     } finally {
       setSaving(null);
+    }
+  }
+
+  async function startManualCall() {
+    setCalling(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const session = await supabase.auth.getSession();
+      const accessToken = session.data.session?.access_token;
+
+      if (!accessToken) throw new Error("Please log in again.");
+
+      const response = await fetch(`/api/dashboard/members/${member.id}/call`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const result = (await response.json().catch(() => null)) as { ok?: boolean; member?: DashboardMember; error?: string } | null;
+
+      if (!response.ok || !result?.ok || !result.member) {
+        throw new Error(result?.error ?? "Could not start the call.");
+      }
+
+      onUpdated(result.member);
+      setMessage(`Calling ${result.member.name} now.`);
+    } catch (callError) {
+      setError(callError instanceof Error ? callError.message : "Could not start the call.");
+    } finally {
+      setCalling(false);
     }
   }
 
@@ -166,6 +209,14 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
               className="rounded-full bg-white px-4 py-2 text-sm font-bold text-ink ring-1 ring-black/10 hover:bg-slate-50"
             >
               Edit questions
+            </button>
+            <button
+              type="button"
+              onClick={() => void startManualCall()}
+              disabled={calling || !member.active}
+              className="rounded-full bg-brandButtonBlue px-4 py-2 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {calling ? `Calling ${member.name}...` : `Call ${member.name}`}
             </button>
           </div>
         </div>
@@ -208,14 +259,53 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
           className="mt-5 grid gap-4 rounded-2xl bg-slate-50 p-4"
           onSubmit={(event) => {
             event.preventDefault();
-            void saveMember({ questionsToAsk: splitQuestions(questionsText) }, "questions");
+            void saveMember({ questionsToAsk: normalizeQuestions(questions) }, "questions");
           }}
         >
-          <label className="grid gap-2 text-sm font-semibold text-slate-700">
-            Custom questions to ask
-            <textarea value={questionsText} onChange={(event) => setQuestionsText(event.target.value)} rows={5} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal leading-6 text-ink outline-none focus:border-brandPink" placeholder="One question per line. Example: Ask how Sam’s hockey tournament went." />
-            <span className="text-xs font-normal leading-5 text-slate-500">Add up to 10 questions. DailyCall can weave these into future conversations.</span>
-          </label>
+          <div className="grid gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-700">Stored custom questions</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">Edit the questions DailyCall should weave into future conversations. Save up to 10.</p>
+            </div>
+            <div className="grid gap-3">
+              {questions.map((question, index) => (
+                <div key={index} className="grid gap-2 rounded-2xl bg-white p-3 ring-1 ring-black/5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                  <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                    Question {index + 1}
+                    <input
+                      value={question}
+                      onChange={(event) => {
+                        const nextQuestion = event.target.value;
+                        setQuestions((current) => current.map((item, itemIndex) => (itemIndex === index ? nextQuestion : item)));
+                      }}
+                      className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 font-normal text-ink outline-none focus:border-brandPink"
+                      placeholder="Ask how Sam's hockey tournament went."
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuestions((current) => {
+                        const nextQuestions = current.filter((_, itemIndex) => itemIndex !== index);
+                        return nextQuestions.length > 0 ? nextQuestions : [""];
+                      });
+                    }}
+                    className="w-fit rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 ring-1 ring-black/10 hover:text-ink"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              disabled={questions.length >= 10}
+              onClick={() => setQuestions((current) => [...current, ""])}
+              className="w-fit rounded-full bg-white px-4 py-2 text-sm font-bold text-ink ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Add question
+            </button>
+          </div>
           <div className="flex gap-2">
             <button type="submit" disabled={saving === "questions"} className="rounded-full bg-brandButtonBlue px-5 py-2 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:opacity-60">
               {saving === "questions" ? "Saving..." : "Save questions"}

@@ -19,9 +19,15 @@ const exampleReportRecipients = [
 export async function sendSms(input: SendSmsInput) {
   const env = getServerEnv();
 
-  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_FROM_NUMBER) {
+  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || (!env.TWILIO_FROM_NUMBER && !env.TWILIO_MESSAGING_SERVICE_SID)) {
     throw new Error("Twilio SMS credentials are not configured.");
   }
+
+  const body = new URLSearchParams({
+    To: input.to,
+    Body: input.body,
+  });
+  body.set(env.TWILIO_MESSAGING_SERVICE_SID ? "MessagingServiceSid" : "From", env.TWILIO_MESSAGING_SERVICE_SID ?? env.TWILIO_FROM_NUMBER ?? "");
 
   const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`, {
     method: "POST",
@@ -29,11 +35,7 @@ export async function sendSms(input: SendSmsInput) {
       Authorization: `Basic ${Buffer.from(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`).toString("base64")}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({
-      From: env.TWILIO_FROM_NUMBER,
-      To: input.to,
-      Body: input.body,
-    }),
+    body,
   });
 
   const payload = (await response.json().catch(() => null)) as TwilioMessageResponse | null;
