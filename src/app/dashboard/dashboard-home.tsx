@@ -513,7 +513,7 @@ export function DashboardHome() {
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">Family dashboard</p>
             <h1 className="mt-4 font-bold tracking-tight text-ink">
               <span className="block text-4xl md:text-5xl">Welcome,</span>
-              <span className="mt-1 block text-3xl md:text-4xl">{state.customer.fullName}</span>
+              <span className="mt-1 block text-4xl md:text-5xl">{state.customer.fullName}</span>
             </h1>
             <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">Manage your DailyCall trial, loved one profile, reports, and call history.</p>
             <div className="mt-8 grid gap-4">
