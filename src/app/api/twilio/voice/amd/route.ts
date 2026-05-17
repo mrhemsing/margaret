@@ -3,12 +3,51 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { sendExampleVoicemailAlertSmsToTeam } from "@/lib/sms/twilio";
 import { getServerEnv } from "@/lib/env";
-import { getElevenLabsBridgeNumber } from "@/lib/voice/twilio";
 
 function twiml(xml: string) {
   return new NextResponse(xml, {
     headers: { "Content-Type": "text/xml; charset=utf-8" },
   });
+}
+
+function extractConversationId(xml: string) {
+  return xml.match(/name="conversation_id" value="([^"]+)"/)?.[1] ?? null;
+}
+
+async function registerElevenLabsTwilioCall(input: {
+  fromNumber: string;
+  toNumber: string;
+  memberName: string;
+  caregiverName: string;
+}) {
+  const env = getServerEnv();
+  const response = await fetch("https://api.elevenlabs.io/v1/convai/twilio/register-call", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "xi-api-key": env.ELEVENLABS_API_KEY,
+    },
+    body: JSON.stringify({
+      agent_id: env.ELEVENLABS_AGENT_ID,
+      from_number: input.fromNumber,
+      to_number: input.toNumber,
+      direction: "outbound",
+      conversation_initiation_client_data: {
+        dynamic_variables: {
+          member_name: input.memberName,
+          caregiver_name: input.caregiverName,
+        },
+      },
+    }),
+  });
+
+  const body = await response.text();
+
+  if (!response.ok) {
+    throw new Error(body || `ElevenLabs register call failed with status ${response.status}`);
+  }
+
+  return body;
 }
 
 function isMachine(answeredBy: string | null) {
@@ -17,9 +56,14 @@ function isMachine(answeredBy: string | null) {
 }
 
 export async function POST(request: Request) {
+  const url = new URL(request.url);
   const formData = await request.formData();
   const callSid = String(formData.get("CallSid") ?? "");
   const answeredBy = String(formData.get("AnsweredBy") ?? "");
+  const fromNumber = String(formData.get("From") ?? "");
+  const toNumber = String(formData.get("To") ?? "");
+  const memberName = url.searchParams.get("memberName") ?? "there";
+  const caregiverName = url.searchParams.get("caregiverName") ?? "your caregiver";
 
   if (callSid && isMachine(answeredBy)) {
     const summary = "Voicemail or answering machine detected. DailyCall hung up without leaving a voicemail message.";
@@ -101,17 +145,34 @@ export async function POST(request: Request) {
     });
   }
 
-  const env = getServerEnv();
-  const bridgeNumber = getElevenLabsBridgeNumber();
+  try {
+    const elevenLabsTwiml = await registerElevenLabsTwilioCall({
+      fromNumber,
+      toNumber,
+      memberName,
+      caregiverName,
+    });
+    const conversationId = extractConversationId(elevenLabsTwiml);
 
-  if (!bridgeNumber || bridgeNumber === env.TWILIO_FROM_NUMBER) {
+    if (callSid && conversationId) {
+      await prisma.callAttempt.updateMany({
+        where: { providerCallSid: callSid },
+        data: {
+          providerConversationId: conversationId,
+          syncedAt: new Date(),
+        },
+      });
+    }
+
+    return twiml(elevenLabsTwiml);
+  } catch (error) {
     if (callSid) {
       await prisma.callAttempt.updateMany({
         where: { providerCallSid: callSid },
         data: {
           status: "FAILED",
           completedAt: new Date(),
-          summary: "Human answer detected, but voicemail-safe bridging requires a second Twilio number connected to ElevenLabs.",
+          summary: error instanceof Error ? error.message : "Human answer detected, but DailyCall could not connect the call to the voice agent.",
           syncedAt: new Date(),
         },
       });
@@ -121,8 +182,4 @@ export async function POST(request: Request) {
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Say>DailyCall is not fully configured yet. Goodbye.</Say><Hangup /></Response>",
     );
   }
-
-  return twiml(
-    `<?xml version="1.0" encoding="UTF-8"?><Response><Dial answerOnBridge="true" callerId="${env.TWILIO_FROM_NUMBER}"><Number>${bridgeNumber}</Number></Dial></Response>`,
-  );
 }
