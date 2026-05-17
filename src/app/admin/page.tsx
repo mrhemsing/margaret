@@ -41,6 +41,21 @@ async function unlockAdminDashboard(formData: FormData) {
   redirect("/admin");
 }
 
+async function signOutAdminDashboard() {
+  "use server";
+
+  const cookieStore = await cookies();
+  cookieStore.set(ADMIN_AUTH_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/admin",
+    maxAge: 0,
+  });
+
+  redirect("/admin");
+}
+
 function AdminPasswordGate({ failed }: { failed: boolean }) {
   return (
     <main className="relative isolate mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center px-6 py-8">
@@ -322,6 +337,11 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
     <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-8 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
+      <form action={signOutAdminDashboard} className="absolute right-6 top-4 z-10 md:right-10">
+        <button type="submit" className="w-20 whitespace-nowrap text-right text-sm font-bold text-ink hover:text-brandButtonBlue">
+          Sign out
+        </button>
+      </form>
       <header className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">internal admin</p>
         <h1 className="mt-3 max-w-2xl whitespace-nowrap text-3xl font-bold tracking-tight text-ink sm:text-4xl md:text-5xl">DailyCall operations</h1>
