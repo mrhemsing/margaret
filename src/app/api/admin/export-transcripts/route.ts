@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,10 @@ function csvCell(value: unknown) {
 }
 
 export async function GET() {
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ ok: false, error: "Not authorized." }, { status: 401 });
+  }
+
   try {
     const callAttempts = await prisma.callAttempt.findMany({
       include: {

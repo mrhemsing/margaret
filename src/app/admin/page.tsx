@@ -1,6 +1,9 @@
 import { SubscriptionStatus } from "@prisma/client";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { CallTestPanel } from "@/app/components/call-test-panel";
+import { ADMIN_AUTH_COOKIE, hashAdminPassword, isAdminAuthenticated } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
 import { sampleCallAttempts, sampleMembers } from "@/lib/sample-data";
 
@@ -15,6 +18,61 @@ type AdminData = Awaited<ReturnType<typeof getAdminData>>;
 const VOICE_AI_COST_PER_MINUTE_USD = 0.08;
 const TELEPHONY_COST_PER_MINUTE_USD = 0.02;
 const ESTIMATED_COST_PER_MINUTE_USD = VOICE_AI_COST_PER_MINUTE_USD + TELEPHONY_COST_PER_MINUTE_USD;
+
+async function unlockAdminDashboard(formData: FormData) {
+  "use server";
+
+  const password = process.env.ADMIN_DASHBOARD_PASSWORD;
+  const attemptedPassword = String(formData.get("password") ?? "");
+
+  if (!password || attemptedPassword !== password) {
+    redirect("/admin?auth=failed");
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(ADMIN_AUTH_COOKIE, hashAdminPassword(password), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/admin",
+    maxAge: 60 * 60 * 12,
+  });
+
+  redirect("/admin");
+}
+
+function AdminPasswordGate({ failed }: { failed: boolean }) {
+  return (
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center px-6 py-8">
+      <section className="rounded-[2rem] bg-white/90 p-8 shadow-sm ring-1 ring-black/5">
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">internal admin</p>
+        <h1 className="mt-3 whitespace-nowrap text-3xl font-bold tracking-tight text-ink sm:text-4xl">DailyCall operations</h1>
+        {process.env.ADMIN_DASHBOARD_PASSWORD ? (
+          <form action={unlockAdminDashboard} className="mt-6 grid gap-4">
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Admin password
+              <input
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink"
+              />
+            </label>
+            {failed ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">Incorrect admin password.</p> : null}
+            <button type="submit" className="rounded-full bg-brandButtonBlue px-5 py-3 font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover">
+              Unlock dashboard
+            </button>
+          </form>
+        ) : (
+          <p className="mt-6 rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-700">
+            Admin password is not configured. Set ADMIN_DASHBOARD_PASSWORD before using this dashboard.
+          </p>
+        )}
+      </section>
+    </main>
+  );
+}
 
 async function getAdminData() {
   try {
@@ -222,7 +280,14 @@ function MetricCard({ label, value, dark = false }: { label: string; value: stri
   );
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams?: Promise<{ auth?: string }> }) {
+  const authenticated = await isAdminAuthenticated();
+
+  if (!authenticated) {
+    const params = await searchParams;
+    return <AdminPasswordGate failed={params?.auth === "failed"} />;
+  }
+
   const data = await getAdminData();
 
   const memberRows = data.ok
