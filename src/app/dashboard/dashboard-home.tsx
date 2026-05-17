@@ -462,6 +462,12 @@ export function DashboardHome() {
     };
   }, [router]);
 
+  useEffect(() => {
+    if (state.status !== "loading") {
+      window.dispatchEvent(new Event("dailycall:dashboard-ready"));
+    }
+  }, [state.status]);
+
   if (state.status === "loading") {
     return <DashboardSkeleton />;
   }

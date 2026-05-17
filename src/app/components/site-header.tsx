@@ -23,6 +23,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
   const pathname = usePathname();
   const router = useRouter();
   const [accountEmail, setAccountEmail] = useState<string | null | undefined>(undefined);
+  const [dashboardReady, setDashboardReady] = useState(false);
   const isDashboardPage = pathname?.startsWith("/dashboard") ?? false;
   const authChecked = accountEmail !== undefined;
 
@@ -51,6 +52,20 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
     };
   }, []);
 
+  useEffect(() => {
+    setDashboardReady(!isDashboardPage);
+
+    function markDashboardReady() {
+      setDashboardReady(true);
+    }
+
+    window.addEventListener("dailycall:dashboard-ready", markDashboardReady);
+
+    return () => {
+      window.removeEventListener("dailycall:dashboard-ready", markDashboardReady);
+    };
+  }, [isDashboardPage]);
+
   async function signOut() {
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
@@ -64,9 +79,15 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
         {accountEmail ? (
           <div className="absolute right-2 top-0 flex items-center gap-2">
             {isDashboardPage ? (
-              <button type="button" onClick={signOut} className="whitespace-nowrap text-sm font-bold text-ink hover:text-brandButtonBlue">
-                Sign out
-              </button>
+              dashboardReady ? (
+                <button type="button" onClick={signOut} className="w-20 whitespace-nowrap text-right text-sm font-bold text-ink hover:text-brandButtonBlue">
+                  Sign out
+                </button>
+              ) : (
+                <span className="inline-flex w-20 items-center justify-end whitespace-nowrap text-sm font-bold text-ink" aria-live="polite">
+                  Loading<span className="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
+                </span>
+              )
             ) : (
               <Link href="/dashboard" className="whitespace-nowrap text-sm font-bold text-ink hover:text-brandButtonBlue">
                 My dashboard
