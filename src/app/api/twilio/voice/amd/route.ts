@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { sendExampleVoicemailAlertSmsToTeam } from "@/lib/sms/twilio";
 import { getServerEnv } from "@/lib/env";
+import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
 
 function twiml(xml: string) {
   return new NextResponse(xml, {
@@ -19,6 +20,11 @@ async function registerElevenLabsTwilioCall(input: {
   toNumber: string;
   memberName: string;
   caregiverName: string;
+  companionContext: string;
+  currentContext: string;
+  recentTopics: string[];
+  topicsToRevisit: string[];
+  avoidRepeating: string[];
 }) {
   const env = getServerEnv();
   const response = await fetch("https://api.elevenlabs.io/v1/convai/twilio/register-call", {
@@ -36,6 +42,11 @@ async function registerElevenLabsTwilioCall(input: {
         dynamic_variables: {
           member_name: input.memberName,
           caregiver_name: input.caregiverName,
+          companion_context: input.companionContext,
+          current_context: input.currentContext,
+          recent_topics: input.recentTopics.join(", ") || "none yet",
+          topics_to_revisit: input.topicsToRevisit.join("; ") || "none yet",
+          avoid_repeating: input.avoidRepeating.join("; ") || "Do not use a generic scripted wellness survey opening.",
         },
       },
     }),
@@ -146,11 +157,46 @@ export async function POST(request: Request) {
   }
 
   try {
+    const callAttempt = callSid
+      ? await prisma.callAttempt.findFirst({
+          where: { providerCallSid: callSid },
+          include: { member: { include: { memory: true } } },
+        })
+      : null;
+    const recentCalls = callAttempt
+      ? await prisma.callAttempt.findMany({
+          where: {
+            memberId: callAttempt.memberId,
+            id: { not: callAttempt.id },
+            summary: { not: null },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        })
+      : [];
+    const companionContext = callAttempt
+      ? buildCompanionContext({
+          memberName: callAttempt.member.name,
+          memory: callAttempt.member.memory,
+          recentCalls,
+        })
+      : {
+          companionContext: [
+            "You are calling " + memberName + ". Sound like a familiar, warm daily companion, not a clinical checklist.",
+            buildCurrentConversationContext(),
+            "Open with warmth and variety. Ask one easy, human question.",
+          ].join("\n"),
+          currentContext: buildCurrentConversationContext(),
+          recentTopics: [],
+          topicsToRevisit: [],
+          avoidRepeating: ["Do not use a generic scripted wellness survey opening."],
+        };
     const elevenLabsTwiml = await registerElevenLabsTwilioCall({
       fromNumber,
       toNumber,
-      memberName,
+      memberName: callAttempt?.member.name ?? memberName,
       caregiverName,
+      ...companionContext,
     });
     const conversationId = extractConversationId(elevenLabsTwiml);
 
