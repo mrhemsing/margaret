@@ -259,7 +259,7 @@ export default async function AdminPage() {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <header className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">internal admin</p>
-        <h1 className="mt-3 max-w-2xl whitespace-nowrap text-2xl font-bold tracking-tight text-ink sm:text-4xl md:text-5xl">DailyCall operations</h1>
+        <h1 className="mt-3 max-w-2xl whitespace-nowrap text-3xl font-bold tracking-tight text-ink sm:text-4xl md:text-5xl">DailyCall operations</h1>
         <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600">
           Internal testing and operational view for live calls, members, free trials, billing readiness, and customer follow-up.
         </p>
