@@ -145,7 +145,7 @@ function formatCallDuration(call: DashboardMember["callAttempts"][number]) {
   if (!call.startedAt || !call.completedAt) return "Conversation time processing";
 
   const minutes = Math.max(1, Math.round((new Date(call.completedAt).getTime() - new Date(call.startedAt).getTime()) / 60000));
-  if (minutes <= 3) return "Short friendly check-in completed";
+  if (minutes <= 3) return "Friendly check-in completed";
   return `${minutes} ${minutes === 1 ? "minute" : "minutes"} conversation`;
 }
 
