@@ -323,7 +323,6 @@ function DashboardOverview({ members }: { members: DashboardMember[] }) {
     <section className="grid gap-4">
       <div className="px-1 py-2">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Family Dashboard</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">For {monitoredName}</h1>
       </div>
       <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
