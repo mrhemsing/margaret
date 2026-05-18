@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 
+const USER_SAFE_CALL_CONNECTION_ERROR = "The call was answered but could not be connected successfully.";
+
 async function getAuthenticatedCustomerId(request: Request) {
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : null;
@@ -99,8 +101,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ mem
 
     return NextResponse.json({ ok: true, member: updatedMember, callSid: result.sid ?? null });
   } catch (error) {
+    console.error("Dashboard manual call failed", error);
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Could not start the call." },
+      { ok: false, error: USER_SAFE_CALL_CONNECTION_ERROR },
       { status: 502 },
     );
   }

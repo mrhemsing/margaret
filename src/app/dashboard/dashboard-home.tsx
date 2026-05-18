@@ -176,8 +176,16 @@ function formatFriendlyStatus(value: string) {
   }
 }
 
+function isBackendErrorText(value: string) {
+  return /twilio|elevenlabs|bridge|bridging|backend|provider|api|webhook|credential|configured|configuration|sid|amd|convai|voicemail-safe|second number|server|fetch failed/i.test(value);
+}
+
+function translateCallError(value: string) {
+  return isBackendErrorText(value) ? "The call was answered but could not be connected successfully." : value;
+}
+
 function getFriendlyCallSummary(call: DashboardMember["callAttempts"][number]) {
-  if (call.summary) return call.summary;
+  if (call.summary) return translateCallError(call.summary);
   if (call.status === "FAILED" || call.status === "NO_RESPONSE") return "DailyCall will try again automatically when retries are available.";
   if (call.status === "SCHEDULED") return "DailyCall is scheduled and ready.";
   return "Call details will appear here after processing finishes.";
@@ -276,7 +284,7 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
   const nextCall = nextCalls[0] ?? null;
   const lastCall = completedCalls[0] ?? null;
   const statusLine = lastCall ? "Check-in completed" : activeMembers.length > 0 ? "Monitoring active" : "Monitoring paused";
-  const moodLine = lastCall?.call.mood ? `${lastCall.call.mood} mood` : lastCall ? "Mood summary pending" : "Waiting for first completed call";
+  const moodLine = lastCall?.call.mood ? lastCall.call.mood : lastCall ? "Mood summary pending" : "Waiting for first completed call";
   const durationLine = lastCall ? formatCallDuration(lastCall.call) : "Conversation details will appear here";
   const nextLine = formatNextCallLine(nextCall?.call.scheduledFor ?? null);
   const updatedLine = formatUpdatedAgo(members);
@@ -353,7 +361,7 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
       const result = (await response.json().catch(() => null)) as { ok?: boolean; member?: DashboardMember; error?: string } | null;
 
       if (!response.ok || !result?.ok || !result.member) {
-        throw new Error(result?.error ?? "Could not save changes.");
+        throw new Error(translateCallError(result?.error ?? "Could not save changes."));
       }
 
       onUpdated(result.member);
@@ -364,7 +372,7 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
       setMessage(panel === "profile" ? "Profile updated." : "Questions updated.");
       setEditPanel(null);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save changes.");
+      setError(saveError instanceof Error ? translateCallError(saveError.message) : "Could not save changes.");
     } finally {
       setSaving(null);
     }
@@ -389,13 +397,13 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
       const result = (await response.json().catch(() => null)) as { ok?: boolean; member?: DashboardMember; error?: string } | null;
 
       if (!response.ok || !result?.ok || !result.member) {
-        throw new Error(result?.error ?? "Could not start the call.");
+        throw new Error(translateCallError(result?.error ?? "Could not start the call."));
       }
 
       onUpdated(result.member);
       setMessage(`Calling ${result.member.name} now.`);
     } catch (callError) {
-      setError(callError instanceof Error ? callError.message : "Could not start the call.");
+      setError(callError instanceof Error ? translateCallError(callError.message) : "Could not start the call.");
     } finally {
       setCalling(false);
     }
