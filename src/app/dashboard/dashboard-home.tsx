@@ -321,22 +321,17 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
 
   return (
     <section className="grid gap-4">
-      <div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Account holder</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">{customerName}</h1>
-          </div>
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Monitoring</p>
-            <p className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">{monitoredName}</p>
-          </div>
+      <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
+        <p className="font-mono text-lg leading-8 text-cream/90 md:text-2xl md:leading-10">Family Dashboard</p>
+        <div className="mt-5 grid gap-1 font-mono text-lg leading-8 md:text-2xl md:leading-10">
+          <p>{customerName}</p>
+          <p>Monitoring {monitoredName}</p>
         </div>
-      </div>
+      </article>
       <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cream/70">Today</p>
+            <p className="font-mono text-lg uppercase tracking-[0.18em] text-cream/70 md:text-2xl">Today - {monitoredName}</p>
             <div className="mt-5 grid gap-3 font-mono text-lg leading-8 md:text-2xl md:leading-10">
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">✅</span><span className="min-w-0">{statusLine}</span></p>
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">😊</span><span className="min-w-0">{moodLine}</span></p>
