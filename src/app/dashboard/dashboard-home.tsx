@@ -71,7 +71,7 @@ function formatNextCallLine(value: string | null) {
   const dayLabel = sameDay ? "today" : nextDay ? "tomorrow" : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(callDate);
   const timeLabel = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(callDate);
 
-  return `Next call ${dayLabel} at ${timeLabel}`;
+  return `Next call: ${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}, ${timeLabel}`;
 }
 
 function formatUpdatedAgo(members: DashboardMember[]) {
