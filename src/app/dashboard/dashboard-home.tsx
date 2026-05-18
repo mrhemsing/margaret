@@ -311,7 +311,6 @@ function DashboardOverview({ members }: { members: DashboardMember[] }) {
 
   const nextCall = nextCalls[0] ?? null;
   const lastCall = completedCalls[0] ?? null;
-  const monitoredName = lastCall?.member.name ?? activeMembers[0]?.name ?? members[0]?.name ?? "your loved one";
   const statusLine = lastCall ? "Check-in completed" : activeMembers.length > 0 ? "Monitoring active" : "Monitoring paused";
   const moodLine = lastCall?.call.mood ? lastCall.call.mood : lastCall ? "Mood summary pending" : "Waiting for first completed call";
   const durationLine = lastCall ? formatCallDuration(lastCall.call) : "Conversation details will appear here";
