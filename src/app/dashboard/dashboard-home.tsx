@@ -730,10 +730,6 @@ export function DashboardHome() {
       <DashboardOverview members={state.customer.members} />
 
       <section className="grid gap-4">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">Family dashboard</p>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-ink">Loved ones</h2>
-        </div>
         {state.customer.members.map((member) => (
           <MemberCard key={member.id} member={member} onUpdated={updateMember} />
         ))}
