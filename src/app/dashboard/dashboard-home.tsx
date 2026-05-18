@@ -58,6 +58,22 @@ function formatDateTime(value: string | null) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
+function formatNextCallLine(value: string | null) {
+  if (!value) return "Next call not scheduled yet";
+
+  const callDate = new Date(value);
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+
+  const sameDay = callDate.toDateString() === today.toDateString();
+  const nextDay = callDate.toDateString() === tomorrow.toDateString();
+  const dayLabel = sameDay ? "today" : nextDay ? "tomorrow" : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(callDate);
+  const timeLabel = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(callDate);
+
+  return `Next call ${dayLabel} at ${timeLabel}`;
+}
+
 function formatDateWithDaysRemaining(value: string | null) {
   if (!value) return "Pending";
 
@@ -240,11 +256,10 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
 
   const nextCall = nextCalls[0] ?? null;
   const lastCall = completedCalls[0] ?? null;
-  const statusName = lastCall?.member.name ?? activeMembers[0]?.name ?? "DailyCall";
-  const statusText = lastCall ? "Check-in completed" : activeMembers.length > 0 ? "Monitoring is active" : "Monitoring is paused";
-  const moodLine = lastCall?.call.mood ? `Mood: ${lastCall.call.mood}` : lastCall ? "Summary ready" : "Waiting for first completed call";
+  const statusLine = lastCall ? "Check-in completed" : activeMembers.length > 0 ? "Monitoring active" : "Monitoring paused";
+  const moodLine = lastCall?.call.mood ? `${lastCall.call.mood} mood` : lastCall ? "Mood summary pending" : "Waiting for first completed call";
   const durationLine = lastCall ? formatCallDuration(lastCall.call) : "Conversation details will appear here";
-  const nextLine = nextCall ? `Next call ${formatDateTime(nextCall.call.scheduledFor)}` : "Next call not scheduled yet";
+  const nextLine = formatNextCallLine(nextCall?.call.scheduledFor ?? null);
 
   return (
     <section className="grid gap-4">
@@ -257,16 +272,10 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cream/70">Today</p>
             <div className="mt-5 grid gap-3 font-mono text-lg leading-8 md:text-2xl md:leading-10">
-              <p className="flex items-start gap-3">
-                <span className="text-emerald-300">✓</span>
-                <span>
-                  <span className="block">{statusName}</span>
-                  <span className="block">{statusText}</span>
-                </span>
-              </p>
-              <p><span className="mr-3 text-sunrise">•</span>{moodLine}</p>
-              <p><span className="mr-3 text-brandBlue">•</span>{durationLine}</p>
-              <p><span className="mr-3 text-brandPink">•</span>{nextLine}</p>
+              <p><span className="mr-3">✅</span>{statusLine}</p>
+              <p><span className="mr-3">😊</span>{moodLine}</p>
+              <p><span className="mr-3">⏱️</span>{durationLine}</p>
+              <p><span className="mr-3">📅</span>{nextLine}</p>
             </div>
           </div>
           <p className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-cream/80">Updated recently</p>
