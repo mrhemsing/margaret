@@ -24,8 +24,11 @@ type DashboardCustomer = {
     callAttempts: Array<{
       id: string;
       scheduledFor: string;
+      startedAt: string | null;
+      completedAt: string | null;
       status: string;
       summary: string | null;
+      mood: string | null;
     }>;
   }>;
   subscriptions: Array<{
@@ -85,6 +88,13 @@ function normalizeQuestions(value: string[]) {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 10);
+}
+
+function formatCallDuration(call: DashboardMember["callAttempts"][number]) {
+  if (!call.startedAt || !call.completedAt) return "Conversation time processing";
+
+  const minutes = Math.max(1, Math.round((new Date(call.completedAt).getTime() - new Date(call.startedAt).getTime()) / 60000));
+  return `${minutes} ${minutes === 1 ? "minute" : "minutes"} conversation`;
 }
 
 function sortCallsNewestFirst(calls: DashboardMember["callAttempts"]) {
@@ -217,7 +227,7 @@ function DashboardSkeleton() {
   );
 }
 
-function DashboardOverview({ members }: { members: DashboardMember[] }) {
+function DashboardOverview({ customerName, members }: { customerName: string; members: DashboardMember[] }) {
   const activeMembers = members.filter((member) => member.active);
   const nextCalls = members
     .map((member) => ({ member, call: getNextCall(member) }))
@@ -230,40 +240,31 @@ function DashboardOverview({ members }: { members: DashboardMember[] }) {
 
   const nextCall = nextCalls[0] ?? null;
   const lastCall = completedCalls[0] ?? null;
-  const headline = activeMembers.length > 0 ? "Everything looks good today" : "Monitoring is paused";
-  const detail = lastCall
-    ? `${lastCall.member.name} completed a check-in ${formatDateTime(lastCall.call.scheduledFor)}.`
-    : activeMembers.length > 0
-      ? "DailyCall is watching the schedule and will show completed check-ins here."
-      : "Turn a loved one back on when you are ready for DailyCall to resume check-ins.";
+  const statusLine = lastCall ? `${lastCall.member.name} check-in completed` : activeMembers.length > 0 ? "DailyCall monitoring is active" : "DailyCall monitoring is paused";
+  const moodLine = lastCall?.call.mood ? `Mood: ${lastCall.call.mood}` : lastCall ? "Summary ready" : "Waiting for first completed call";
+  const durationLine = lastCall ? formatCallDuration(lastCall.call) : "Conversation details will appear here";
+  const nextLine = nextCall ? `Next call ${formatDateTime(nextCall.call.scheduledFor)}` : "Next call not scheduled yet";
 
   return (
-    <section className="rounded-[2rem] bg-white/85 p-5 shadow-sm ring-1 ring-black/5 md:p-7">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch">
-        <div className="flex min-w-0 flex-1 gap-4">
-          <span className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200">
-            <span className="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.14)]" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sage">Today</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">{headline}</h1>
-            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">{detail}</p>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Updated recently</p>
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:w-[28rem]">
-          <article className="rounded-2xl bg-slate-50 p-4 ring-1 ring-black/5">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Last successful call</p>
-            <p className="mt-2 text-lg font-bold leading-snug text-ink">{lastCall ? lastCall.member.name : "Pending"}</p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">{lastCall ? formatDateTime(lastCall.call.scheduledFor) : "No completed calls yet"}</p>
-          </article>
-          <article className="rounded-2xl bg-slate-50 p-4 ring-1 ring-black/5">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Next scheduled call</p>
-            <p className="mt-2 text-lg font-bold leading-snug text-ink">{nextCall ? nextCall.member.name : "Pending"}</p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">{nextCall ? formatDateTime(nextCall.call.scheduledFor) : "No upcoming call set"}</p>
-          </article>
-        </div>
+    <section className="grid gap-4">
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Family dashboard</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">{customerName}</h1>
       </div>
+      <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
+        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cream/70">Today</p>
+            <div className="mt-5 grid gap-3 font-mono text-lg leading-8 md:text-2xl md:leading-10">
+              <p><span className="mr-3 text-emerald-300">✓</span>{statusLine}</p>
+              <p><span className="mr-3 text-sunrise">•</span>{moodLine}</p>
+              <p><span className="mr-3 text-brandBlue">•</span>{durationLine}</p>
+              <p><span className="mr-3 text-brandPink">•</span>{nextLine}</p>
+            </div>
+          </div>
+          <p className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-cream/80">Updated recently</p>
+        </div>
+      </article>
     </section>
   );
 }
@@ -642,7 +643,7 @@ export function DashboardHome() {
 
   return (
     <div className="grid gap-6">
-      <DashboardOverview members={state.customer.members} />
+      <DashboardOverview customerName={state.customer.fullName} members={state.customer.members} />
 
       <section className="grid gap-4">
         <div>
