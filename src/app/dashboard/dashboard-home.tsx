@@ -74,6 +74,25 @@ function formatNextCallLine(value: string | null) {
   return `Next call ${dayLabel} at ${timeLabel}`;
 }
 
+function formatUpdatedAgo(members: DashboardMember[]) {
+  const timestamps = members.flatMap((member) => member.callAttempts.map((call) => call.completedAt ?? call.startedAt ?? call.scheduledFor));
+  const latest = timestamps
+    .map((value) => new Date(value).getTime())
+    .filter((value) => Number.isFinite(value))
+    .sort((first, second) => second - first)[0];
+
+  if (!latest) return "Updated just now";
+
+  const minutes = Math.max(1, Math.round((Date.now() - latest) / 60000));
+  if (minutes < 60) return `Updated ${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `Updated ${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+
+  const days = Math.round(hours / 24);
+  return `Updated ${days} ${days === 1 ? "day" : "days"} ago`;
+}
+
 function formatDateWithDaysRemaining(value: string | null) {
   if (!value) return "Pending";
 
@@ -260,6 +279,7 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
   const moodLine = lastCall?.call.mood ? `${lastCall.call.mood} mood` : lastCall ? "Mood summary pending" : "Waiting for first completed call";
   const durationLine = lastCall ? formatCallDuration(lastCall.call) : "Conversation details will appear here";
   const nextLine = formatNextCallLine(nextCall?.call.scheduledFor ?? null);
+  const updatedLine = formatUpdatedAgo(members);
 
   return (
     <section className="grid gap-4">
@@ -278,7 +298,7 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
               <p><span className="mr-3">📅</span>{nextLine}</p>
             </div>
           </div>
-          <p className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-cream/80">Updated recently</p>
+          <p className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-cream/80">{updatedLine}</p>
         </div>
       </article>
     </section>
