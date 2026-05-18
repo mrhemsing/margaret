@@ -321,12 +321,10 @@ function DashboardOverview({ members }: { members: DashboardMember[] }) {
 
   return (
     <section className="grid gap-4">
-      <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
-        <p className="font-mono text-lg leading-8 text-cream/90 md:text-2xl md:leading-10">Family Dashboard</p>
-        <div className="mt-5 grid gap-1 font-mono text-lg leading-8 md:text-2xl md:leading-10">
-          <p>For {monitoredName}</p>
-        </div>
-      </article>
+      <div className="px-1 py-2">
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Family Dashboard</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">For {monitoredName}</h1>
+      </div>
       <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
