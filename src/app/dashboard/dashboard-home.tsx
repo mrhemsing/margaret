@@ -74,6 +74,22 @@ function formatNextCallLine(value: string | null) {
   return `Next call: ${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}, ${timeLabel}`;
 }
 
+function formatNextCallParts(value: string | null) {
+  if (!value) return null;
+
+  const callDate = new Date(value);
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+
+  const sameDay = callDate.toDateString() === today.toDateString();
+  const nextDay = callDate.toDateString() === tomorrow.toDateString();
+  const dayLabel = sameDay ? "Today" : nextDay ? "Tomorrow" : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(callDate);
+  const timeLabel = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(callDate);
+
+  return { dayLabel, timeLabel };
+}
+
 function formatUpdatedAgo(members: DashboardMember[]) {
   const timestamps = members.flatMap((member) => member.callAttempts.map((call) => call.completedAt ?? call.startedAt ?? call.scheduledFor));
   const latest = timestamps
@@ -288,6 +304,7 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
   const moodLine = lastCall?.call.mood ? lastCall.call.mood : lastCall ? "Mood summary pending" : "Waiting for first completed call";
   const durationLine = lastCall ? formatCallDuration(lastCall.call) : "Conversation details will appear here";
   const nextLine = formatNextCallLine(nextCall?.call.scheduledFor ?? null);
+  const nextParts = formatNextCallParts(nextCall?.call.scheduledFor ?? null);
   const updatedLine = formatUpdatedAgo(members);
 
   return (
@@ -304,7 +321,14 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
               <p><span className="mr-3">✅</span>{statusLine}</p>
               <p><span className="mr-3">😊</span>{moodLine}</p>
               <p><span className="mr-3">⏱️</span>{durationLine}</p>
-              <p><span className="mr-3">📅</span>{nextLine}</p>
+              {nextParts ? (
+                <p>
+                  <span className="block"><span className="mr-3">📅</span>Next call</span>
+                  <span className="block pl-10">{nextParts.dayLabel}, {nextParts.timeLabel}</span>
+                </p>
+              ) : (
+                <p><span className="mr-3">📅</span>{nextLine}</p>
+              )}
             </div>
           </div>
           <p className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-cream/80">{updatedLine}</p>
