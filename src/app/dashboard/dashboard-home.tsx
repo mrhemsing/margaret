@@ -298,7 +298,7 @@ function DashboardSkeleton() {
   );
 }
 
-function DashboardOverview({ customerName, members }: { customerName: string; members: DashboardMember[] }) {
+function DashboardOverview({ members }: { members: DashboardMember[] }) {
   const activeMembers = members.filter((member) => member.active);
   const nextCalls = members
     .map((member) => ({ member, call: getNextCall(member) }))
@@ -729,7 +729,7 @@ export function DashboardHome() {
 
   return (
     <div className="grid gap-6">
-      <DashboardOverview customerName={state.customer.fullName} members={state.customer.members} />
+      <DashboardOverview members={state.customer.members} />
 
       <section className="grid gap-4">
         <div>
