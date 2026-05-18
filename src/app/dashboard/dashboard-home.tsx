@@ -329,16 +329,19 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cream/70">Today</p>
             <div className="mt-5 grid gap-3 font-mono text-lg leading-8 md:text-2xl md:leading-10">
-              <p><span className="mr-3">✅</span>{statusLine}</p>
-              <p><span className="mr-3">😊</span>{moodLine}</p>
-              <p><span className="mr-3">⏱️</span>{durationLine}</p>
+              <p className="flex items-start gap-3"><span className="w-12 shrink-0">✅</span><span className="min-w-0">{statusLine}</span></p>
+              <p className="flex items-start gap-3"><span className="w-12 shrink-0">😊</span><span className="min-w-0">{moodLine}</span></p>
+              <p className="flex items-start gap-3"><span className="w-12 shrink-0">⏱️</span><span className="min-w-0">{durationLine}</span></p>
               {nextParts ? (
-                <p>
-                  <span className="block"><span className="mr-3">📅</span>Next call</span>
-                  <span className="block pl-10">{nextParts.dayLabel}, {nextParts.timeLabel}</span>
+                <p className="flex items-start gap-3">
+                  <span className="w-12 shrink-0">📅</span>
+                  <span className="min-w-0">
+                    <span className="block">Next call</span>
+                    <span className="block">{nextParts.dayLabel}, {nextParts.timeLabel}</span>
+                  </span>
                 </p>
               ) : (
-                <p><span className="mr-3">📅</span>{nextLine}</p>
+                <p className="flex items-start gap-3"><span className="w-12 shrink-0">📅</span><span className="min-w-0">{nextLine}</span></p>
               )}
             </div>
           </div>
