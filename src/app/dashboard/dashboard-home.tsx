@@ -327,7 +327,7 @@ function DashboardOverview({ members }: { members: DashboardMember[] }) {
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="font-mono text-sm uppercase tracking-[0.18em] text-cream/70 md:text-base">Today</p>
-            <div className="mt-4 grid gap-2 text-lg leading-8 md:text-xl md:leading-8">
+            <div className="mt-4 grid gap-2 text-xl leading-8 md:text-xl md:leading-8">
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">✅</span><span className="min-w-0">{statusLine}</span></p>
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">😊</span><span className="min-w-0">{moodLine}</span></p>
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">⏱️</span><span className="min-w-0">{durationLine}</span></p>
