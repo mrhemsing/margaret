@@ -18,8 +18,8 @@ export async function generateMetadata({ params }: { params: Promise<{ contact: 
 }
 
 const exampleContacts: Record<Contact, { name: string; phone: string; title: string }> = {
-  matt: { name: "Matt", phone: "+1 604 313 8398", title: "Matt's DailyCall dashboard" },
-  chuck: { name: "Chuck", phone: "+1 306 880 2055", title: "Chuck's DailyCall dashboard" },
+  matt: { name: "Matt", phone: "+1 604 313 8398", title: "Matt Hemsing" },
+  chuck: { name: "Chuck", phone: "+1 306 880 2055", title: "Chuck" },
 };
 
 const fallbackMetrics = [
@@ -314,7 +314,10 @@ export default async function MemberDashboardPage({ params }: { params: Promise<
       <header className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">example member dashboard</p>
         <div className="mt-4">
-          <h1 className="text-4xl font-bold tracking-tight text-ink md:text-5xl">{profile.title}</h1>
+          <h1 className="font-bold tracking-tight text-ink">
+            <span className="block text-4xl md:text-5xl">Welcome,</span>
+            <span className="mt-1 block text-4xl md:text-5xl">{profile.title}</span>
+          </h1>
           <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
             Focused test space for {profile.name}: calls, transcripts, memory, and retention signals.
           </p>
