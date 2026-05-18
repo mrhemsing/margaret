@@ -298,7 +298,7 @@ function DashboardSkeleton() {
   );
 }
 
-function DashboardOverview({ members }: { members: DashboardMember[] }) {
+function DashboardOverview({ customerName, members }: { customerName: string; members: DashboardMember[] }) {
   const activeMembers = members.filter((member) => member.active);
   const nextCalls = members
     .map((member) => ({ member, call: getNextCall(member) }))
@@ -322,8 +322,16 @@ function DashboardOverview({ members }: { members: DashboardMember[] }) {
   return (
     <section className="grid gap-4">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Family dashboard</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">Monitoring {monitoredName}</h1>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Account holder</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">{customerName}</h1>
+          </div>
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Monitoring</p>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">{monitoredName}</p>
+          </div>
+        </div>
       </div>
       <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
@@ -727,7 +735,7 @@ export function DashboardHome() {
 
   return (
     <div className="grid gap-6">
-      <DashboardOverview members={state.customer.members} />
+      <DashboardOverview customerName={state.customer.fullName} members={state.customer.members} />
 
       <section className="grid gap-4">
         <div>
