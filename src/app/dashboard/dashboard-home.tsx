@@ -230,27 +230,27 @@ function DashboardSkeleton() {
           <SkeletonBlock className="h-3 w-40" />
           <SkeletonBlock className="mt-3 h-9 w-56 max-w-full md:h-10" />
         </div>
-        <article className="rounded-[1.5rem] bg-[#174a62] p-4 text-cream shadow-sm ring-1 ring-black/10 md:p-5">
+        <article className="rounded-[1.5rem] bg-[#e8f5f7] p-4 text-[#143746] shadow-sm ring-1 ring-[#c3dde3] md:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0 flex-1">
-              <div className="h-3 w-24 rounded-full bg-white/20" />
+              <div className="h-3 w-24 rounded-full bg-[#174a62]/20" />
               <div className="mt-4 grid gap-3">
                 {[0, 1, 2].map((item) => (
                   <div key={item} className="flex items-center gap-3">
-                    <div className="h-7 w-7 rounded-full bg-white/15" />
-                    <div className="h-6 w-64 max-w-[75%] rounded-full bg-white/15" />
+                    <div className="h-7 w-7 rounded-full bg-[#174a62]/15" />
+                    <div className="h-6 w-64 max-w-[75%] rounded-full bg-[#174a62]/15" />
                   </div>
                 ))}
                 <div className="flex items-start gap-3">
-                  <div className="h-7 w-7 rounded-full bg-white/15" />
+                  <div className="h-7 w-7 rounded-full bg-[#174a62]/15" />
                   <div className="grid flex-1 gap-3">
-                    <div className="h-6 w-36 rounded-full bg-white/15" />
-                    <div className="h-6 w-52 rounded-full bg-white/15" />
+                    <div className="h-6 w-36 rounded-full bg-[#174a62]/15" />
+                    <div className="h-6 w-52 rounded-full bg-[#174a62]/15" />
                   </div>
                 </div>
               </div>
             </div>
-            <div className="h-7 w-36 rounded-full bg-white/15" />
+            <div className="h-7 w-36 rounded-full bg-[#174a62]/15" />
           </div>
         </article>
       </section>
@@ -323,10 +323,10 @@ function DashboardOverview({ members }: { members: DashboardMember[] }) {
       <div className="px-1 py-2">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Family Dashboard</p>
       </div>
-      <article className="rounded-[1.5rem] bg-[#174a62] p-4 text-cream shadow-sm ring-1 ring-black/10 md:p-5">
+      <article className="rounded-[1.5rem] bg-[#e8f5f7] p-4 text-[#143746] shadow-sm ring-1 ring-[#c3dde3] md:p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="font-mono text-sm uppercase tracking-[0.18em] text-cream/70 md:text-base">Today</p>
+            <p className="font-mono text-sm uppercase tracking-[0.18em] text-[#4f7b86] md:text-base">Today</p>
             <div className="mt-4 grid gap-2 text-xl leading-8 md:text-xl md:leading-8">
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">✅</span><span className="min-w-0">{statusLine}</span></p>
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">😊</span><span className="min-w-0">{moodLine}</span></p>
@@ -344,7 +344,7 @@ function DashboardOverview({ members }: { members: DashboardMember[] }) {
               )}
             </div>
           </div>
-          <p className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-cream/80">{updatedLine}</p>
+          <p className="rounded-full bg-white/70 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#174a62] ring-1 ring-[#c3dde3]">{updatedLine}</p>
         </div>
       </article>
     </section>
