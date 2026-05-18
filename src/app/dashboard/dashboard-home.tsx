@@ -330,7 +330,7 @@ function DashboardOverview({ members }: { members: DashboardMember[] }) {
       <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="font-mono text-lg uppercase tracking-[0.18em] text-cream/70 md:text-2xl">Today - {monitoredName}</p>
+            <p className="font-mono text-lg uppercase tracking-[0.18em] text-cream/70 md:text-2xl">Today</p>
             <div className="mt-5 grid gap-3 font-mono text-lg leading-8 md:text-2xl md:leading-10">
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">✅</span><span className="min-w-0">{statusLine}</span></p>
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">😊</span><span className="min-w-0">{moodLine}</span></p>
