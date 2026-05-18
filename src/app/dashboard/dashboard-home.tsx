@@ -325,7 +325,7 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
         <p className="font-mono text-lg leading-8 text-cream/90 md:text-2xl md:leading-10">Family Dashboard</p>
         <div className="mt-5 grid gap-1 font-mono text-lg leading-8 md:text-2xl md:leading-10">
           <p>{customerName}</p>
-          <p>Monitoring {monitoredName}</p>
+          <p>Caring for {monitoredName}</p>
         </div>
       </article>
       <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
