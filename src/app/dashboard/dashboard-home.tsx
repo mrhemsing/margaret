@@ -230,11 +230,11 @@ function DashboardSkeleton() {
           <SkeletonBlock className="h-3 w-40" />
           <SkeletonBlock className="mt-3 h-9 w-56 max-w-full md:h-10" />
         </div>
-        <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
-          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+        <article className="rounded-[1.5rem] bg-[#174a62] p-4 text-cream shadow-sm ring-1 ring-black/10 md:p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0 flex-1">
               <div className="h-3 w-24 rounded-full bg-white/20" />
-              <div className="mt-5 grid gap-4">
+              <div className="mt-4 grid gap-3">
                 {[0, 1, 2].map((item) => (
                   <div key={item} className="flex items-center gap-3">
                     <div className="h-7 w-7 rounded-full bg-white/15" />
@@ -323,11 +323,11 @@ function DashboardOverview({ members }: { members: DashboardMember[] }) {
       <div className="px-1 py-2">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Family Dashboard</p>
       </div>
-      <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
-        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+      <article className="rounded-[1.5rem] bg-[#174a62] p-4 text-cream shadow-sm ring-1 ring-black/10 md:p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="font-mono text-lg uppercase tracking-[0.18em] text-cream/70 md:text-2xl">Today</p>
-            <div className="mt-5 grid gap-3 font-mono text-lg leading-8 md:text-2xl md:leading-10">
+            <p className="font-mono text-sm uppercase tracking-[0.18em] text-cream/70 md:text-base">Today</p>
+            <div className="mt-4 grid gap-2 text-base leading-7 md:text-xl md:leading-8">
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">✅</span><span className="min-w-0">{statusLine}</span></p>
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">😊</span><span className="min-w-0">{moodLine}</span></p>
               <p className="flex items-start gap-2 md:gap-3"><span className="w-8 shrink-0 md:w-12">⏱️</span><span className="min-w-0">{durationLine}</span></p>
@@ -456,7 +456,6 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-semibold uppercase tracking-wide text-sage">Loved one</p>
               <span className={"inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-bold " + (member.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600")}>
                 <span className={"h-2 w-2 rounded-full " + (member.active ? "bg-emerald-500" : "bg-slate-400")} />
                 {member.active ? "Active" : "Paused"}
@@ -472,7 +471,7 @@ function MemberCard({ member, onUpdated }: { member: DashboardMember; onUpdated:
           disabled={calling || !member.active}
           className="inline-flex w-full items-center justify-center rounded-full bg-brandButtonBlue px-5 py-3 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
         >
-          {calling ? `Calling ${member.name}...` : `Call ${member.name} now`}
+          {calling ? `Calling ${member.name}...` : "Call Now"}
         </button>
       </div>
 
