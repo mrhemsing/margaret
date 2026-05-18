@@ -240,7 +240,8 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
 
   const nextCall = nextCalls[0] ?? null;
   const lastCall = completedCalls[0] ?? null;
-  const statusLine = lastCall ? `${lastCall.member.name} check-in completed` : activeMembers.length > 0 ? "DailyCall monitoring is active" : "DailyCall monitoring is paused";
+  const statusName = lastCall?.member.name ?? activeMembers[0]?.name ?? "DailyCall";
+  const statusText = lastCall ? "Check-in completed" : activeMembers.length > 0 ? "Monitoring is active" : "Monitoring is paused";
   const moodLine = lastCall?.call.mood ? `Mood: ${lastCall.call.mood}` : lastCall ? "Summary ready" : "Waiting for first completed call";
   const durationLine = lastCall ? formatCallDuration(lastCall.call) : "Conversation details will appear here";
   const nextLine = nextCall ? `Next call ${formatDateTime(nextCall.call.scheduledFor)}` : "Next call not scheduled yet";
@@ -256,7 +257,13 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cream/70">Today</p>
             <div className="mt-5 grid gap-3 font-mono text-lg leading-8 md:text-2xl md:leading-10">
-              <p><span className="mr-3 text-emerald-300">✓</span>{statusLine}</p>
+              <p className="flex items-start gap-3">
+                <span className="text-emerald-300">✓</span>
+                <span>
+                  <span className="block">{statusName}</span>
+                  <span className="block">{statusText}</span>
+                </span>
+              </p>
               <p><span className="mr-3 text-sunrise">•</span>{moodLine}</p>
               <p><span className="mr-3 text-brandBlue">•</span>{durationLine}</p>
               <p><span className="mr-3 text-brandPink">•</span>{nextLine}</p>
