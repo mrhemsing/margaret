@@ -298,7 +298,7 @@ function DashboardSkeleton() {
   );
 }
 
-function DashboardOverview({ customerName, members }: { customerName: string; members: DashboardMember[] }) {
+function DashboardOverview({ members }: { members: DashboardMember[] }) {
   const activeMembers = members.filter((member) => member.active);
   const nextCalls = members
     .map((member) => ({ member, call: getNextCall(member) }))
@@ -311,6 +311,7 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
 
   const nextCall = nextCalls[0] ?? null;
   const lastCall = completedCalls[0] ?? null;
+  const monitoredName = lastCall?.member.name ?? activeMembers[0]?.name ?? members[0]?.name ?? "your loved one";
   const statusLine = lastCall ? "Check-in completed" : activeMembers.length > 0 ? "Monitoring active" : "Monitoring paused";
   const moodLine = lastCall?.call.mood ? lastCall.call.mood : lastCall ? "Mood summary pending" : "Waiting for first completed call";
   const durationLine = lastCall ? formatCallDuration(lastCall.call) : "Conversation details will appear here";
@@ -322,7 +323,7 @@ function DashboardOverview({ customerName, members }: { customerName: string; me
     <section className="grid gap-4">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Family dashboard</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">{customerName}</h1>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">Monitoring {monitoredName}</h1>
       </div>
       <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
@@ -726,7 +727,7 @@ export function DashboardHome() {
 
   return (
     <div className="grid gap-6">
-      <DashboardOverview customerName={state.customer.fullName} members={state.customer.members} />
+      <DashboardOverview members={state.customer.members} />
 
       <section className="grid gap-4">
         <div>
