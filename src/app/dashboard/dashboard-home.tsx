@@ -225,63 +225,74 @@ function SkeletonBlock({ className }: { className: string }) {
 function DashboardSkeleton() {
   return (
     <div className="grid gap-6" aria-label="Loading dashboard">
-      <section className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5 md:p-10">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
-          <div className="grid gap-6">
-            <div>
-              <SkeletonBlock className="h-3 w-36" />
-              <SkeletonBlock className="mt-5 h-10 w-64 max-w-full md:h-12 md:w-96" />
-              <div className="mt-5 grid max-w-3xl gap-3">
-                <SkeletonBlock className="h-4 w-full" />
-                <SkeletonBlock className="h-4 w-10/12" />
-              </div>
-            </div>
-
-            <article className="rounded-3xl bg-slate-50 p-5 ring-1 ring-black/5">
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="min-w-0 flex-1">
-                  <SkeletonBlock className="h-3 w-24" />
-                  <SkeletonBlock className="mt-4 h-7 w-44" />
-                  <SkeletonBlock className="mt-4 h-4 w-72 max-w-full" />
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <SkeletonBlock className="h-9 w-24" />
-                    <SkeletonBlock className="h-9 w-28" />
-                    <SkeletonBlock className="h-9 w-32" />
+      <section className="grid gap-4">
+        <div>
+          <SkeletonBlock className="h-3 w-40" />
+          <SkeletonBlock className="mt-3 h-9 w-56 max-w-full md:h-10" />
+        </div>
+        <article className="rounded-[1.5rem] bg-brandNavy p-5 text-cream shadow-sm ring-1 ring-black/10 md:p-7">
+          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="h-3 w-24 rounded-full bg-white/20" />
+              <div className="mt-5 grid gap-4">
+                {[0, 1, 2].map((item) => (
+                  <div key={item} className="flex items-center gap-3">
+                    <div className="h-7 w-7 rounded-full bg-white/15" />
+                    <div className="h-6 w-64 max-w-[75%] rounded-full bg-white/15" />
+                  </div>
+                ))}
+                <div className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-full bg-white/15" />
+                  <div className="grid flex-1 gap-3">
+                    <div className="h-6 w-36 rounded-full bg-white/15" />
+                    <div className="h-6 w-52 rounded-full bg-white/15" />
                   </div>
                 </div>
-                <SkeletonBlock className="h-7 w-20" />
               </div>
-
-              <div className="mt-5 grid gap-4">
-                <section className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
-                  <SkeletonBlock className="h-4 w-36" />
-                  <div className="mt-4 rounded-2xl bg-brandBlue/10 p-4 ring-1 ring-brandBlue/10">
-                    <SkeletonBlock className="h-6 w-48" />
-                    <SkeletonBlock className="mt-3 h-4 w-32" />
-                  </div>
-                </section>
-                <section className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
-                  <SkeletonBlock className="h-4 w-24" />
-                  <div className="mt-4 grid gap-3">
-                    <SkeletonBlock className="h-4 w-full" />
-                    <SkeletonBlock className="h-4 w-11/12" />
-                    <SkeletonBlock className="h-4 w-8/12" />
-                  </div>
-                </section>
-              </div>
-            </article>
+            </div>
+            <div className="h-7 w-36 rounded-full bg-white/15" />
           </div>
+        </article>
+      </section>
 
-          <div className="grid gap-3">
-            {[0, 1, 2].map((item) => (
-              <article key={item} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-black/5">
+      <section className="grid gap-4">
+        <div>
+          <SkeletonBlock className="h-3 w-36" />
+          <SkeletonBlock className="mt-3 h-7 w-32" />
+        </div>
+        <article className="rounded-[1.5rem] bg-slate-50 p-4 ring-1 ring-black/5 md:p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex min-w-0 gap-4">
+              <SkeletonBlock className="h-14 w-14 shrink-0" />
+              <div className="min-w-0">
                 <SkeletonBlock className="h-3 w-24" />
-                <SkeletonBlock className="mt-3 h-7 w-28" />
-                <SkeletonBlock className="mt-3 h-4 w-40" />
-              </article>
+                <SkeletonBlock className="mt-4 h-7 w-44" />
+                <SkeletonBlock className="mt-4 h-4 w-56 max-w-full" />
+              </div>
+            </div>
+            <SkeletonBlock className="h-11 w-full md:w-40" />
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
+                <SkeletonBlock className="h-3 w-24" />
+                <SkeletonBlock className="mt-3 h-5 w-32" />
+                <SkeletonBlock className="mt-3 h-4 w-40 max-w-full" />
+              </div>
             ))}
           </div>
-        </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <SkeletonBlock className="h-9 w-24" />
+            <SkeletonBlock className="h-9 w-28" />
+          </div>
+          <section className="mt-5 rounded-2xl bg-white p-4 ring-1 ring-black/5">
+            <SkeletonBlock className="h-4 w-28" />
+            <div className="mt-4 grid gap-3">
+              <SkeletonBlock className="h-20 w-full rounded-2xl" />
+              <SkeletonBlock className="h-20 w-full rounded-2xl" />
+            </div>
+          </section>
+        </article>
       </section>
     </div>
   );
