@@ -16,10 +16,11 @@ export type SiteHeaderLink = {
 type SiteHeaderProps = {
   showLoginLink?: boolean;
   showTrialButton?: boolean;
+  showAccountControls?: boolean;
   links?: SiteHeaderLink[];
 };
 
-export function SiteHeader({ showLoginLink = true, showTrialButton = false, links = [] }: SiteHeaderProps) {
+export function SiteHeader({ showLoginLink = true, showTrialButton = false, showAccountControls = true, links = [] }: SiteHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [accountEmail, setAccountEmail] = useState<string | null | undefined>(undefined);
@@ -83,7 +84,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
   return (
     <div className="flex flex-col gap-1">
       <div className="relative h-5 min-h-5 px-2 text-sm font-semibold text-slate-600">
-        {accountEmail ? (
+        {showAccountControls && accountEmail ? (
           <div className="absolute right-2 top-0 flex items-center gap-2">
             {isDashboardPage ? (
               dashboardLoading ? (
@@ -114,7 +115,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = false, link
               </svg>
             </Link>
           </div>
-        ) : authChecked && showLoginLink ? (
+        ) : showAccountControls && authChecked && showLoginLink ? (
           <Link href="/login" className="absolute right-2 top-0 whitespace-nowrap hover:text-ink">
             Existing user? Login
           </Link>

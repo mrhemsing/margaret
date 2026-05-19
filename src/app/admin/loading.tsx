@@ -11,7 +11,7 @@ export default function AdminLoading() {
       <div className="absolute right-6 top-4 z-10 inline-flex w-20 items-center justify-end whitespace-nowrap text-sm font-bold text-ink md:right-10" aria-live="polite">
         Loading<span className="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
       </div>
-      <SiteHeader showLoginLink={false} />
+      <SiteHeader showLoginLink={false} showAccountControls={false} />
 
       <header className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5">
         <SkeletonBlock className="h-3 w-36" />
