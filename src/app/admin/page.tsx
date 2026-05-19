@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { CallTestPanel } from "@/app/components/call-test-panel";
+import { SiteHeader } from "@/app/components/site-header";
 import { ADMIN_AUTH_COOKIE, hashAdminPassword, isAdminAuthenticated } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
 import { sampleCallAttempts, sampleMembers } from "@/lib/sample-data";
@@ -58,8 +59,10 @@ async function signOutAdminDashboard() {
 
 function AdminPasswordGate({ failed }: { failed: boolean }) {
   return (
-    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center px-6 py-8">
-      <section className="rounded-[2rem] bg-white/90 p-8 shadow-sm ring-1 ring-black/5">
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-5 md:px-10">
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
+      <SiteHeader showLoginLink={false} />
+      <section className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center rounded-[2rem] bg-white/90 p-8 shadow-sm ring-1 ring-black/5">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">internal admin</p>
         <h1 className="mt-3 whitespace-nowrap text-3xl font-bold tracking-tight text-ink sm:text-4xl">DailyCall operations</h1>
         {process.env.ADMIN_DASHBOARD_PASSWORD ? (
@@ -334,7 +337,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
   const demoReportRows = allReportRows.filter((attempt) => attempt.isDemo).slice(0, 8);
 
   return (
-    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-8 md:px-10">
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-5 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <form action={signOutAdminDashboard} className="absolute right-6 top-4 z-10 md:right-10">
@@ -342,6 +345,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
           Sign out
         </button>
       </form>
+      <SiteHeader showLoginLink={false} />
       <header className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">internal admin</p>
         <h1 className="mt-3 max-w-2xl whitespace-nowrap text-3xl font-bold tracking-tight text-ink sm:text-4xl md:text-5xl">DailyCall operations</h1>
