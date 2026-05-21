@@ -6,7 +6,7 @@ export const voiceOptions = [
     name: "Female Companion",
     gender: "Female",
     description: "Soft, caring Marin voice for everyday check-ins.",
-    imagePath: "/voices/marin-companion-35.webp",
+    imagePath: "/voices/marin-companion-tied-back-35.webp",
     openAIRealtimeVoice: "marin",
   },
   {
