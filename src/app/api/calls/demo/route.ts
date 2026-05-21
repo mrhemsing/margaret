@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { getCachedCallCurrentContext, refreshCallCurrentInfoSnapshots } from "@/lib/voice/current-info";
 import { scheduleTwilioCallEnd, startOutboundCheckInCall } from "@/lib/voice/elevenlabs";
 
 const requestSchema = z.object({
@@ -31,6 +32,29 @@ function normalizePhoneNumber(value: string) {
   }
 
   return null;
+}
+
+async function preloadDemoCurrentContext() {
+  const refreshStartedAt = Date.now();
+
+  try {
+    const refreshResults = await refreshCallCurrentInfoSnapshots(prisma);
+    const currentContext = await getCachedCallCurrentContext(prisma);
+
+    return {
+      currentContext,
+      refreshMs: Date.now() - refreshStartedAt,
+      refreshResults: refreshResults.map((result) => ({ key: result.key, ok: result.ok, error: result.error })),
+    };
+  } catch (error) {
+    console.error("Demo current context preload failed", error);
+
+    return {
+      currentContext: await getCachedCallCurrentContext(prisma),
+      refreshMs: Date.now() - refreshStartedAt,
+      refreshResults: [{ key: "fallback:cached-current-context", ok: false, error: error instanceof Error ? error.message : "Unknown refresh error" }],
+    };
+  }
 }
 
 export async function POST(request: Request) {
@@ -66,11 +90,13 @@ export async function POST(request: Request) {
   const memberName = parsed.data.firstName?.trim() || "there";
 
   try {
+    const currentInfo = await preloadDemoCurrentContext();
     const providerStartedAt = Date.now();
     const result = await startOutboundCheckInCall({
       toNumber: phoneNumber,
       memberName,
       caregiverName: "your family",
+      currentContext: currentInfo.currentContext,
       demoMaxDurationSeconds: DEMO_MAX_DURATION_SECONDS,
       firstMessage: `Hi ${memberName}, this is DailyCall. I am an AI companion calling with a quick demo, just so you can hear what the service feels like. How are you doing today?`,
     });
@@ -118,7 +144,7 @@ export async function POST(request: Request) {
         status: "IN_PROGRESS",
         providerCallSid: result.callSid ?? null,
         providerConversationId: result.conversation_id ?? null,
-        summary: `Landing page demo call started for ${member.name}.`,
+        summary: `Landing page demo call started for ${member.name}. Preloaded current context for light news, weather, and NHL sports.`,
       },
     });
 
@@ -126,6 +152,8 @@ export async function POST(request: Request) {
       phoneNumber,
       providerMs,
       totalMs: Date.now() - startedAt,
+      currentInfoRefreshMs: currentInfo.refreshMs,
+      currentInfoRefreshResults: currentInfo.refreshResults,
       hasCallSid: Boolean(result.callSid),
       hasConversationId: Boolean(result.conversation_id),
     });

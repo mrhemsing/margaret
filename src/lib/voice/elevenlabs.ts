@@ -3,6 +3,7 @@ type StartOutboundCheckInCallInput = {
   memberName?: string;
   caregiverName?: string;
   companionContext?: string;
+  currentContext?: string;
   recentTopics?: string[];
   topicsToRevisit?: string[];
   avoidRepeating?: string[];
@@ -122,6 +123,7 @@ export async function startOutboundCheckInCall(input: StartOutboundCheckInCallIn
           member_name: input.memberName ?? "there",
           caregiver_name: input.caregiverName ?? "your caregiver",
           companion_context: input.companionContext ?? "No prior memory yet. Be warm, gentle, curious, and non-clinical.",
+          current_context: input.currentContext ?? "No fresh current context is available. Do not invent current news, weather, scores, or schedules.",
           recent_topics: input.recentTopics?.join(", ") || "none yet",
           topics_to_revisit: input.topicsToRevisit?.join("; ") || "none yet",
           avoid_repeating: input.avoidRepeating?.join("; ") || "Do not use a generic scripted wellness survey opening.",
