@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
+import { getVoiceProvider } from "@/lib/voice/openai-realtime";
 
 const requestSchema = z.object({
   toNumber: z.string().min(8),
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
     const result = await startAmdProtectedCheckInCall({ ...parsed.data, memberName: member.name });
 
     if (!result) {
-      throw new Error("ElevenLabs did not return a call result.");
+      throw new Error("Voice provider did not return a call result.");
     }
 
     const callAttempt = await prisma.callAttempt.create({
@@ -70,13 +71,13 @@ export async function POST(request: Request) {
         startedAt: new Date(),
         status: "IN_PROGRESS",
         providerCallSid: result.sid ?? null,
-        summary: `Test call started for ${member.name}. Transcript will appear after ElevenLabs finishes processing the conversation.`,
+        summary: `Test call started for ${member.name}. Transcript will appear after the voice provider finishes processing the conversation.`,
       },
     });
 
     return NextResponse.json({
       ok: true,
-      provider: "twilio_amd_bridge",
+      provider: getVoiceProvider(),
       member,
       callAttempt,
       result,

@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db";
+import { withMemberPhotoDisplayUrl } from "@/lib/member-photos";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 const updateMemberSchema = z.object({
   profile: z
@@ -10,6 +12,7 @@ const updateMemberSchema = z.object({
       name: z.string().trim().min(1).max(120).optional(),
       phoneNumber: z.string().trim().min(7).max(30).optional(),
       preferredCallTime: z.string().trim().min(1).max(20).optional(),
+      preferredVoiceId: z.string().trim().optional().refine((value) => !value || isAllowedVoiceId(value), "Voice not available."),
     })
     .optional(),
   questionsToAsk: z.array(z.string().trim().min(1).max(300)).max(10).optional(),
@@ -96,5 +99,5 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
     },
   });
 
-  return NextResponse.json({ ok: true, member: updatedMember });
+  return NextResponse.json({ ok: true, member: updatedMember ? await withMemberPhotoDisplayUrl(updatedMember) : updatedMember });
 }

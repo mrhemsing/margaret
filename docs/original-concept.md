@@ -46,3 +46,15 @@ Original human Care Caller language should become AI-safe language:
 - “trusted friendly Care Callers” → “friendly AI voice check-ins supervised by service rules/operator controls.”
 - “assess and report” → “identify configured concern signals and notify caregivers.”
 - “emergency notifications” → “urgent caregiver/next-of-kin alerts,” unless actual emergency services integration exists.
+
+## OpenAI Realtime translation
+
+The current AI version should preserve the original human-service promise while using OpenAI Realtime for a more natural phone call:
+
+- Keep the call warm and brief, but allow a little extra time when the senior clearly wants to talk.
+- Use a soft, caring, human-like companion voice rather than a clinical assistant voice.
+- Keep turn-taking snappy with high semantic VAD eagerness so calls do not feel delayed.
+- Use memory carefully so the caller feels familiar without pretending to be family.
+- Use pre-call current context for light topics such as weather, sports, holidays, and family notes, but never invent current facts.
+- Keep family reports concise and respectful; summarize care-relevant signals instead of exposing private transcript detail by default.
+- Continue to disclose AI identity honestly when asked or when required by consent/disclosure policy.

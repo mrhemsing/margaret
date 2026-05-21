@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { scheduleTwilioCallEnd } from "@/lib/voice/elevenlabs";
-import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
+import { scheduleTwilioCallEnd, startOutboundCheckInCall } from "@/lib/voice/elevenlabs";
 
 const requestSchema = z.object({
   phoneNumber: z.string().min(8).max(30),
@@ -35,6 +34,7 @@ function normalizePhoneNumber(value: string) {
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
 
   if (!parsed.success) {
@@ -66,6 +66,24 @@ export async function POST(request: Request) {
   const memberName = parsed.data.firstName?.trim() || "there";
 
   try {
+    const providerStartedAt = Date.now();
+    const result = await startOutboundCheckInCall({
+      toNumber: phoneNumber,
+      memberName,
+      caregiverName: "your family",
+      demoMaxDurationSeconds: DEMO_MAX_DURATION_SECONDS,
+      firstMessage: `Hi ${memberName}, this is DailyCall. I am an AI companion calling with a quick demo, just so you can hear what the service feels like. How are you doing today?`,
+    });
+    const providerMs = Date.now() - providerStartedAt;
+
+    if (!result) {
+      throw new Error("Demo call provider did not return a result.");
+    }
+
+    if (result.callSid) {
+      scheduleTwilioCallEnd(result.callSid, DEMO_MAX_DURATION_SECONDS * 1000);
+    }
+
     const customer = await prisma.customer.upsert({
       where: { email: "demo-family@dailycall.local" },
       update: { fullName: "Demo Family", phoneNumber: phoneNumber },
@@ -92,34 +110,34 @@ export async function POST(request: Request) {
           },
         });
 
-    const result = await startAmdProtectedCheckInCall({
-      toNumber: phoneNumber,
-      memberName,
-      caregiverName: "your family",
-    });
-
-    if (!result) {
-      throw new Error("Demo call provider did not return a result.");
-    }
-
-    if (result.sid) {
-      scheduleTwilioCallEnd(result.sid, DEMO_MAX_DURATION_SECONDS * 1000);
-    }
-
     await prisma.callAttempt.create({
       data: {
         memberId: member.id,
         scheduledFor: new Date(),
         startedAt: new Date(),
         status: "IN_PROGRESS",
-        providerCallSid: result.sid ?? null,
+        providerCallSid: result.callSid ?? null,
+        providerConversationId: result.conversation_id ?? null,
         summary: `Landing page demo call started for ${member.name}.`,
       },
+    });
+
+    console.log("Demo call started", {
+      phoneNumber,
+      providerMs,
+      totalMs: Date.now() - startedAt,
+      hasCallSid: Boolean(result.callSid),
+      hasConversationId: Boolean(result.conversation_id),
     });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
     demoCallAttempts.delete(phoneNumber);
+    console.error("Demo call failed", {
+      phoneNumber,
+      totalMs: Date.now() - startedAt,
+      error,
+    });
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : "We could not start the demo call. Please try again." },
       { status: 502 },

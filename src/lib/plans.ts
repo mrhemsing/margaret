@@ -6,25 +6,37 @@ export const supportedBillingCountries = ["CA", "US"] as const;
 
 export const planOptions = [
   {
-    label: "Companion Daily",
+    label: "Wellness",
     value: SubscriptionPlan.ONE_CALL_DAILY,
-    price: "$14.95",
-    detail: "1 caring call per day, missed-call alert after 2 unanswered attempts, 1 family alert contact, and call transcripts.",
+    price: "$19.95",
+    trialMinutes: 90,
+    monthlyMinutes: 120,
+    detail: "120 included minutes per month for a friendly daily check-in call, missed-call alerts, 1 family alert contact, and call transcripts.",
     envKeys: {
       CA: "STRIPE_PRICE_ONE_CALL_DAILY_CAD",
       US: "STRIPE_PRICE_ONE_CALL_DAILY_USD",
     },
   },
   {
-    label: "Companion Plus",
+    label: "Companion",
     value: SubscriptionPlan.THREE_CALLS_DAILY,
-    price: "$29.95",
-    detail: "Up to 3 caring calls per day, up to 10 alert contacts, custom questions, unlimited conversation time, and expanded summaries.",
+    price: "$34.95",
+    trialMinutes: 120,
+    monthlyMinutes: 250,
+    detail: "250 included minutes per month for richer personalized conversations, call-anytime access, up to 10 alert contacts, custom questions, daily planning help, and optional encouragement or memory prompts.",
     envKeys: {
       CA: "STRIPE_PRICE_THREE_CALLS_DAILY_CAD",
       US: "STRIPE_PRICE_THREE_CALLS_DAILY_USD",
     },
   },
+] as const;
+
+export const trialLengthDays = 14;
+
+export const additionalMinutePacks = [
+  { minutes: 30, price: "$4.99" },
+  { minutes: 60, price: "$8.99" },
+  { minutes: 120, price: "$14.99" },
 ] as const;
 
 const legacyPlanEnvKeys: Partial<Record<SubscriptionPlan, string>> = {

@@ -4,8 +4,9 @@ import { z } from "zod";
 
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
-import { supportedBillingCountries } from "@/lib/plans";
+import { supportedBillingCountries, trialLengthDays } from "@/lib/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 function splitList(value: string) {
   return value
@@ -34,6 +35,7 @@ const trialSchema = z.object({
   importantEvents: z.string().optional().default(""),
   questionsToAsk: z.string().optional().default(""),
   preferredTone: z.string().optional().default("warm_patient"),
+  preferredVoiceId: z.string().optional().default(defaultVoiceId),
   ritualPreference: z.string().optional().default("morning_chat"),
   plan: z.nativeEnum(SubscriptionPlan),
 });
@@ -72,7 +74,8 @@ export async function POST(request: Request) {
 
   const preferredCallSchedule = callTimes.join(", ");
   const questionsToAsk = input.plan === SubscriptionPlan.THREE_CALLS_DAILY ? input.questionsToAsk : "";
-  const trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const preferredVoiceId = isAllowedVoiceId(input.preferredVoiceId) ? input.preferredVoiceId : defaultVoiceId;
+  const trialEndsAt = new Date(Date.now() + trialLengthDays * 24 * 60 * 60 * 1000);
 
   try {
     const { customer, member } = await prisma.$transaction(async (tx) => {
@@ -98,6 +101,7 @@ export async function POST(request: Request) {
           phoneNumber: input.parentPhone,
           timezone: input.timezone,
           preferredCallTime: preferredCallSchedule,
+          preferredVoiceId,
         },
       });
 

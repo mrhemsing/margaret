@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/calls/process-scheduled",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/calls/sync-transcripts",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/voice/current-info/refresh",
+      "schedule": "0 1,13,17,21 * * *"
+    }
+  ]
+}

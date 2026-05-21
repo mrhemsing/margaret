@@ -7,6 +7,7 @@ type StartOutboundCheckInCallInput = {
   topicsToRevisit?: string[];
   avoidRepeating?: string[];
   demoMaxDurationSeconds?: number;
+  firstMessage?: string;
 };
 
 type ElevenLabsOutboundCallResponse = {
@@ -34,6 +35,19 @@ type ElevenLabsConversationDetails = {
   metadata?: Record<string, unknown>;
   [key: string]: unknown;
 };
+
+export function getConversationTiming(details: ElevenLabsConversationDetails) {
+  const startTimeUnixSecs = Number(details.metadata?.start_time_unix_secs);
+  const callDurationSecs = Number(details.metadata?.call_duration_secs);
+  const startedAt = Number.isFinite(startTimeUnixSecs) && startTimeUnixSecs > 0
+    ? new Date(startTimeUnixSecs * 1000)
+    : null;
+  const completedAt = startedAt && Number.isFinite(callDurationSecs) && callDurationSecs >= 0
+    ? new Date(startedAt.getTime() + callDurationSecs * 1000)
+    : null;
+
+  return { startedAt, completedAt, callDurationSecs: Number.isFinite(callDurationSecs) ? callDurationSecs : null };
+}
 
 export function formatConversationTranscript(transcript: ElevenLabsTranscriptTurn[] | undefined, memberName = "Member") {
   if (!transcript?.length) return null;
@@ -65,6 +79,10 @@ export async function getConversationDetails(conversationId: string) {
   const { getServerEnv } = await import("@/lib/env");
   const env = getServerEnv();
 
+  if (!env.ELEVENLABS_API_KEY) {
+    throw new Error("ElevenLabs API key is not configured.");
+  }
+
   const response = await fetch(`https://api.elevenlabs.io/v1/convai/conversations/${conversationId}`, {
     headers: {
       "xi-api-key": env.ELEVENLABS_API_KEY,
@@ -84,6 +102,10 @@ export async function getConversationDetails(conversationId: string) {
 export async function startOutboundCheckInCall(input: StartOutboundCheckInCallInput) {
   const { getServerEnv } = await import("@/lib/env");
   const env = getServerEnv();
+
+  if (!env.ELEVENLABS_API_KEY || !env.ELEVENLABS_AGENT_ID || !env.ELEVENLABS_AGENT_PHONE_NUMBER_ID) {
+    throw new Error("ElevenLabs outbound calling is not configured.");
+  }
 
   const response = await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound-call", {
     method: "POST",
@@ -105,6 +127,13 @@ export async function startOutboundCheckInCall(input: StartOutboundCheckInCallIn
           avoid_repeating: input.avoidRepeating?.join("; ") || "Do not use a generic scripted wellness survey opening.",
           demo_max_duration_seconds: input.demoMaxDurationSeconds ?? null,
         },
+        conversation_config_override: input.firstMessage
+          ? {
+              agent: {
+                first_message: input.firstMessage,
+              },
+            }
+          : undefined,
       },
     }),
   });

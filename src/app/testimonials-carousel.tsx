@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Testimonial = {
   quote: string;
@@ -13,6 +13,22 @@ type Testimonial = {
 export function TestimonialsCarousel({ testimonials }: { testimonials: Testimonial[] }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(1);
+  const pageCount = useMemo(() => Math.ceil(testimonials.length / itemsPerPage), [itemsPerPage, testimonials.length]);
+  const activePage = Math.min(Math.floor(activeIndex / itemsPerPage), pageCount - 1);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+
+    function updateItemsPerPage() {
+      setItemsPerPage(mediaQuery.matches ? 2 : 1);
+    }
+
+    updateItemsPerPage();
+    mediaQuery.addEventListener("change", updateItemsPerPage);
+
+    return () => mediaQuery.removeEventListener("change", updateItemsPerPage);
+  }, []);
 
   function scrollToIndex(index: number) {
     const scroller = scrollerRef.current;
@@ -25,9 +41,10 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
   }
 
   function scrollByCard(direction: "prev" | "next") {
-    const nextIndex = direction === "next"
-      ? Math.min(activeIndex + 1, testimonials.length - 1)
-      : Math.max(activeIndex - 1, 0);
+    const pageIndex = direction === "next"
+      ? Math.min(activePage + 1, pageCount - 1)
+      : Math.max(activePage - 1, 0);
+    const nextIndex = pageIndex * itemsPerPage;
 
     scrollToIndex(nextIndex);
   }
@@ -60,7 +77,7 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
         aria-label="Previous testimonial"
         onClick={() => scrollByCard("prev")}
         className="absolute left-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-2xl font-bold text-ink shadow-sm ring-1 ring-black/10 transition hover:bg-white hover:shadow-md disabled:opacity-40 md:flex"
-        disabled={activeIndex === 0}
+        disabled={activePage === 0}
       >
         ‹
       </button>
@@ -69,7 +86,7 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
         aria-label="Next testimonial"
         onClick={() => scrollByCard("next")}
         className="absolute right-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-2xl font-bold text-ink shadow-sm ring-1 ring-black/10 transition hover:bg-white hover:shadow-md disabled:opacity-40 md:flex"
-        disabled={activeIndex === testimonials.length - 1}
+        disabled={activePage === pageCount - 1}
       >
         ›
       </button>
@@ -94,13 +111,13 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
       </div>
 
       <div className="mt-5 flex justify-center gap-2" aria-label="Testimonials pagination">
-        {testimonials.map((testimonial, index) => (
+        {Array.from({ length: pageCount }, (_, pageIndex) => (
           <button
-            key={testimonial.name}
+            key={pageIndex}
             type="button"
-            aria-label={`Show testimonial ${index + 1}`}
-            onClick={() => scrollToIndex(index)}
-            className={`h-2.5 w-2.5 rounded-full transition ${index === activeIndex ? "bg-brandPink" : "bg-brandBlue/35 hover:bg-brandBlue/60"}`}
+            aria-label={`Show testimonial page ${pageIndex + 1}`}
+            onClick={() => scrollToIndex(pageIndex * itemsPerPage)}
+            className={`h-2.5 w-2.5 rounded-full transition ${pageIndex === activePage ? "bg-brandPink" : "bg-brandBlue/35 hover:bg-brandBlue/60"}`}
           />
         ))}
       </div>

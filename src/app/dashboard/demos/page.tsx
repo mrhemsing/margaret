@@ -76,7 +76,7 @@ export default async function DemoLogsDashboardPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">Landing page demos</p>
         <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink md:text-5xl">Demo call logs.</h1>
         <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
-          A separate view for one-minute landing-page demo calls, so demo activity stays out of Matt and Chuck&apos;s focused member dashboards.
+          A separate view for one-minute landing-page demo calls, so demo activity stays out of the customer dashboard.
         </p>
       </header>
 

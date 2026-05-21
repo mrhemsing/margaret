@@ -4,9 +4,10 @@ import { SubscriptionPlan } from "@prisma/client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { planOptions } from "@/lib/plans";
+import { planOptions, trialLengthDays } from "@/lib/plans";
 import { formatNorthAmericanPhoneInput, normalizeNorthAmericanPhone } from "@/lib/phone";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { defaultVoiceId, voiceOptions } from "@/lib/voice/voice-options";
 import { SocialSigninButtons } from "./social-signin-buttons";
 
 type CheckoutState = {
@@ -147,6 +148,7 @@ export function SignupForm() {
   const [detectedTimezone, setDetectedTimezone] = useState<{ value: string; label: string } | null>(null);
   const [selectedTimezone, setSelectedTimezone] = useState("America/Los_Angeles");
   const [timezoneEdited, setTimezoneEdited] = useState(false);
+  const [selectedVoiceId, setSelectedVoiceId] = useState(defaultVoiceId);
 
   useEffect(() => {
     let cancelled = false;
@@ -269,6 +271,7 @@ export function SignupForm() {
       importantEvents: String(formData.get("importantEvents") ?? ""),
       questionsToAsk: String(formData.get("questionsToAsk") ?? ""),
       preferredTone: String(formData.get("preferredTone") ?? "warm_patient"),
+      preferredVoiceId: String(formData.get("preferredVoiceId") ?? selectedVoiceId),
       ritualPreference: formData
         .getAll("ritualPreference")
         .map((value) => String(value).trim())
@@ -364,7 +367,7 @@ export function SignupForm() {
                   <input name="accountPassword" type="password" minLength={8} autoComplete="new-password" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="8+ characters" />
                 </label>
               </div>
-              <p className="text-xs leading-5 text-slate-500">No credit card is needed for the 30-day trial. Password is only needed if you are not using Google.</p>
+              <p className="text-xs leading-5 text-slate-500">No credit card is needed for the {trialLengthDays}-day trial. Password is only needed if you are not using Google.</p>
             </>
           ) : null}
         </fieldset>
@@ -436,9 +439,54 @@ export function SignupForm() {
           </label>
         </fieldset>
 
+        <fieldset className="grid gap-4">
+          <div>
+            <legend className="mb-2 text-xl font-bold text-ink">4. Choose a voice</legend>
+            <p className="text-sm leading-6 text-slate-600">Pick the OpenAI Realtime voice your loved one will hear. You can change this later in My Dashboard.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {voiceOptions.map((voice) => (
+              <label
+                key={voice.id}
+                className={
+                  "grid gap-3 rounded-2xl border bg-white p-4 transition " +
+                  (selectedVoiceId === voice.id ? "border-brandButtonBlue ring-4 ring-brandBlue/20" : "border-slate-200")
+                }
+              >
+                <img
+                  src={voice.imagePath}
+                  alt=""
+                  className={
+                    "aspect-square w-full rounded-2xl bg-white " +
+                    (voice.imagePath.endsWith(".svg") ? "object-contain p-8 ring-1 ring-slate-100" : "object-cover")
+                  }
+                />
+                <span className="flex items-start gap-3">
+                  <input
+                    name="preferredVoiceId"
+                    type="radio"
+                    value={voice.id}
+                    checked={selectedVoiceId === voice.id}
+                    onChange={() => setSelectedVoiceId(voice.id)}
+                    className="mt-1 h-4 w-4 shrink-0"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-ink">{voice.name}</span>
+                    <span className="mt-1 block text-xs font-bold uppercase tracking-wide text-brandPink">{voice.gender}</span>
+                    <span className="mt-2 block text-sm leading-6 text-slate-600">{voice.description}</span>
+                  </span>
+                </span>
+                <audio controls controlsList="nodownload noplaybackrate" preload="none" className="h-10 w-full">
+                  <source src={"/api/voice/sample?voiceId=" + encodeURIComponent(voice.id)} type="audio/mpeg" />
+                </audio>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         <fieldset className="grid gap-4 rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15">
           <div>
-            <legend className="text-xl font-bold text-ink">4. Help us make the calls feel personal</legend>
+            <legend className="text-xl font-bold text-ink">5. Help us make the calls feel personal</legend>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Optional, but powerful: the more you share, the more familiar, warm, and natural the daily calls will feel.
             </p>
@@ -491,7 +539,7 @@ export function SignupForm() {
               placeholder="Ask about her childhood in Winnipeg. Ask what music she played with Robert."
             />
             <span className="text-xs font-normal leading-5 text-slate-500">
-              {selectedPlan === SubscriptionPlan.THREE_CALLS_DAILY ? "Included with Companion Plus." : "Available with Companion Plus."}
+              {selectedPlan === SubscriptionPlan.THREE_CALLS_DAILY ? "Included with Companion." : "Available with Companion."}
             </span>
           </label>
 
@@ -535,9 +583,9 @@ export function SignupForm() {
 
         <fieldset className="grid gap-4">
           <div>
-            <legend className="text-xl font-bold text-ink">5. Choose your trial experience</legend>
+            <legend className="text-xl font-bold text-ink">6. Choose your trial experience</legend>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Your 30-day trial is free. No credit card today. Choose the experience you want to try — you can change plans before billing starts.
+              Your {trialLengthDays}-day trial is free. No credit card today. Choose the experience you want to try — you can change plans before billing starts.
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
@@ -559,9 +607,12 @@ export function SignupForm() {
                   <span>{plan.label}</span>
                 </span>
                 <span className="mt-2 inline-flex rounded-full bg-sage/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sage">
-                  Free for 30 days
+                  Free for {trialLengthDays} days
                 </span>
                 <span className="mt-3 block text-xs font-normal leading-5 text-slate-500">{plan.detail}</span>
+                <span className="mt-2 block text-xs font-semibold text-slate-500">
+                  Trial includes {plan.trialMinutes} minutes. Then {plan.monthlyMinutes} minutes/month.
+                </span>
                 <span className="mt-3 block text-xs font-semibold text-slate-500">After trial: {plan.price} CAD/USD / mo</span>
               </label>
             ))}
@@ -605,7 +656,7 @@ export function SignupForm() {
                     </div>
                   </div>
                 ))}
-                <p className="text-xs font-normal leading-5 text-slate-500 xl:col-span-3">Companion Plus can include up to three preferred daily call windows. Uncheck any call slots you do not want.</p>
+                <p className="text-xs font-normal leading-5 text-slate-500 xl:col-span-3">Companion can include up to three preferred daily call windows. Uncheck any call slots you do not want.</p>
               </div>
             ) : (
               <label className="grid gap-2 text-sm font-semibold text-slate-700">
@@ -646,7 +697,7 @@ export function SignupForm() {
 
         <div className="grid gap-4 md:grid-cols-[auto_1fr] md:items-center">
           <p className="order-1 rounded-2xl bg-brandBlue/10 p-4 text-sm font-semibold leading-6 text-ink ring-1 ring-brandBlue/15 md:order-2">
-            Your 30-day trial is free. No credit card today. You can change plans before billing starts.
+            Your {trialLengthDays}-day trial is free. No credit card today. You can change plans before billing starts.
           </p>
 
           <button

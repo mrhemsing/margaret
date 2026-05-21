@@ -1,0 +1,1 @@
+ALTER TABLE "Member" ALTER COLUMN "preferredVoiceId" SET DEFAULT 'hpp4J3VqNfWAUOO0d1Us';

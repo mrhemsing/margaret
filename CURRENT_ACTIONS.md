@@ -1,102 +1,108 @@
-# Dailycall Current Actions
+# DailyCall Current Actions
 
 ## North Star
 
-Make the senior want tomorrow’s call.
+Make the senior want tomorrow's call.
 
-Monitoring is the buyer hook. **Personalization is the moat.** Companionship, emotional continuity, memory, and family trust are how we compound it.
+Voice is the product. Monitoring is the buyer hook, but personalization, emotional continuity, memory, safety judgment, and family trust are how DailyCall becomes the #1 check-in care caller for seniors in the world.
 
 ## Active Backlog
 
-### 1. Reframe the call experience from check-in to companion
-Status: **In progress**
+### 1. OpenAI Realtime production call path
 
-Actions:
-- [ ] Rewrite the ElevenLabs agent instructions so the opening feels warm, familiar, and non-clinical.
-- [ ] Pass memory/context into every outbound call.
-- [ ] Avoid repeated openings and stale survey-like phrasing.
-- [ ] Add gentle safety escalation only when risk signals appear.
+Status: **Active**
 
-### 2. Build Senior Memory v1
-Status: **Started / first schema shipped**
+Shipped:
+- [x] Switched the active local provider to `openai_realtime_twilio`.
+- [x] Kept ElevenLabs settings, docs, and environment variables as fallback.
+- [x] Added Twilio AMD -> OpenAI Realtime SIP TwiML path.
+- [x] Added OpenAI Realtime webhook accept path.
+- [x] Added OpenAI transcript/event persistence path.
+- [x] Injected DailyCall memory, profile context, and pre-call current context into OpenAI instructions.
+
+Next:
+- [ ] Add `OPENAI_PROJECT_ID` in production.
+- [ ] Add `OPENAI_WEBHOOK_SECRET` in production.
+- [ ] Register the OpenAI dashboard webhook to `/api/openai/realtime-webhook`.
+- [ ] Run full phone-path tests: human answer, voicemail, no-answer, busy, short hangup, and failed call.
+- [ ] Confirm transcript completion and post-call insight extraction from real OpenAI SIP calls.
+
+### 2. Voice quality operating loop
+
+Status: **Active**
+
+Defaults:
+- `OPENAI_REALTIME_MODEL=gpt-realtime-2`
+- `OPENAI_REALTIME_VOICE=marin`
+- `OPENAI_REALTIME_REASONING_EFFORT=low`
+- `OPENAI_REALTIME_VAD_EAGERNESS=high`
+- soft, caring, understanding senior companion tone
+- snappy turn-taking with short replies
+
+Next:
+- [ ] Run at least five senior-style human test calls and score them with the voice-quality rubric.
+- [ ] Compare Marin vs Cedar for senior comfort and naturalness.
+- [ ] Capture pause length from Realtime events and flag repeated pauses over two seconds.
+- [ ] Add member/profile-level VAD overrides for slower speakers.
+- [ ] Keep a recurring OpenAI Realtime and senior voice-agent innovation watch.
+
+### 3. Senior memory and pre-call context
+
+Status: **Started**
 
 Shipped:
 - [x] Added `SeniorMemory` model.
 - [x] Added call report fields for mood, topics, notable moments, follow-up, and memory updates.
-- [x] Sync now extracts insights and updates memory.
-- [x] Dashboard now displays richer emotional/family-trust report fields.
+- [x] Sync extracts insights and updates memory.
+- [x] Dashboard displays richer emotional and family-trust report fields.
+- [x] Pre-call current context snapshots are refreshed before outbound calls.
+- [x] Memory and current context are now available to OpenAI Realtime instructions.
 
 Next:
-- [ ] Inject memory into outbound call dynamic variables.
-- [ ] Add visible “Memory captured” section to dashboard.
-- [ ] Preserve cumulative hobbies/routines/health notes instead of replacing them.
-
-### 3. Anti-repetition safeguards
-Status: **Next active build chunk**
-
-Actions:
-- [ ] Store last 5 summaries/topics per senior.
-- [ ] Pass recent topics/questions into the voice agent.
-- [ ] Tell agent what not to repeat.
-- [ ] Rotate conversation themes: family, memories, hobbies, plans, weather, gratitude, light humor.
-- [ ] Track repeated-call patterns and flag shallow loops.
+- [ ] Add visible "Memory captured" section to the dashboard.
+- [ ] Preserve cumulative hobbies, routines, family notes, and health notes instead of replacing them.
+- [ ] Store last five summaries/topics per senior for anti-repetition.
+- [ ] Pass recent topics and "do not repeat" guidance into every OpenAI call.
+- [ ] Personalize current context by member location and interests.
 
 ### 4. Family trust dashboard
+
 Status: **Started**
 
 Shipped:
 - [x] Mood.
 - [x] Topics discussed.
 - [x] Notable moments.
-- [x] Follow-up suggested/reason.
+- [x] Follow-up suggested and reason.
 
 Next:
-- [ ] Memory updates captured.
-- [ ] Family-friendly “why this matters” explanation.
+- [ ] Show memory updates captured.
+- [ ] Add family-friendly "why this matters" explanation.
 - [ ] Separate safety alerts from warm companion summaries.
+- [ ] Keep transcripts as sensitive source material, not the default family-facing artifact.
 
-### 5. Reliability polish
+### 5. Reliability and voicemail handling
+
 Status: **Started**
 
 Shipped:
-- [x] Automatic transcript sync every 2 minutes.
+- [x] Twilio AMD runs before connecting the AI caller.
 - [x] Duplicate in-progress rows hidden.
 - [x] Duplicate rapid test calls guarded.
 - [x] Stuck-call timeout fallback.
+- [x] Strict instruction: never leave voicemail; end immediately on voicemail/recording/beep.
 
 Next:
-- [x] Add strict voice-agent instruction: never leave voicemail; end immediately on voicemail/recording/beep.
-- [ ] After-call voicemail/answering-machine detection from transcript and provider metadata.
+- [ ] Validate AMD behavior with the OpenAI Realtime SIP path.
 - [ ] Record voicemail outcomes separately from answered conversations.
 - [ ] Add client-visible retry settings: retry count, retry delay, and when to alert family.
 - [ ] Schedule retries when voicemail/no-answer is detected.
-- [ ] Clear no-answer / short-hangup states.
+- [ ] Clear no-answer and short-hangup states.
 - [ ] Add configurable call time limits by plan/profile.
 - [ ] Give the agent a warm close before ending near the time limit.
-- [ ] Better processing UI while ElevenLabs finishes transcripts.
 
-### 5a. Twilio AMD / second-number voicemail-safe architecture
-Status: **Backlog / required before production voicemail guarantee**
+### 6. Retention and quality metrics
 
-Goal: guarantee Dailycall does not leave voicemail messages.
-
-Required setup:
-- [ ] Buy/provision a second Twilio number.
-- [ ] Number A = outbound AMD screener / caller ID.
-- [ ] Number B = ElevenLabs-connected agent number.
-- [ ] Configure Number B in ElevenLabs as the inbound agent number.
-- [ ] Configure Number A calls with Twilio `MachineDetection=Enable`.
-- [ ] If Twilio detects machine/voicemail/fax: hang up immediately, record voicemail outcome, notify/retry according to settings.
-- [ ] If Twilio detects human: bridge Number A call into Number B / ElevenLabs agent.
-- [ ] Add tests for human answer, voicemail greeting, carrier recording, no-answer, busy, and failed.
-- [ ] Expose client settings for retry count, retry delay, and alert timing.
-
-Why this matters:
-- Prompt-only voicemail avoidance reduces risk but cannot guarantee no voicemail.
-- Pre-agent AMD is the production-grade guarantee.
-- This should be completed before broad customer rollout.
-
-### 6. Retention metrics
 Status: **Pending**
 
 Actions:
@@ -105,10 +111,13 @@ Actions:
 - [ ] Repeat answer rate by week.
 - [ ] Hangup/skipped-call rate.
 - [ ] Week-4 retention.
-- [ ] Family report engagement later.
+- [ ] Family report engagement.
+- [ ] Voice-quality rubric trend.
+- [ ] Pause-length trend.
+- [ ] Memory reuse without repetition.
 
 ## Current Implementation Focus
 
-**Companion Context Injection + Anti-Repetition v1**
+**OpenAI Realtime production readiness + voice quality benchmark**
 
-Goal: every outbound call should feel personally specific to that senior. It should receive memory, recent conversation context, family profile, rituals, and anti-repetition guidance so the agent sounds familiar and avoids generic check-in behavior.
+Goal: every outbound call should sound soft, caring, human-like, and personally specific, with snappy turn-taking and trustworthy family summaries. ElevenLabs remains available as a fallback, but active product work is now OpenAI Realtime.

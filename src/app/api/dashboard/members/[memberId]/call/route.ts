@@ -61,7 +61,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ mem
     where: {
       memberId: member.id,
       status: "IN_PROGRESS",
-      createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) },
+      OR: [
+        { providerConversationId: { not: null }, createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) } },
+        { providerConversationId: null, createdAt: { gte: new Date(Date.now() - 4 * 60 * 1000) } },
+      ],
     },
     orderBy: { createdAt: "desc" },
   });

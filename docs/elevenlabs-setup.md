@@ -1,6 +1,13 @@
-# ElevenLabs Setup — dailycall
+# ElevenLabs Setup — DailyCall fallback
 
-## API key
+This document is retained for rollback/testing only. DailyCall's active production direction is OpenAI Realtime + Twilio SIP.
+
+See:
+
+- `docs/openai-realtime-setup.md`
+- `docs/openai-realtime-agent-prompt.md`
+
+## Fallback API key
 
 Create a dedicated ElevenLabs API key named `dailycall`.
 
@@ -12,7 +19,7 @@ Recommended posture:
 
 ## Required ElevenLabs capabilities
 
-Dailycall plans to use ElevenLabs as the full conversational voice agent layer, not only text-to-speech.
+If DailyCall switches back, ElevenLabs would act as the full conversational voice agent layer, not only text-to-speech.
 
 The API key needs access to the endpoints used for:
 
@@ -26,22 +33,22 @@ If ElevenLabs only shows granular categories, enable the category for Conversati
 
 ## Optional permissions
 
-These are only needed if we build a custom voice pipeline later instead of using ElevenLabs Conversational AI end-to-end:
+These are only needed if we build a custom ElevenLabs voice pipeline instead of using ElevenLabs Conversational AI end-to-end:
 
 - Text to Speech
 - Speech to Text
 - Speech to Speech
 
-For the MVP, prefer ElevenLabs Conversational AI + Twilio instead of building our own realtime STT → LLM → TTS pipeline.
+Current MVP preference is OpenAI Realtime + Twilio SIP, not ElevenLabs.
 
 ## Twilio connection
 
-Dailycall will need either:
+If we switch back, DailyCall will need either:
 
 - a Twilio phone number imported/connected into ElevenLabs, or
 - a verified Twilio caller ID for outbound-only use, if ElevenLabs supports the intended flow.
 
-The app will eventually store:
+Fallback env shape:
 
 ```env
 VOICE_PROVIDER=elevenlabs_twilio
@@ -61,11 +68,11 @@ ELEVENLABS_AGENT_PHONE_NUMBER_ID=phnum_6301kr6z8vmqfwj98njvcfczsyd8
 TWILIO_FROM_NUMBER=+12362058677
 ```
 
-The Twilio number has been imported into ElevenLabs and assigned to the Dailycall agent.
+The Twilio number was imported into ElevenLabs and assigned to the DailyCall agent during the previous implementation. Keep these IDs available for rollback, but do not treat them as the active production voice path.
 
 ## First test target
 
-Once local `.env` contains the real secret values, the first integration test should be:
+If reverting to ElevenLabs, the first integration test should be:
 
 1. Run the Next.js dev server.
 2. Trigger one outbound test call to Matt's phone or a test number.

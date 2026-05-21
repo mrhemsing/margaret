@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function SignupPage() {
   return (
-    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-5 md:px-10">
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 pb-5 pt-0 md:px-10 md:pt-5">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <SiteHeader />
@@ -28,7 +28,7 @@ export default function SignupPage() {
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">signup</p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink md:text-5xl">Let&apos;s schedule your loved one&apos;s first companion call.</h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            Start your free 30-day trial. <span className="hidden md:block" />No credit card required. Setup takes less than 2 minutes, works with regular phones, and can be canceled anytime.
+            Start your free 14-day trial. <span className="hidden md:block" />No credit card required. Setup takes less than 2 minutes, works with regular phones, and can be canceled anytime.
           </p>
           <div className="mt-6 grid gap-3 text-sm font-bold text-ink sm:grid-cols-2">
             {["No credit card required", "Cancel anytime", "Works with any phone", "No app required"].map((item) => (

@@ -4,9 +4,9 @@ import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
 import { sendExampleReportSmsToTeam } from "@/lib/sms/twilio";
 import { deriveConversationInsights } from "@/lib/voice/conversation-insights";
-import { formatConversationTranscript, getConversationDetails, mapConversationStatus } from "@/lib/voice/elevenlabs";
+import { formatConversationTranscript, getConversationDetails, getConversationTiming, mapConversationStatus } from "@/lib/voice/elevenlabs";
 
-export async function POST() {
+async function syncTranscripts() {
   const pendingCalls = await prisma.callAttempt.findMany({
     where: {
       providerConversationId: { not: null },
@@ -20,9 +20,105 @@ export async function POST() {
 
   for (const call of pendingCalls) {
     try {
+      if (call.providerConversationId?.startsWith("rtc_")) {
+        const member = await prisma.member.findUnique({
+          where: { id: call.memberId },
+          include: { memory: true, customer: true },
+        });
+        const isDemoCall = member?.customer.email === "demo-family@dailycall.local" || member?.preferredCallTime === "Landing page demo";
+        const transcript = call.transcript ?? "";
+        const insights = deriveConversationInsights({
+          memberName: member?.name ?? "the call recipient",
+          summary: call.summary,
+          transcript,
+          priorRecentTopics: member?.memory?.recentTopics ?? [],
+        });
+        const isStuckInProgress = call.status === "IN_PROGRESS" && Boolean(call.startedAt) && Date.now() - call.startedAt!.getTime() > 15 * 60 * 1000;
+        const finalStatus = isStuckInProgress ? "FAILED" : call.status === "IN_PROGRESS" ? "IN_PROGRESS" : call.status;
+        const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE"].includes(finalStatus) ? call.completedAt ?? new Date() : call.completedAt;
+        let smsResults: Awaited<ReturnType<typeof sendExampleReportSmsToTeam>> | null = null;
+        let smsError: string | null = null;
+
+        if (completedAt && !call.reportSentAt) {
+          try {
+            smsResults = await sendExampleReportSmsToTeam({
+              memberName: member?.name ?? "the call recipient",
+              status: finalStatus,
+              summary: call.summary,
+              isDemo: isDemoCall,
+            });
+          } catch (error) {
+            smsError = error instanceof Error ? error.message : "Unknown SMS notification error";
+          }
+        }
+
+        if (member && completedAt && transcript) {
+          const existingMemory = member.memory;
+          const mergeList = (existing: string[] | undefined, incoming: string[], limit = 12) =>
+            Array.from(new Set([...(existing ?? []), ...incoming].map((item) => item.trim()).filter(Boolean))).slice(0, limit);
+
+          await prisma.seniorMemory.upsert({
+            where: { memberId: member.id },
+            create: {
+              memberId: member.id,
+              preferredName: member.name,
+              hobbies: insights.memoryUpdates.possibleHobbies,
+              routines: insights.memoryUpdates.possibleRoutines,
+              healthNotes: insights.memoryUpdates.possibleHealthNotes,
+              recentMood: insights.mood,
+              topicsToRevisit: [],
+              recentTopics: insights.memoryUpdates.recentTopics,
+              lastSummary: insights.memoryUpdates.lastSummary,
+            },
+            update: {
+              recentMood: insights.mood,
+              recentTopics: { set: mergeList(insights.memoryUpdates.recentTopics, existingMemory?.recentTopics ?? [], 8) },
+              lastSummary: insights.memoryUpdates.lastSummary,
+              hobbies: { set: mergeList(existingMemory?.hobbies, insights.memoryUpdates.possibleHobbies) },
+              routines: { set: mergeList(existingMemory?.routines, insights.memoryUpdates.possibleRoutines) },
+              healthNotes: { set: mergeList(existingMemory?.healthNotes, insights.memoryUpdates.possibleHealthNotes) },
+            },
+          });
+        }
+
+        if (member && completedAt && !isDemoCall) {
+          await ensureUpcomingScheduledCalls(prisma, [member]);
+        }
+
+        const updated = await prisma.callAttempt.update({
+          where: { id: call.id },
+          data: {
+            status: finalStatus,
+            completedAt,
+            mood: transcript ? insights.mood : call.mood,
+            topics: transcript ? insights.topics : call.topics,
+            notableMoments: transcript ? insights.notableMoments : call.notableMoments,
+            followUpSuggested: transcript ? insights.followUpSuggested : call.followUpSuggested,
+            followUpReason: transcript ? insights.followUpReason : call.followUpReason,
+            memoryUpdates: transcript ? (insights.memoryUpdates as Prisma.InputJsonValue) : call.memoryUpdates ?? undefined,
+            syncedAt: new Date(),
+            reportSentAt: smsResults ? new Date() : call.reportSentAt,
+          },
+        });
+
+        results.push({
+          id: updated.id,
+          ok: true,
+          provider: "openai_realtime",
+          status: updated.status,
+          timedOut: isStuckInProgress,
+          hasTranscript: Boolean(updated.transcript),
+          smsSent: Boolean(smsResults),
+          smsResults,
+          smsError,
+        });
+        continue;
+      }
+
       const details = await getConversationDetails(call.providerConversationId!);
       const summary = details.analysis?.transcript_summary ?? call.summary;
       const status = mapConversationStatus(details.status);
+      const timing = getConversationTiming(details);
 
       const member = await prisma.member.findUnique({
         where: { id: call.memberId },
@@ -41,7 +137,7 @@ export async function POST() {
       const finalSummary = isStuckInProgress
         ? "Call processing timed out after 15 minutes. DailyCall marked this attempt as failed so it does not linger in progress."
         : summary;
-      const completedAt = finalStatus === "ANSWERED_OK" || finalStatus === "FAILED" ? call.completedAt ?? new Date() : call.completedAt;
+      const completedAt = finalStatus === "ANSWERED_OK" || finalStatus === "FAILED" ? timing.completedAt ?? call.completedAt ?? new Date() : call.completedAt;
       let smsResults: Awaited<ReturnType<typeof sendExampleReportSmsToTeam>> | null = null;
       let smsError: string | null = null;
 
@@ -74,13 +170,12 @@ export async function POST() {
             routines: insights.memoryUpdates.possibleRoutines,
             healthNotes: insights.memoryUpdates.possibleHealthNotes,
             recentMood: insights.mood,
-            topicsToRevisit: insights.memoryUpdates.topicsToRevisit,
+            topicsToRevisit: [],
             recentTopics: insights.memoryUpdates.recentTopics,
             lastSummary: insights.memoryUpdates.lastSummary,
           },
           update: {
             recentMood: insights.mood,
-            topicsToRevisit: { set: mergeList(existingMemory?.topicsToRevisit, insights.memoryUpdates.topicsToRevisit) },
             recentTopics: { set: mergeList(insights.memoryUpdates.recentTopics, existingMemory?.recentTopics ?? [], 8) },
             lastSummary: insights.memoryUpdates.lastSummary,
             hobbies: { set: mergeList(existingMemory?.hobbies, insights.memoryUpdates.possibleHobbies) },
@@ -98,6 +193,7 @@ export async function POST() {
         where: { id: call.id },
         data: {
           status: finalStatus,
+          startedAt: timing.startedAt ?? call.startedAt,
           completedAt,
           summary: finalSummary,
           transcript,
@@ -133,4 +229,12 @@ export async function POST() {
   }
 
   return NextResponse.json({ ok: true, synced: results.length, results });
+}
+
+export async function GET() {
+  return syncTranscripts();
+}
+
+export async function POST() {
+  return syncTranscripts();
 }

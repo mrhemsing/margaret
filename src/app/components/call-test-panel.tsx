@@ -60,7 +60,7 @@ export function CallTestPanel() {
           <p className="text-sm font-semibold uppercase tracking-wide text-sage">Voice agent test</p>
           <h2 className="mt-2 text-2xl font-bold text-ink">Call to test</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Trigger a live outbound check-in call from the DailyCall ElevenLabs voice agent.
+            Trigger a live outbound check-in call from the DailyCall voice agent.
           </p>
         </div>
       </div>

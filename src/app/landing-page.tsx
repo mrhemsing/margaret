@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/app/components/site-header";
+import { trialLengthDays } from "@/lib/plans";
 import { DemoCallForm } from "./demo-call-form";
 import { TestimonialsCarousel } from "./testimonials-carousel";
 
@@ -10,12 +11,20 @@ const heroProof = [
   { label: "No credit card required", mobileOnly: true },
   { label: "Setup in under 2 minutes" },
   { label: "Cancel anytime", mobileOnly: true },
+  { label: "Family updates after calls" },
+];
+
+const proofStats = [
+  { value: "2 min", label: "typical setup" },
+  { value: "0 apps", label: "for your parent" },
+  { value: "14 days", label: "free trial" },
+  { value: "Every call", label: "family summary" },
 ];
 
 const steps = [
-  { title: "Choose a call schedule", copy: "Pick the time of day that feels natural for your loved one." },
-  { title: "They receive friendly calls", copy: "DailyCall becomes a familiar voice for connection, routine, and encouragement." },
-  { title: "You get peace-of-mind updates", copy: "Family-friendly text message summaries and missed-call alerts help you know when to follow up." },
+  { title: "You set it up", copy: "Choose a name, call time, and topics your parent loves. Takes about 2 minutes." },
+  { title: "They get a call", copy: "DailyCall rings their regular phone - no app, no screen, just a warm voice that knows them by name." },
+  { title: "You stay informed", copy: "Text summary after every call, plus alerts if a call is missed or something seems off." },
 ];
 
 const seniorBenefits = [
@@ -32,10 +41,23 @@ const familyBenefits = [
   "Peace of mind without making the senior feel watched or monitored",
 ];
 
+const parentIntroPoints = [
+  "Frame it as a friendly daily phone companion, not monitoring",
+  "Choose a familiar call time, like after breakfast or before dinner",
+  "Start with a short call so it feels easy and low-pressure",
+  "Keep family calls going so DailyCall supports the relationship",
+];
+
 const memoryExamples = [
   "How did your grandson's hockey tournament go?",
   "Did your dog recover from surgery?",
   "You mentioned your husband loved jazz music.",
+];
+
+const lonelinessStats = [
+  { value: "24%", label: "of community-dwelling adults 65+ are socially isolated" },
+  { value: "43%", label: "of adults 60+ report feeling lonely" },
+  { value: "Daily", label: "connection helps turn support into a routine" },
 ];
 
 const rituals = [
@@ -49,118 +71,93 @@ const rituals = [
 
 const testimonials = [
   {
-    quote: "I live across the country from my mom, and the daily calls have given me so much peace of mind. She actually looks forward to them every morning now.",
-    name: "Sarah M.",
-    location: "Vancouver",
-    image: "/testimonials/sarah.png",
+    quote: "I live a flight away from my dad. DailyCall gives him a friendly routine and gives me a little more confidence that I am not missing something important.",
+    name: "Michael Turner",
+    location: "Seattle, WA",
+    image: "/testimonials/long-distance-family.png",
   },
   {
-    quote: "After my dad lost his wife, the house became very quiet. These conversations helped bring some routine and connection back into his day.",
-    name: "Michael T.",
-    location: "Seattle",
-    image: "/testimonials/michael.png",
+    quote: "It is nice having someone call just to talk. The conversations feel easy, and I do not have to learn any new app or remember a password.",
+    name: "Margaret Ross",
+    location: "DailyCall member",
+    image: "/testimonials/lonely-senior.png",
   },
   {
-    quote: "It is nice knowing someone will call every day just to chat and check in. The conversations feel warm and friendly.",
-    name: "Margaret R.",
-    location: "Calgary",
-    image: "/testimonials/margaret.png",
-  },
-  {
-    quote: "The missed-call alerts are incredibly reassuring. I do not feel like I have to constantly worry anymore.",
-    name: "Jennifer L.",
-    location: "Toronto",
-    image: "/testimonials/jennifer.png",
-  },
-  {
-    quote: "What surprised me most is that my mom genuinely enjoys the calls. It does not feel like a monitoring service - it feels like companionship.",
-    name: "Emily K.",
-    location: "Portland",
+    quote: "My daughter says I sound brighter on days when the call comes. I like that it is just a regular phone call, not another thing to learn.",
+    name: "Emily Keller",
+    location: "Portland, OR",
     image: "/testimonials/emily.png",
   },
 ];
 
-const trustItems = [
-  "No app or password for seniors",
-  "Works with regular phones and landlines",
-  "Family summaries written for reassurance",
-  "Missed-call alerts after unanswered attempts",
-];
-
 const plans = [
   {
-    name: "Companion Daily",
-    price: "$14.95",
-    eyebrow: "1 caring call per day",
-    bestFor: "A reliable morning call to help your loved one feel connected, supported, and safe.",
+    name: "Wellness",
+    price: "$19.95",
+    eyebrow: "120 monthly minutes",
+    bestFor: "A reliable daily check-in to help your loved one feel connected, supported, and safe.",
+    trial: "14-day free trial included",
     includes: [
-      "1 daily companion call, 7 days a week",
+      "120 included minutes per month",
+      "A friendly daily check-in call",
       "Missed-call alert after 2 unanswered attempts",
       "1 family alert contact",
       "Access to call transcripts",
-      "Simple wellness check-in",
-      "Friendly conversation and daily encouragement",
     ],
-    cta: "Start Free 30-Day Trial",
+    cta: "Start Free 14-Day Trial",
     featured: false,
   },
   {
-    name: "Companion Plus",
-    price: "$29.95",
-    eyebrow: "Up to 3 caring calls per day",
-    bestFor: "More frequent support, deeper companionship, and flexible daily conversations throughout the day.",
+    name: "Companion",
+    price: "$34.95",
+    eyebrow: "250 monthly minutes",
+    bestFor: "More frequent support, deeper companionship, and flexible conversations throughout the day.",
+    trial: "14-day free trial included",
     includes: [
-      "Up to 3 daily companion calls, 7 days a week",
+      "250 included minutes per month",
+      "Up to 3 preferred daily call windows",
       "Up to 10 family alert contacts",
       "Up to 10 custom questions for the companion to ask",
-      "Unlimited conversation time",
-      "Personalized daily conversations",
-      "Advanced daily planning help",
-      "Weather-aware activity suggestions",
-      "Shopping, cooking, exercise, and outdoor activity support",
-      "Optional encouragement, quote, prayer, reflection, or memory prompt",
-      "Expanded call transcripts and summaries",
+      "Richer, more personalized conversations",
+      "Daily planning help - weather, activities, shopping, and routines",
+      "Optional encouragement, prayer, reflection, or memory prompts",
     ],
-    cta: "Start Free 30-Day Trial",
+    cta: "Start Free 14-Day Trial",
     featured: true,
   },
 ];
 
-const pricingComparisonRows = [
-  ["Price", "$14.95/mo", "$29.95/mo"],
-  ["Free Trial", "30 days", "30 days"],
-  ["Calls Per Day", "1", "Up to 3"],
-  ["Missed-Call Alerts", "Yes", "Yes"],
-  ["Alert Contacts", "1", "Up to 10"],
-  ["Call Transcripts", "Yes", "Yes"],
-  ["Custom Questions", "No", "Up to 10"],
-  ["Conversation Time", "Standard", "Unlimited"],
-  ["Daily Planning Help", "Basic", "Advanced"],
-];
-
 const faqs = [
-  ["Does my parent need an app?", "No. DailyCall works by phone and can call landlines."],
-  ["Is this hard to set up?", "No. Families can sign up and start calls in just a few minutes. No credit card required."],
-  ["What does DailyCall talk about?", "DailyCall can chat about daily life, memories, family, hobbies, music, routines, and more."],
-  ["Can I see how my loved one is doing?", "Yes. Family accounts include helpful insights into engagement, mood trends, missed calls, and changes in routine."],
-  ["Is DailyCall replacing human contact?", "No. DailyCall is designed to support connection, not replace family, friends, caregivers, or emergency services."],
-  ["Can I change how often it calls?", "Yes. Call timing and routines can be adjusted as your loved one's needs change."],
+  ["Does my parent need an app or smartphone?", "No. DailyCall works by regular phone call, so your loved one does not need an app, account, password, or smartphone."],
+  ["Will my loved one know they're speaking with AI?", "Yes. DailyCall should be introduced honestly as an AI phone companion that helps families stay connected and informed."],
+  ["Can DailyCall call landlines?", "Yes. DailyCall can call mobile phones and landlines, which makes it simple for seniors who prefer a familiar phone."],
+  ["Is DailyCall easy to set up?", "Yes. Families can sign up and start calls in just a few minutes. No credit card required."],
+  ["What are DailyCall conversations like?", "DailyCall has warm, everyday conversations about routines, memories, family, hobbies, music, plans, and how the day is going."],
+  ["Is DailyCall replacing family connection?", "No. DailyCall is designed to support connection, not replace family, friends, caregivers, or emergency services."],
+  ["What happens if a call is missed?", "Missed calls can be shown in the family dashboard, and DailyCall can help families notice changes in call patterns over time."],
+  ["Can I choose how often DailyCall calls?", "Yes. Call timing and routines can be adjusted as your loved one's needs change."],
+  ["What updates do families receive?", "Families can see helpful updates such as call status, engagement, mood trends, missed calls, and conversation highlights."],
   [
-    "How does DailyCall protect my parent's privacy?",
-    "DailyCall keeps calls protected under our privacy policy, and we take your privacy very seriously. We use conversation details only to provide the service, improve quality, and create helpful family insights like mood, engagement, and positive topics. We do not sell personal data, and we protect it with strong security practice",
+    "How does DailyCall protect privacy and personal information?",
+    "DailyCall uses conversation details only to provide the service, improve quality, and create helpful family insights. We do not sell personal data, and we protect it with strong security practices.",
   ],
+  ["Can I customize the voice or personality?", "Yes. Families can choose from available companion voices and adjust conversation preferences so calls feel more comfortable."],
+  ["Can multiple family members receive updates?", "Yes. DailyCall is designed so more than one family member can stay informed as care needs grow."],
 ];
 
 function CheckIcon() {
   return <span className="bullet-dot h-2 w-2 shrink-0 rounded-full bg-brandPink" aria-hidden="true" />;
 }
 
-export function LandingPage() {
+export function LandingPage({ initialAuthenticated = false }: { initialAuthenticated?: boolean }) {
   return (
-    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-5 md:px-10">
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 pb-5 pt-0 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
-      <SiteHeader showTrialButton />
+      <SiteHeader
+        showTrialButton
+        initialAuthenticated={initialAuthenticated}
+      />
 
       <header className="-mt-2 overflow-hidden rounded-[2rem] bg-white/75 shadow-sm ring-1 ring-black/5">
         <div className="relative">
@@ -189,7 +186,7 @@ export function LandingPage() {
             </div>
             <div className="pt-10 sm:pt-0">
               <p className="mt-4 w-[65%] max-w-[65%] -translate-y-10 text-lg leading-8 text-slate-600 md:mt-5 md:w-auto md:max-w-[72%] md:translate-y-0">
-                Simple daily companion calls that help aging parents feel connected, supported, and safe.
+                DailyCall gives aging parents a warm, familiar conversation by regular phone - and gives families simple updates after each call.
               </p>
               <p className="mt-4 hidden text-sm font-extrabold uppercase tracking-normal text-ink sm:flex sm:flex-wrap sm:gap-x-2 sm:gap-y-1 sm:text-base">
                 <span className="block whitespace-nowrap sm:inline">NO CREDIT CARD REQUIRED</span>
@@ -211,7 +208,7 @@ export function LandingPage() {
               </div>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link href="/signup" className="rounded-full bg-brandButtonBlue px-6 py-3 text-center font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover">
-                  Start Your Free 30-Day Trial
+                  Start Your Free 14-Day Trial
                 </Link>
                 <a href="#how-it-works" className="rounded-full bg-white/85 px-6 py-3 text-center font-semibold text-ink shadow-sm ring-1 ring-black/10 hover:bg-white">
                   See how it works
@@ -221,6 +218,15 @@ export function LandingPage() {
           </div>
         </div>
       </header>
+
+      <section data-mobile-reveal aria-label="DailyCall proof points" className="grid grid-cols-2 gap-3 rounded-[2rem] bg-white/80 p-4 shadow-sm ring-1 ring-black/5 lg:grid-cols-4">
+        {proofStats.map((item) => (
+          <div key={item.label} className="rounded-2xl bg-brandBlue/10 p-4 text-center ring-1 ring-brandBlue/15">
+            <p className="text-2xl font-bold text-ink">{item.value}</p>
+            <p className="mt-1 text-base md:text-sm font-semibold leading-5 text-slate-600">{item.label}</p>
+          </div>
+        ))}
+      </section>
 
       <section data-mobile-reveal id="how-it-works" className="rounded-[2rem] bg-ink p-8 text-cream shadow-sm md:p-10">
         <div className="grid gap-8 md:grid-cols-[0.75fr_1fr] md:items-center">
@@ -260,9 +266,11 @@ export function LandingPage() {
             <div className="mt-6 rounded-[2rem] bg-ink p-5 text-cream shadow-sm md:flex md:min-h-[360px] md:flex-col md:justify-center">
               <p className="text-sm md:text-xs font-semibold uppercase tracking-wide text-cream/50">Sample conversation</p>
               <div className="mt-4 grid gap-3 text-base md:text-sm leading-6">
-                <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Hi, this is DailyCall. I am calling for a quick friendly check-in. How is your morning going?</p>
-                <p className="ml-auto max-w-[88%] rounded-2xl bg-brandPink p-3 font-semibold text-white">Pretty good. I just finished coffee.</p>
-                <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">That sounds nice. A little music can be a lovely way to start the day — have you listened to anything this morning?</p>
+                <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Hi, this is DailyCall calling for your daily check-in! How are you feeling today?</p>
+                <p className="ml-auto max-w-[88%] rounded-2xl bg-brandPink p-3 font-semibold text-white">A little tired, but okay. I slept in a bit.</p>
+                <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Glad you got some extra rest — sometimes that&apos;s exactly what we need. Do you have anything you&apos;re looking forward to today?</p>
+                <p className="ml-auto max-w-[88%] rounded-2xl bg-brandPink p-3 font-semibold text-white">My daughter is coming over for lunch.</p>
+                <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">That&apos;s wonderful! Is there anything else you&apos;d like to talk about or I can help with? If not, enjoy your lunch with her!</p>
               </div>
             </div>
           </div>
@@ -274,7 +282,7 @@ export function LandingPage() {
         <article className="relative overflow-hidden rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-brandPink/20 to-transparent" />
           <p className="relative text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Connection</p>
-          <h2 className="relative mt-3 text-2xl font-bold text-ink">Someone to talk to when you can&apos;t be there.</h2>
+          <h2 className="relative mt-3 text-2xl font-bold text-ink">For the in-between days.</h2>
           <p className="relative mt-3 leading-7 text-slate-600">Life gets busy. Companion calls help loved ones feel connected even when families can&apos;t call every day.</p>
         </article>
         <article className="relative overflow-hidden rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
@@ -310,6 +318,69 @@ export function LandingPage() {
             ))}
           </ul>
         </article>
+      </section>
+
+      <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
+        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+          <div>
+            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Family dashboard</p>
+            <h2 className="mt-3 text-3xl font-bold text-ink">Show families what actually happened.</h2>
+            <p className="mt-4 leading-7 text-slate-600">
+              The dashboard turns each call into a simple, useful update: whether the call was answered, how the conversation felt, what came up, and whether anyone should follow up.
+            </p>
+          </div>
+          <div className="rounded-[2rem] bg-ink p-4 text-cream shadow-sm ring-1 ring-ink">
+            <div className="rounded-3xl bg-white p-4 text-ink">
+              <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-wide text-sage">Today&apos;s check-in</p>
+                  <h3 className="mt-1 text-xl font-bold">Margaret Ross</h3>
+                </div>
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">Answered</span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {[
+                  ["Answer rate", "92%"],
+                  ["Mood trend", "Brighter"],
+                  ["Missed calls", "0 this week"],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-2xl bg-brandBlue/10 p-3">
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
+                    <p className="mt-1 text-lg font-bold text-ink">{value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Summary</p>
+                <p className="mt-2 text-base md:text-sm leading-6 text-slate-700">
+                  Margaret sounded upbeat after breakfast. She talked about her garden, remembered her granddaughter&apos;s visit, and said she plans to call Sarah this evening.
+                </p>
+              </div>
+              <div className="mt-3 rounded-2xl bg-brandPink/10 p-3 text-base md:text-sm font-semibold leading-6 text-ink">
+                Follow-up note: ask about the garden tomatoes next call.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
+        <div className="grid gap-7 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+          <div>
+            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Introducing DailyCall</p>
+            <h2 className="mt-3 text-3xl font-bold text-ink">Make the first call feel natural.</h2>
+            <p className="mt-4 leading-7 text-slate-600">
+              Families are often worried their parent will resist anything that sounds like technology. DailyCall is easiest to explain as a friendly phone call that helps them stay connected.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {parentIntroPoints.map((item) => (
+              <div key={item} className="rounded-2xl bg-brandBlue/10 p-4 text-base md:text-sm font-bold leading-6 text-ink ring-1 ring-brandBlue/15">
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
@@ -351,16 +422,22 @@ export function LandingPage() {
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-brandBlue/10 p-6 shadow-sm ring-1 ring-brandBlue/15 md:p-10">
-        <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Family dashboard</p>
-        <h2 className="mt-3 text-3xl font-bold text-ink">Helpful insight, carefully framed.</h2>
+        <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Why daily connection matters</p>
+        <h2 className="mt-3 text-3xl font-bold text-ink">Loneliness is not a small problem.</h2>
         <p className="mt-4 max-w-3xl leading-7 text-slate-600">
-          Get helpful insights into mood, engagement, missed calls, and routine changes - without making the experience feel clinical. DailyCall is companionship first, with family reassurance in the background.
+          A short daily call will not replace family or professional care. It can, however, create a steady moment of conversation that helps families notice changes sooner and helps older adults feel less alone.
         </p>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {["Mood trends", "Wellness indicators", "Loneliness risk signals", "Missed-call alerts", "Cognitive change indicators", "Emergency escalation options"].map((item) => (
-            <div key={item} className="rounded-2xl bg-white/80 p-4 text-base md:text-sm font-semibold text-ink shadow-sm ring-1 ring-black/5">{item}</div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {lonelinessStats.map((item) => (
+            <div key={item.label} className="rounded-2xl bg-white/80 p-5 shadow-sm ring-1 ring-black/5">
+              <p className="text-3xl font-bold text-ink">{item.value}</p>
+              <p className="mt-2 text-base md:text-sm font-semibold leading-6 text-slate-600">{item.label}</p>
+            </div>
           ))}
         </div>
+        <p className="mt-4 text-sm leading-6 text-slate-500">
+          Source: National Academies report on social isolation and loneliness in older adults.
+        </p>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/70 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
@@ -376,17 +453,18 @@ export function LandingPage() {
         <div className="text-center">
           <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Pricing</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Companionship for them. Peace of mind for you.</h2>
-          <p className="mx-auto mt-3 max-w-2xl leading-7 text-slate-600">Both plans include a 30-day free trial with no credit card required.</p>
+          <p className="mx-auto mt-3 max-w-4xl text-xl font-bold leading-7 text-ink md:whitespace-nowrap">Less than a single caregiver hour. Less than one dinner out. Daily peace of mind.</p>
+          <p className="mx-auto mt-2 max-w-2xl leading-7 text-slate-600">Both plans include a {trialLengthDays}-day free trial. No credit card required.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
           {plans.map((plan) => (
             <article key={plan.name} className={`flex flex-col rounded-3xl p-6 shadow-sm ring-1 md:h-full ${plan.featured ? "bg-ink text-cream ring-ink" : "bg-white/80 text-ink ring-black/5"}`}>
               <div className="flex items-center justify-between gap-3">
                 <p className={`text-base md:text-sm font-semibold uppercase tracking-wide ${plan.featured ? "text-cream/60" : "text-sage"}`}>{plan.name}</p>
-                {plan.featured ? <span className="rounded-full bg-brandPink px-3 py-1 text-sm md:text-xs font-bold text-white">Most popular</span> : null}
+                {plan.featured ? <span className="rounded-full bg-brandPink px-3 py-1 text-sm md:text-xs font-bold text-white">Recommended</span> : null}
               </div>
-              <p className="mt-3 text-4xl font-bold">{plan.price}<span className={`text-base font-medium ${plan.featured ? "text-cream/60" : "text-slate-500"}`}> CAD/USD / mo</span></p>
-              <p className={`mt-1 text-sm md:text-xs font-semibold uppercase tracking-wide ${plan.featured ? "text-cream/50" : "text-slate-500"}`}>Introductory first-year price</p>
+              <p className="mt-3 text-4xl font-bold">{plan.price}<span className={`text-base font-medium ${plan.featured ? "text-cream/60" : "text-slate-500"}`}> / mo</span></p>
+              <p className={`mt-2 text-base md:text-sm font-semibold ${plan.featured ? "text-brandPink" : "text-sage"}`}>{plan.trial}</p>
               <p className={`mt-2 text-base md:text-sm font-bold ${plan.featured ? "text-cream" : "text-ink"}`}>{plan.eyebrow}</p>
               <p className={`mt-3 min-h-12 text-base md:text-sm leading-6 ${plan.featured ? "text-cream/75" : "text-slate-600"}`}>{plan.bestFor}</p>
               <ul className={`mt-5 grid gap-2 text-base md:text-sm leading-6 ${plan.featured ? "text-cream/80" : "text-slate-600"}`}>
@@ -399,110 +477,83 @@ export function LandingPage() {
             </article>
           ))}
         </div>
-      </section>
-
-      <section data-mobile-reveal className="relative overflow-hidden rounded-[2rem] bg-white/80 p-4 shadow-sm ring-1 ring-black/5 md:p-6">
-        <Image
-          src="/elderly-man-phone-cta.jpg"
-          alt="Older man smiling while talking on the phone"
-          width={1280}
-          height={720}
-          className="absolute inset-y-0 right-0 hidden h-full w-[75%] object-cover object-center opacity-65 xl:block"
-        />
-        <div
-          className="absolute inset-y-0 right-0 hidden w-[75%] xl:block"
-          style={{ background: "linear-gradient(to right, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 18%, rgba(255, 255, 255, 0.52) 50%, rgba(255, 255, 255, 0.1) 62%)" }}
-        />
-        <div className="relative p-2 md:p-4 xl:max-w-[68%]">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Plan comparison</p>
-          <h2 className="mt-3 text-3xl font-bold text-ink">Choose the daily rhythm that fits.</h2>
-          <p className="mt-3 text-base md:text-sm leading-6 text-slate-600 md:hidden">A compact view of the biggest differences. The full comparison appears on larger screens.</p>
-        </div>
-
-        <div className="relative grid gap-4 md:hidden">
-          <div className="grid grid-cols-2 gap-3">
-            <article className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-              <p className="text-sm md:text-xs font-bold uppercase tracking-wide text-sage">Daily</p>
-              <p className="mt-2 text-2xl font-bold text-ink">$14.95</p>
-              <p className="text-sm md:text-xs text-slate-500">CAD/USD / month</p>
-              <p className="mt-3 text-base md:text-sm font-semibold leading-5 text-ink">1 caring call per day</p>
-            </article>
-            <article className="rounded-3xl bg-ink p-4 text-cream shadow-sm ring-1 ring-ink">
-              <p className="text-sm md:text-xs font-bold uppercase tracking-wide text-cream/60">Plus</p>
-              <p className="mt-2 text-2xl font-bold">$29.95</p>
-              <p className="text-sm md:text-xs text-cream/60">CAD/USD / month</p>
-              <p className="mt-3 text-base md:text-sm font-semibold leading-5">Up to 3 calls per day</p>
-            </article>
+        <div className="grid gap-5 rounded-[2rem] bg-ink p-5 text-cream shadow-sm ring-1 ring-ink md:grid-cols-[0.9fr_1.1fr] md:p-6">
+          <div>
+            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-brandPink">Companion plan</p>
+            <h3 className="mt-2 text-2xl font-bold">Always reachable.</h3>
+            <p className="mt-3 text-base md:text-sm leading-6 text-cream/75">
+              Your loved one can call DailyCall anytime, day or night, simply by dialing back the same number. It is not just scheduled calls - it is a friendly voice that is there whenever they want to talk.
+            </p>
           </div>
-
-          <div className="grid gap-2 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+          <div className="grid gap-3 rounded-3xl bg-white/10 p-4 ring-1 ring-white/10">
             {[
-              ["Free trial", "30 days", "30 days"],
-              ["Missed-call alerts", "Yes", "Yes"],
-              ["Alert contacts", "1", "Up to 10"],
-              ["Custom questions", "No", "Up to 10"],
-              ["Conversation time", "Standard", "Unlimited"],
-              ["Daily planning", "Basic", "Advanced"],
-            ].map(([feature, daily, plus]) => (
-              <div key={feature} className="grid grid-cols-[1.25fr_0.75fr_0.75fr] items-center gap-2 border-b border-slate-100 py-2 last:border-b-0">
-                <span className="text-sm md:text-xs font-semibold leading-5 text-slate-600">{feature}</span>
-                <span className="rounded-full bg-brandBlue/10 px-3 py-1.5 text-center text-sm md:text-xs font-bold leading-5 text-brandButtonBlue">{daily}</span>
-                <span className="rounded-full bg-ink px-3 py-1.5 text-center text-sm md:text-xs font-bold leading-5 text-cream">{plus}</span>
+              "They dial the same number that calls them.",
+              "The companion recognizes them and picks up where they left off.",
+              "Conversations feel continuous, like calling a friend.",
+              "Included with the Companion plan.",
+            ].map((item) => (
+              <div key={item} className="flex gap-3 text-base md:text-sm font-semibold leading-6 text-cream/85">
+                <CheckIcon />
+                <span>{item}</span>
               </div>
             ))}
           </div>
-
-          <div className="rounded-3xl bg-brandBlue/10 p-4 shadow-sm ring-1 ring-brandBlue/15">
-            <p className="text-base md:text-sm font-bold text-ink">Plus is best when they&apos;d benefit from extra connection during the day.</p>
-            <p className="mt-2 text-base md:text-sm leading-6 text-slate-600">It adds more calls, more alert contacts, custom questions, unlimited conversation time, and advanced daily planning support.</p>
-          </div>
         </div>
-
-        <div className="relative hidden overflow-x-auto md:block xl:max-w-[68%]">
-          <table className="min-w-[680px] border-separate border-spacing-0 text-left text-base md:text-sm">
-            <thead>
-              <tr className="text-ink">
-                <th className="rounded-l-2xl bg-brandBlue/10 p-4 font-bold">Feature</th>
-                <th className="bg-brandBlue/10 p-4 font-bold">Companion Daily</th>
-                <th className="rounded-r-2xl bg-brandBlue/10 p-4 font-bold">Companion Plus</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pricingComparisonRows.map((row) => (
-                <tr key={row[0]} className="border-b border-slate-100">
-                  {row.map((cell, index) => (
-                    <td key={`${row[0]}-${index}`} className={`border-b border-slate-100 p-4 ${index === 2 ? "font-bold text-ink" : "text-slate-600"}`}>{cell}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="relative p-4 text-base md:text-sm font-semibold leading-6 text-ink xl:max-w-[68%]">A simple call. A familiar voice. A little more peace of mind.</p>
       </section>
 
-      <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
-        <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Trust & privacy</p>
-        <h2 className="mt-3 text-3xl font-bold text-ink">Designed to feel supportive, not intrusive.</h2>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {trustItems.map((item) => (
-            <div key={item} className="rounded-2xl bg-brandBlue/10 p-4 text-base md:text-sm font-bold leading-6 text-ink ring-1 ring-brandBlue/15">{item}</div>
-          ))}
+      <section data-mobile-reveal className="relative overflow-hidden rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
+        <Image
+          src="/trust-son-mom-v2.png"
+          alt="Adult son sitting with his elderly mother in a warm home setting"
+          width={1536}
+          height={1024}
+          className="absolute inset-y-0 left-0 hidden h-full w-[77%] object-cover object-center opacity-90 lg:block"
+        />
+        <div
+          className="absolute inset-y-0 left-[50%] hidden w-[50%] lg:block"
+          style={{ background: "linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 14%, rgba(255,255,255,0.28) 34%, rgba(255,255,255,0.68) 58%, rgba(255,255,255,0.94) 78%, rgba(255,255,255,1) 100%)" }}
+        />
+        <div className="pointer-events-none absolute inset-x-0 -top-[25px] h-[24rem] overflow-hidden lg:hidden">
+          <Image
+            src="/trust-son-mom-v2.png"
+            alt="Adult son sitting with his elderly mother in a warm home setting"
+            width={1536}
+            height={1024}
+            className="h-full w-full object-cover object-[0%_center]"
+          />
+          <div className="absolute inset-x-0 bottom-0 h-52 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_34%,rgba(255,255,255,0.66)_72%,rgba(255,255,255,0.98)_100%)]" />
         </div>
-        <p className="mt-5 max-w-3xl text-base md:text-sm leading-7 text-slate-600">DailyCall is a family reassurance service.<br className="hidden md:block" /> Summaries and alerts are meant to help families stay connected, not make seniors feel monitored.</p>
+        <div className="relative max-w-2xl pt-[20.5rem] lg:ml-auto lg:max-w-[31rem] lg:translate-x-4 lg:pt-0 xl:max-w-[34rem] xl:translate-x-6">
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Trust & privacy</p>
+          <h2 className="mt-3 text-3xl font-bold text-ink">
+            <span className="md:hidden">Designed for trust.</span>
+            <span className="hidden md:inline">Designed to feel supportive, not intrusive.</span>
+          </h2>
+          <div className="mt-6 rounded-3xl bg-ink p-5 text-cream shadow-sm">
+            <p className="text-xl font-bold">Honest about AI. Always.</p>
+            <p className="mt-3 max-w-xl text-base md:text-sm leading-6 text-cream/75">
+              Every call begins with a clear disclosure that DailyCall is an AI companion - not a human. We will never pretend otherwise, and we believe families shouldn&apos;t have to either.
+            </p>
+          </div>
+          <p className="mt-6 max-w-xl text-base md:text-sm leading-7 text-slate-600">
+            Your loved one&apos;s conversations stay private. Family summaries are written to support connection - never to surveil, score, or pathologize. We don&apos;t sell your data, we don&apos;t share it with third parties, and we encrypt everything end-to-end.
+          </p>
+        </div>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
         <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">FAQ</p>
-        <h2 className="mt-3 text-3xl font-bold text-ink">Simple answers for families.</h2>
+        <h2 className="mt-3 text-3xl font-bold text-ink">Questions families often ask.</h2>
         <div className="mt-6 grid gap-3 xl:grid-cols-2">
           {faqs.map(([question, answer]) => (
-            <details key={question} className="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 transition hover:ring-brandBlue/25 open:ring-brandBlue/25 xl:min-h-24">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-ink marker:hidden [&::-webkit-details-marker]:hidden">
-                <span>{question}</span>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brandBlue/10 text-lg leading-none text-brandButtonBlue transition group-open:rotate-45">+</span>
+            <details key={question} className="group h-full rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition hover:ring-brandBlue/25 open:ring-brandBlue/25">
+              <summary className="block h-full min-h-24 cursor-pointer list-none p-5 marker:hidden [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center justify-between gap-4 font-bold text-ink">
+                  <span>{question}</span>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brandBlue/10 text-lg leading-none text-brandButtonBlue transition group-open:rotate-45">+</span>
+                </span>
+                <span className="mt-3 hidden max-w-3xl text-base font-normal leading-6 text-slate-600 group-open:block md:text-sm">{answer}</span>
               </summary>
-              <p className="mt-3 max-w-3xl text-base md:text-sm leading-6 text-slate-600">{answer}</p>
             </details>
           ))}
         </div>
@@ -521,11 +572,16 @@ export function LandingPage() {
           style={{ background: "linear-gradient(to right, #12354f 0%, rgba(18, 53, 79, 0.98) 18%, rgba(18, 53, 79, 0.72) 36%, rgba(18, 53, 79, 0.2) 62%, rgba(18, 53, 79, 0) 100%)" }}
         />
         <div className="relative max-w-2xl">
-          <h2 className="text-3xl font-bold">Give them a call they can look forward to.</h2>
+          <h2 className="text-3xl font-bold">You can&apos;t always be there. This can.</h2>
           <p className="mt-3 max-w-xl leading-7 text-cream/75">Set up a warm daily phone companion for your loved one in minutes. No app, no password, just a friendly call.</p>
-          <Link href="/signup" className="mt-6 inline-flex rounded-full bg-cream px-6 py-3 font-semibold text-ink shadow-sm hover:bg-white">
-            Set up daily calls
-          </Link>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <Link href="/signup" className="inline-flex rounded-full bg-cream px-6 py-3 font-semibold text-ink shadow-sm hover:bg-white">
+              Start free 14-day trial
+            </Link>
+            <a href="tel:+18005552255" className="inline-flex rounded-full bg-white/10 px-6 py-3 font-semibold text-cream ring-1 ring-white/20 hover:bg-white/15">
+              Talk to a person first
+            </a>
+          </div>
         </div>
       </section>
 

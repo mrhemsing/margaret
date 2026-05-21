@@ -4,15 +4,28 @@ import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 
 const PROCESSING_WINDOW_MS = 30 * 60 * 1000;
-const EXCLUDED_CRON_CUSTOMER_EMAILS = ["demo-family@dailycall.local", "example-family@dailycall.local"];
+const DEMO_CRON_CUSTOMER_EMAIL = "demo-family@dailycall.local";
+const EXCLUDED_CRON_CUSTOMER_EMAILS = [DEMO_CRON_CUSTOMER_EMAIL, "example-family@dailycall.local"];
+const EXCLUDED_CRON_PREFERRED_CALL_TIMES = ["Landing page demo", "On demand test", "OpenAI realtime phone test"];
+const ALLOWED_DEMO_CRON_PHONE_NUMBERS = ["+16043138398"];
+const cronEligibleMemberWhere = {
+  preferredCallTime: { notIn: EXCLUDED_CRON_PREFERRED_CALL_TIMES },
+  OR: [
+    { customer: { email: { notIn: EXCLUDED_CRON_CUSTOMER_EMAILS } } },
+    {
+      phoneNumber: { in: ALLOWED_DEMO_CRON_PHONE_NUMBERS },
+      customer: { email: DEMO_CRON_CUSTOMER_EMAIL },
+    },
+  ],
+};
 
-export async function POST() {
+async function processScheduledCalls() {
   const now = new Date();
   const processingWindowStart = new Date(now.getTime() - PROCESSING_WINDOW_MS);
   const activeMembers = await prisma.member.findMany({
     where: {
       active: true,
-      customer: { email: { notIn: EXCLUDED_CRON_CUSTOMER_EMAILS } },
+      ...cronEligibleMemberWhere,
     },
     select: { id: true, active: true, preferredCallTime: true, timezone: true },
   });
@@ -23,7 +36,9 @@ export async function POST() {
     where: {
       status: "SCHEDULED",
       scheduledFor: { lt: processingWindowStart },
-      member: { customer: { email: { notIn: EXCLUDED_CRON_CUSTOMER_EMAILS } } },
+      member: {
+        ...cronEligibleMemberWhere,
+      },
     },
     data: {
       status: "FAILED",
@@ -36,7 +51,9 @@ export async function POST() {
   const dueCalls = await prisma.callAttempt.findMany({
     where: {
       status: "SCHEDULED",
-      member: { customer: { email: { notIn: EXCLUDED_CRON_CUSTOMER_EMAILS } } },
+      member: {
+        ...cronEligibleMemberWhere,
+      },
       scheduledFor: {
         gte: processingWindowStart,
         lte: now,
@@ -85,4 +102,12 @@ export async function POST() {
   }
 
   return NextResponse.json({ ok: true, expired: expiredCalls.count, processed: results.length, results });
+}
+
+export async function GET() {
+  return processScheduledCalls();
+}
+
+export async function POST() {
+  return processScheduledCalls();
 }

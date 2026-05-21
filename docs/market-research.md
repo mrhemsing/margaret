@@ -35,6 +35,18 @@ A strong wedge remains for a service that combines:
 - Affordable setup and pricing.
 - High trust, privacy, and family peace-of-mind.
 
+## Technology implication
+
+The OpenAI Realtime direction supports the market wedge better than a generic call bot because DailyCall can tune the conversation loop directly:
+
+- high semantic VAD eagerness for faster turn-taking;
+- soft companion voice defaults for older adults;
+- preloaded member memory and current context;
+- live transcript events for summaries and safety review;
+- future tool use for current weather, sports, reminders, and caregiver workflows.
+
+The product should still lead with emotional clarity and trust, not technology. OpenAI Realtime is the engine; the customer promise remains warm daily calls and simple family peace of mind.
+
 ## Product Implications
 
 Prioritize messaging and product surfaces around:
@@ -43,4 +55,5 @@ Prioritize messaging and product surfaces around:
 - Family summaries that feel useful, not surveillance-heavy.
 - Dead-simple setup for non-technical seniors.
 - A warmer emotional tone than safety-only check-in tools.
+- Snappier, more human-feeling calls than survey-like check-in bots.
 - Pricing that undercuts hardware-heavy alternatives.

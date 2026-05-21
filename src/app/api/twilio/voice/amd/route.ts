@@ -4,6 +4,13 @@ import { prisma } from "@/lib/db";
 import { sendExampleVoicemailAlertSmsToTeam } from "@/lib/sms/twilio";
 import { getServerEnv } from "@/lib/env";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
+import { getCachedCallCurrentContext } from "@/lib/voice/current-info";
+import {
+  buildOpenAIRealtimeConferenceTwiml,
+  createOpenAIRealtimeConferenceParticipant,
+  getVoiceProvider,
+} from "@/lib/voice/openai-realtime";
+import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 function twiml(xml: string) {
   return new NextResponse(xml, {
@@ -13,6 +20,17 @@ function twiml(xml: string) {
 
 function extractConversationId(xml: string) {
   return xml.match(/name="conversation_id" value="([^"]+)"/)?.[1] ?? null;
+}
+
+function buildHybridVoiceTwiml(input: { callSid: string; baseUrl: string }) {
+  const actionUrl = `${input.baseUrl}/api/twilio/voice/hybrid?callSid=${encodeURIComponent(input.callSid)}`;
+
+  return [
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+    "<Response>",
+    `<Redirect method="POST">${actionUrl}</Redirect>`,
+    "</Response>",
+  ].join("");
 }
 
 async function registerElevenLabsTwilioCall(input: {
@@ -25,8 +43,14 @@ async function registerElevenLabsTwilioCall(input: {
   recentTopics: string[];
   topicsToRevisit: string[];
   avoidRepeating: string[];
+  preferredVoiceId?: string | null;
 }) {
   const env = getServerEnv();
+
+  if (!env.ELEVENLABS_API_KEY || !env.ELEVENLABS_AGENT_ID) {
+    throw new Error("ElevenLabs Twilio bridge is not configured.");
+  }
+
   const response = await fetch("https://api.elevenlabs.io/v1/convai/twilio/register-call", {
     method: "POST",
     headers: {
@@ -48,6 +72,11 @@ async function registerElevenLabsTwilioCall(input: {
           topics_to_revisit: input.topicsToRevisit.join("; ") || "none yet",
           avoid_repeating: input.avoidRepeating.join("; ") || "Do not use a generic scripted wellness survey opening.",
         },
+        conversation_config_override: {
+          tts: {
+            voice_id: isAllowedVoiceId(input.preferredVoiceId ?? "") ? input.preferredVoiceId : defaultVoiceId,
+          },
+        },
       },
     }),
   });
@@ -66,6 +95,18 @@ function isMachine(answeredBy: string | null) {
   return answeredBy.toLowerCase().startsWith("machine") || answeredBy.toLowerCase() === "fax";
 }
 
+function getRequestedVoiceProvider(value: string | null) {
+  if (
+    value === "openai_realtime_twilio" ||
+    value === "openai_text_elevenlabs_twilio" ||
+    value === "elevenlabs_twilio"
+  ) {
+    return value;
+  }
+
+  return null;
+}
+
 export async function POST(request: Request) {
   const url = new URL(request.url);
   const formData = await request.formData();
@@ -73,6 +114,7 @@ export async function POST(request: Request) {
   const answeredBy = String(formData.get("AnsweredBy") ?? "");
   const fromNumber = String(formData.get("From") ?? "");
   const toNumber = String(formData.get("To") ?? "");
+  const callToken = String(formData.get("CallToken") ?? "");
   const memberName = url.searchParams.get("memberName") ?? "there";
   const caregiverName = url.searchParams.get("caregiverName") ?? "your caregiver";
 
@@ -174,28 +216,89 @@ export async function POST(request: Request) {
           take: 5,
         })
       : [];
+    const cachedCurrentContext = await getCachedCallCurrentContext(prisma);
     const companionContext = callAttempt
       ? buildCompanionContext({
           memberName: callAttempt.member.name,
           memory: callAttempt.member.memory,
           recentCalls,
+          currentContext: cachedCurrentContext,
         })
       : {
           companionContext: [
             "You are calling " + memberName + ". Sound like a familiar, warm daily companion, not a clinical checklist.",
-            buildCurrentConversationContext(),
+            cachedCurrentContext || buildCurrentConversationContext(),
             "Open with warmth and variety. Ask one easy, human question.",
           ].join("\n"),
-          currentContext: buildCurrentConversationContext(),
+          currentContext: cachedCurrentContext || buildCurrentConversationContext(),
           recentTopics: [],
           topicsToRevisit: [],
           avoidRepeating: ["Do not use a generic scripted wellness survey opening."],
-        };
+    };
+    const voiceProvider = getRequestedVoiceProvider(url.searchParams.get("voiceProvider")) ?? getVoiceProvider();
+
+    if (voiceProvider === "openai_text_elevenlabs_twilio") {
+      const env = getServerEnv();
+      const baseUrl = (env.PUBLIC_APP_URL ?? env.APP_URL)?.replace(/\/$/, "");
+
+      if (!baseUrl) {
+        throw new Error("PUBLIC_APP_URL or APP_URL is required for the hybrid Twilio voice loop.");
+      }
+
+      if (callSid) {
+        await prisma.callAttempt.updateMany({
+          where: { providerCallSid: callSid },
+          data: {
+            summary: "Human answer detected. DailyCall is connecting OpenAI text replies to ElevenLabs voice playback.",
+            conversationRaw: {
+              provider: "openai_text_elevenlabs_twilio",
+              twilioAmd: Object.fromEntries(formData.entries()),
+              hybridTranscript: [],
+            } as Prisma.InputJsonValue,
+            syncedAt: new Date(),
+          },
+        });
+      }
+
+      return twiml(buildHybridVoiceTwiml({ callSid, baseUrl }));
+    }
+
+    if (voiceProvider === "openai_realtime_twilio") {
+      const conferenceName = `dailycall-${callSid}`;
+
+      const openAIParticipant = await createOpenAIRealtimeConferenceParticipant({
+        conferenceName,
+        fromNumber,
+        callAttemptId: callAttempt?.id,
+        callToken,
+      });
+
+      const openAITwiml = buildOpenAIRealtimeConferenceTwiml({ conferenceName });
+
+      if (callSid) {
+        await prisma.callAttempt.updateMany({
+          where: { providerCallSid: callSid },
+          data: {
+            summary: "Human answer detected. DailyCall is connecting the call to an OpenAI Realtime conference.",
+            conversationRaw: {
+              provider: "openai_realtime",
+              twilioAmd: Object.fromEntries(formData.entries()),
+              openAISipParticipant: openAIParticipant,
+            } as Prisma.InputJsonValue,
+            syncedAt: new Date(),
+          },
+        });
+      }
+
+      return twiml(openAITwiml);
+    }
+
     const elevenLabsTwiml = await registerElevenLabsTwilioCall({
       fromNumber,
       toNumber,
       memberName: callAttempt?.member.name ?? memberName,
       caregiverName,
+      preferredVoiceId: callAttempt?.member.preferredVoiceId,
       ...companionContext,
     });
     const conversationId = extractConversationId(elevenLabsTwiml);

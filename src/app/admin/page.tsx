@@ -2,6 +2,7 @@ import { SubscriptionStatus } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { AdminTopNav } from "@/app/components/admin-top-nav";
 import { CallTestPanel } from "@/app/components/call-test-panel";
 import { SiteHeader } from "@/app/components/site-header";
 import { ADMIN_AUTH_COOKIE, hashAdminPassword, isAdminAuthenticated } from "@/lib/admin-auth";
@@ -20,14 +21,23 @@ const VOICE_AI_COST_PER_MINUTE_USD = 0.08;
 const TELEPHONY_COST_PER_MINUTE_USD = 0.02;
 const ESTIMATED_COST_PER_MINUTE_USD = VOICE_AI_COST_PER_MINUTE_USD + TELEPHONY_COST_PER_MINUTE_USD;
 
+function getSafeAdminRedirect(value: FormDataEntryValue | string | null | undefined) {
+  const path = typeof value === "string" ? value : "";
+
+  if (!path.startsWith("/") || path.startsWith("//")) return "/admin";
+
+  return path;
+}
+
 async function unlockAdminDashboard(formData: FormData) {
   "use server";
 
   const password = process.env.ADMIN_DASHBOARD_PASSWORD;
   const attemptedPassword = String(formData.get("password") ?? "");
+  const nextPath = getSafeAdminRedirect(formData.get("next"));
 
   if (!password || attemptedPassword !== password) {
-    redirect("/admin?auth=failed");
+    redirect(`/admin?auth=failed&next=${encodeURIComponent(nextPath)}`);
   }
 
   const cookieStore = await cookies();
@@ -35,11 +45,11 @@ async function unlockAdminDashboard(formData: FormData) {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    path: "/admin",
+    path: "/",
     maxAge: 60 * 60 * 12,
   });
 
-  redirect("/admin");
+  redirect(nextPath);
 }
 
 async function signOutAdminDashboard() {
@@ -50,23 +60,24 @@ async function signOutAdminDashboard() {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    path: "/admin",
+    path: "/",
     maxAge: 0,
   });
 
   redirect("/admin");
 }
 
-function AdminPasswordGate({ failed }: { failed: boolean }) {
+function AdminPasswordGate({ failed, nextPath }: { failed: boolean; nextPath: string }) {
   return (
-    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-5 md:px-10">
+    <main className="relative isolate mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 pb-8 pt-4 md:gap-6 md:px-10 md:py-5">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <SiteHeader showLoginLink={false} showAccountControls={false} />
-      <section className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center rounded-[2rem] bg-white/90 p-8 shadow-sm ring-1 ring-black/5">
+      <section className="mx-auto mt-2 w-full max-w-xl rounded-[2rem] bg-white/90 p-7 shadow-sm ring-1 ring-black/5 sm:p-8 md:mt-4">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">internal admin</p>
         <h1 className="mt-3 whitespace-nowrap text-3xl font-bold tracking-tight text-ink sm:text-4xl">DailyCall operations</h1>
         {process.env.ADMIN_DASHBOARD_PASSWORD ? (
-          <form action={unlockAdminDashboard} className="mt-6 grid gap-4">
+          <form action={unlockAdminDashboard} className="mt-5 grid gap-3">
+            <input type="hidden" name="next" value={nextPath} />
             <label className="grid gap-2 text-sm font-semibold text-slate-700">
               Admin password
               <input
@@ -298,12 +309,17 @@ function MetricCard({ label, value, dark = false }: { label: string; value: stri
   );
 }
 
-export default async function AdminPage({ searchParams }: { searchParams?: Promise<{ auth?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams?: Promise<{ auth?: string; next?: string }> }) {
   const authenticated = await isAdminAuthenticated();
+  const params = await searchParams;
+  const nextPath = getSafeAdminRedirect(params?.next);
 
   if (!authenticated) {
-    const params = await searchParams;
-    return <AdminPasswordGate failed={params?.auth === "failed"} />;
+    return <AdminPasswordGate failed={params?.auth === "failed"} nextPath={nextPath} />;
+  }
+
+  if (nextPath !== "/admin") {
+    redirect(nextPath);
   }
 
   const data = await getAdminData();
@@ -340,11 +356,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
     <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-5 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
-      <form action={signOutAdminDashboard} className="absolute right-6 top-4 z-10 md:right-10">
-        <button type="submit" className="w-20 whitespace-nowrap text-right text-sm font-bold text-ink hover:text-brandButtonBlue">
-          Sign out
-        </button>
-      </form>
+      <AdminTopNav activePath="/admin" signOutAction={signOutAdminDashboard} />
       <SiteHeader showLoginLink={false} showAccountControls={false} />
       <header className="rounded-[2rem] bg-white/80 p-8 shadow-sm ring-1 ring-black/5">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">internal admin</p>

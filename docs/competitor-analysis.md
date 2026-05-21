@@ -599,6 +599,20 @@ Best trust patterns:
 
 ## DailyCall Positioning Recommendation
 
+### Product mission
+
+DailyCall should aim to be the #1 check-in care caller for seniors in the world.
+
+That does not mean the broadest eldercare AI platform. It means being the best at one repeated daily job:
+
+- a senior answers a normal phone;
+- the voice feels soft, caring, human-like, and respectful;
+- the conversation has no awkward lag;
+- the family receives a concise, useful, privacy-respecting update;
+- missed calls and concern signals are handled reliably.
+
+OpenAI Realtime + Twilio SIP is aligned with that mission because it gives DailyCall direct control over voice prompt, memory, current context, VAD eagerness, transcript events, and post-call extraction while preserving ordinary phone access.
+
 ### Best one-line positioning
 
 > DailyCall is a warm AI phone companion that calls your loved one each day, has a real conversation, and sends your family a simple summary so you know they’re okay.
@@ -722,6 +736,15 @@ Hear a sample call
    - Conversations are private by default.
 5. Add **How to explain DailyCall to your parent** script.
 6. Add pricing clarity around the $19–$29/month range if the business model allows.
+
+### Voice/product changes
+
+1. Keep OpenAI Realtime production defaults tuned for snappy calls: low reasoning, high semantic VAD, and short caring replies.
+2. Use Marin as the default soft companion voice and Cedar as the alternate gentle caller voice.
+3. Evaluate every call against two scores: senior comfort and family trust.
+4. Preload daily context before calls; avoid live lookups that create dead air.
+5. Build post-call extraction as an app-owned pipeline: mood, topics, notable moments, concerns, follow-up, and memory updates.
+6. Treat transcripts as sensitive source material, not the default family-facing artifact.
 
 ### Strategic choices to make
 

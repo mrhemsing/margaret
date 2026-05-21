@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
+import { withMembersPhotoDisplayUrls } from "@/lib/member-photos";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
@@ -84,5 +85,7 @@ export async function GET(request: Request) {
     }, 0),
   );
 
-  return NextResponse.json({ ok: true, customer: { ...customer, members: refreshedMembers, minutesUsed } });
+  const membersWithPhotoUrls = await withMembersPhotoDisplayUrls(refreshedMembers);
+
+  return NextResponse.json({ ok: true, customer: { ...customer, members: membersWithPhotoUrls, minutesUsed } });
 }

@@ -51,8 +51,11 @@ model Member {
   customerId          String
   name                String
   phoneNumber         String
+  photoUrl            String?
+  photoStoragePath    String?
   timezone            String        @default("America/Los_Angeles")
   preferredCallTime   String
+  preferredVoiceId    String        @default("hpp4J3VqNfWAUOO0d1Us")
   active              Boolean       @default(true)
   noResponseAlertMins     Int           @default(15)
   voicemailRetryCount     Int           @default(1)
@@ -140,4 +143,20 @@ model SeniorMemory {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   member             Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model CurrentInfoSnapshot {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  topic     String
+  title     String?
+  summary   String
+  source    String?
+  raw       Json?
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([topic, expiresAt])
 }

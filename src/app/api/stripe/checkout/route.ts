@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db";
-import { getStripePriceIdForPlan, supportedBillingCountries } from "@/lib/plans";
+import { getStripePriceIdForPlan, supportedBillingCountries, trialLengthDays } from "@/lib/plans";
 import { getStripeClient } from "@/lib/stripe";
 
 function splitList(value: string) {
@@ -179,7 +179,7 @@ export async function POST(request: Request) {
         pricingOffer: "introductory_first_year",
       },
       subscription_data: {
-        trial_period_days: 30,
+        trial_period_days: trialLengthDays,
         metadata: {
           customerId: customer.id,
           memberId: member.id,
