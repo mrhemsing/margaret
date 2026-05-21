@@ -1,12 +1,14 @@
-import type { Member } from "@prisma/client";
-
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const memberPhotosBucket = process.env.SUPABASE_MEMBER_PHOTOS_BUCKET || "member-photos";
 
 const signedUrlTtlSeconds = 60 * 60 * 24 * 7;
 
-type MemberWithPhoto = Pick<Member, "id" | "photoUrl" | "photoStoragePath">;
+type MemberWithPhoto = {
+  id: string;
+  photoUrl?: string | null;
+  photoStoragePath?: string | null;
+};
 
 export function getMemberPhotoStoragePath(customerId: string, memberId: string, extension = "jpg") {
   return `customers/${customerId}/members/${memberId}/photo.${extension}`;
