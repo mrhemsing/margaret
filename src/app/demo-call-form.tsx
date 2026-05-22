@@ -99,7 +99,7 @@ export function DemoCallForm() {
           }}
         />
       </label>
-      <fieldset className="grid gap-2">
+      <fieldset className="grid gap-3">
         <legend className="text-sm font-semibold text-ink">Choose a demo voice</legend>
         <div className="grid grid-cols-2 gap-3">
           {voiceOptions.map((voice) => (
