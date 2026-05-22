@@ -119,7 +119,7 @@ export function DemoCallForm() {
               />
               <span className="min-w-0">
                 <span className="block text-sm font-bold text-ink">{voice.gender}</span>
-                <span className="mt-0.5 block text-xs font-semibold leading-5 text-slate-500">{voice.name}</span>
+                <span className="mt-0.5 hidden text-xs font-semibold leading-5 text-slate-500 sm:block">{voice.name}</span>
               </span>
               <input
                 name="preferredVoiceId"
