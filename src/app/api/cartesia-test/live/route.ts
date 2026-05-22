@@ -3,8 +3,8 @@ import type { Prisma } from "@prisma/client";
 
 import { getCartesiaConfigFromRaw, getPublicBaseUrl } from "@/lib/cartesia-test-call";
 import { prisma } from "@/lib/db";
-import { buildCurrentConversationContext } from "@/lib/voice/companion-context";
-import { formatHybridTranscript, generateHybridOpenAIReply, getHybridTranscript, type HybridTranscriptTurn } from "@/lib/voice/hybrid";
+import { getServerEnv } from "@/lib/env";
+import { formatHybridTranscript, getHybridTranscript, type HybridTranscriptTurn } from "@/lib/voice/hybrid";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +33,80 @@ function getInitialPrompt(raw: unknown) {
   return typeof prompt === "string" && prompt.trim() ? prompt.trim() : null;
 }
 
+type OpenAIResponsesPayload = {
+  output_text?: string;
+  output?: Array<{
+    content?: Array<{
+      text?: string;
+      type?: string;
+    }>;
+  }>;
+  error?: {
+    message?: string;
+  };
+};
+
+function extractResponseText(payload: OpenAIResponsesPayload) {
+  if (payload.output_text?.trim()) return payload.output_text.trim();
+
+  return (
+    payload.output
+      ?.flatMap((item) => item.content ?? [])
+      .map((content) => content.text)
+      .find((text) => text?.trim())
+      ?.trim() ?? null
+  );
+}
+
+async function generateFastCartesiaTestReply(input: {
+  memberName: string;
+  caregiverName: string;
+  transcript: HybridTranscriptTurn[];
+}) {
+  const env = getServerEnv();
+
+  if (!env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not configured.");
+  }
+
+  const recentTranscript = formatHybridTranscript(input.transcript.slice(-6));
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+      "OpenAI-Safety-Identifier": "dailycall-cartesia-live-test",
+    },
+    body: JSON.stringify({
+      model: "gpt-4.1-nano",
+      instructions: [
+        `You are DailyCall in a live Cartesia voice test with ${input.memberName}.`,
+        `The reviewer is ${input.caregiverName}.`,
+        "Reply like a warm senior companion, but optimize for speed.",
+        "Return only the exact words to say next. No labels, markdown, SSML, or stage directions.",
+        "Keep it to one short sentence. Ask one natural follow-up when useful.",
+      ].join("\n"),
+      input: recentTranscript || "Start with a brief warm greeting and invite the caller to test the voice.",
+      max_output_tokens: 55,
+      store: false,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as OpenAIResponsesPayload | null;
+
+  if (!response.ok) {
+    throw new Error(payload?.error?.message ?? `OpenAI Cartesia test response failed with status ${response.status}`);
+  }
+
+  const text = payload ? extractResponseText(payload) : null;
+
+  if (!text) {
+    throw new Error("OpenAI Cartesia test response did not include speech text.");
+  }
+
+  return text.replace(/\s+/g, " ").trim();
+}
+
 function buildGatherTwiml(input: {
   actionUrl: string;
   audioUrl: string;
@@ -46,7 +120,7 @@ function buildGatherTwiml(input: {
     input.shouldHangup
       ? "<Hangup />"
       : [
-          `<Gather input="speech" action="${xmlEscape(input.actionUrl)}" method="POST" language="en-US" speechTimeout="1" timeout="4" profanityFilter="false" />`,
+          `<Gather input="speech" action="${xmlEscape(input.actionUrl)}" method="POST" language="en-US" speechModel="phone_call" speechTimeout="1" timeout="2" profanityFilter="false" />`,
           `<Redirect method="POST">${xmlEscape(`${input.actionUrl}&idle=${input.nextIdleCount}`)}</Redirect>`,
         ].join(""),
     "</Response>",
@@ -107,17 +181,9 @@ export async function POST(request: Request) {
     const assistantText =
       idleCount >= 2 && !speechResult && turns.length > 2
         ? "I will let you go for now. Thanks for testing the Cartesia voice with me."
-        : await generateHybridOpenAIReply({
+        : await generateFastCartesiaTestReply({
             memberName: callAttempt.member.name,
             caregiverName: callAttempt.member.customer.fullName || "DailyCall test reviewer",
-            companionContext: [
-              `You are running a DailyCall Cartesia voice test with ${callAttempt.member.name}.`,
-              "Keep the conversation natural and brief. The goal is to let the caller talk with the selected Cartesia voice.",
-            ].join("\n"),
-            currentContext: buildCurrentConversationContext(),
-            recentTopics: [],
-            topicsToRevisit: [],
-            avoidRepeating: ["Do not sound like a canned sample playback."],
             transcript: turns,
           });
     openAIDurationMs = Date.now() - openAIStartedAt;
