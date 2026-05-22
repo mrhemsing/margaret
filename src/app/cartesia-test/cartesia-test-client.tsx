@@ -16,13 +16,13 @@ const defaultTranscript =
   "Hi Margaret, this is DailyCall with your quick check-in. I am here if anything is on your mind, or if you would just like a short chat. How are you doing today?";
 
 const voiceOptions = [
-  { label: "Sarah - Mindful Woman\n(soothing female)", value: "694f9389-aac1-45b6-b726-9d9369183238" },
-  { label: "Katie - Friendly Fixer\n(clear female)", value: "f786b574-daa5-4673-aa0c-cbe3e8534c02" },
-  { label: "Jacqueline - Reassuring Agent\n(empathetic female)", value: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc" },
-  { label: "Caroline - Southern Guide\n(slow friendly female)", value: "f9836c6e-a0bd-460e-9d3c-f7299fa60f94" },
-  { label: "Skylar - Friendly Guide\n(customer care female)", value: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4" },
-  { label: "Greg - Supporter\n(deep male)", value: "a0e99841-438c-4a64-b679-ae501e7d6091" },
-  { label: "Rupert - Caring Dad\n(warm mature male)", value: "0ad65e7f-006c-47cf-bd31-52279d487913" },
+  { name: "Sarah - Mindful Woman", description: "(soothing female)", value: "694f9389-aac1-45b6-b726-9d9369183238" },
+  { name: "Katie - Friendly Fixer", description: "(clear female)", value: "f786b574-daa5-4673-aa0c-cbe3e8534c02" },
+  { name: "Jacqueline - Reassuring Agent", description: "(empathetic female)", value: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc" },
+  { name: "Caroline - Southern Guide", description: "(slow friendly female)", value: "f9836c6e-a0bd-460e-9d3c-f7299fa60f94" },
+  { name: "Skylar - Friendly Guide", description: "(customer care female)", value: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4" },
+  { name: "Greg - Supporter", description: "(deep male)", value: "a0e99841-438c-4a64-b679-ae501e7d6091" },
+  { name: "Rupert - Caring Dad", description: "(warm mature male)", value: "0ad65e7f-006c-47cf-bd31-52279d487913" },
 ];
 
 const modelOptions = [
@@ -74,6 +74,68 @@ function SelectControl({
         </svg>
       </span>
     </label>
+  );
+}
+
+function VoiceControl({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = voiceOptions.find((option) => option.value === value) ?? voiceOptions[0];
+
+  return (
+    <div className="grid gap-2 text-sm font-semibold text-slate-700">
+      Voice
+      <div className="relative">
+        <button
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen((current) => !current)}
+          className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-left font-normal text-ink outline-none focus:border-brandPink"
+        >
+          <span className="min-w-0">
+            <span className="block truncate">{selectedOption.name}</span>
+            <span className="block truncate text-slate-500">{selectedOption.description}</span>
+          </span>
+          <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-ink">
+            <path d="M5.5 7.5 10 12l4.5-4.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </svg>
+        </button>
+
+        {isOpen ? (
+          <div
+            role="listbox"
+            aria-label="Voice"
+            className="absolute left-0 right-0 z-[80] mt-2 max-h-96 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-xl"
+          >
+            {voiceOptions.map((option) => {
+              const selected = option.value === value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={[
+                    "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left text-sm transition",
+                    selected ? "bg-brandPink/10 text-ink" : "text-slate-700 hover:bg-slate-50",
+                  ].join(" ")}
+                >
+                  <span className="min-w-0">
+                    <span className="block font-semibold">{option.name}</span>
+                    <span className="block font-normal text-slate-500">{option.description}</span>
+                  </span>
+                  <span className={["h-4 w-4 shrink-0 rounded-full border", selected ? "border-brandPink bg-brandPink" : "border-slate-300"].join(" ")} />
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -164,7 +226,7 @@ export function CartesiaTestClient({ configured, callConfigured }: { configured:
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <SelectControl label="Model" value={modelId} options={modelOptions} onChange={setModelId} />
-          <SelectControl label="Voice" value={voiceId} options={voiceOptions} onChange={setVoiceId} />
+          <VoiceControl value={voiceId} onChange={setVoiceId} />
         </div>
 
         <label className="mt-5 grid gap-2 text-sm font-semibold text-slate-700">
