@@ -100,11 +100,11 @@ export async function POST(request: Request) {
       },
     });
 
-    const existingMember = await prisma.member.findFirst({ where: { phoneNumber } });
+    const existingMember = await prisma.member.findFirst({ where: { customerId: customer.id, phoneNumber } });
     const member = existingMember
       ? await prisma.member.update({
           where: { id: existingMember.id },
-          data: { customerId: customer.id, name: memberName, preferredVoiceId },
+          data: { name: memberName, preferredVoiceId },
         })
       : await prisma.member.create({
           data: {
