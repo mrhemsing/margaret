@@ -6,30 +6,45 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.PUBLIC_APP_URL ?? process.env.APP_URL ?? "https://dailycall.care"),
   title: {
-    default: "DailyCall",
-    template: "DailyCall: %s",
+    default: "DailyCall | AI Companion Calls for Seniors and Aging Parents",
+    template: "%s | DailyCall",
   },
-  description: "A friendly daily call for aging parents — companionship for them and peace of mind for families.",
+  description:
+    "DailyCall gives aging parents friendly AI companion calls by regular phone, with family updates, missed-call visibility, and peace of mind. No app required.",
+  keywords: [
+    "AI companion calls for seniors",
+    "daily phone calls for aging parents",
+    "senior companionship service",
+    "family check-in calls",
+    "elderly loneliness support",
+    "AI phone companion",
+    "no app senior check-ins",
+    "peace of mind for families",
+  ],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "DailyCall",
-    description: "A friendly daily call for aging parents — companionship for them and peace of mind for families.",
+    title: "DailyCall | AI Companion Calls for Seniors and Aging Parents",
+    description:
+      "Friendly daily phone calls for aging parents, plus simple updates for families. No app, no password, just a familiar call.",
     url: "/",
     siteName: "DailyCall",
     images: [
       {
-        url: "/dailycall-logo.jpg",
-        width: 571,
-        height: 150,
-        alt: "DailyCall logo",
+        url: "/dailycall-meta-image.png",
+        width: 1061,
+        height: 550,
+        alt: "DailyCall - friendly daily calls for aging parents",
       },
     ],
     type: "website",
   },
   twitter: {
-    card: "summary",
-    title: "DailyCall",
-    description: "A friendly daily call for aging parents — companionship for them and peace of mind for families.",
-    images: ["/dailycall-logo.jpg"],
+    card: "summary_large_image",
+    title: "DailyCall | AI Companion Calls for Seniors",
+    description: "Friendly daily phone calls for aging parents, with simple updates and peace of mind for families.",
+    images: ["/dailycall-meta-image.png"],
   },
 };
 
