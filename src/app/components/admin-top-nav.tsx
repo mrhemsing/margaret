@@ -23,7 +23,7 @@ function linkClassName(active: boolean) {
 
 export function AdminTopNav({ activePath, signOutAction }: AdminTopNavProps) {
   return (
-    <div className="absolute right-6 top-4 z-20 md:right-10">
+    <div className="absolute right-6 top-4 z-[60] md:right-10">
       <div className="hidden items-center gap-2 sm:flex">
         {adminLinks.map((link, index) => (
           <div key={link.href} className="flex items-center gap-2">
