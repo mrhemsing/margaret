@@ -3,10 +3,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getCachedCallCurrentContext, refreshCallCurrentInfoSnapshots } from "@/lib/voice/current-info";
 import { scheduleTwilioCallEnd, startOutboundCheckInCall } from "@/lib/voice/elevenlabs";
+import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 const requestSchema = z.object({
   phoneNumber: z.string().min(8).max(30),
   firstName: z.string().trim().max(40).optional(),
+  preferredVoiceId: z.string().optional().default(defaultVoiceId),
   company: z.string().optional(),
 });
 
@@ -88,6 +90,7 @@ export async function POST(request: Request) {
   demoCallAttempts.set(phoneNumber, now);
 
   const memberName = parsed.data.firstName?.trim() || "there";
+  const preferredVoiceId = isAllowedVoiceId(parsed.data.preferredVoiceId) ? parsed.data.preferredVoiceId : defaultVoiceId;
 
   try {
     const currentInfo = await preloadDemoCurrentContext();
@@ -98,6 +101,7 @@ export async function POST(request: Request) {
       caregiverName: "your family",
       currentContext: currentInfo.currentContext,
       demoMaxDurationSeconds: DEMO_MAX_DURATION_SECONDS,
+      preferredVoiceId,
       firstMessage: `Hi ${memberName}, this is DailyCall. I am an AI companion calling with a quick demo, just so you can hear what the service feels like. How are you doing today?`,
     });
     const providerMs = Date.now() - providerStartedAt;
@@ -124,7 +128,7 @@ export async function POST(request: Request) {
     const member = existingMember
       ? await prisma.member.update({
           where: { id: existingMember.id },
-          data: { customerId: customer.id, name: memberName },
+          data: { customerId: customer.id, name: memberName, preferredVoiceId },
         })
       : await prisma.member.create({
           data: {
@@ -133,6 +137,7 @@ export async function POST(request: Request) {
             phoneNumber,
             timezone: "America/Los_Angeles",
             preferredCallTime: "Landing page demo",
+            preferredVoiceId,
           },
         });
 

@@ -9,6 +9,7 @@ type StartOutboundCheckInCallInput = {
   avoidRepeating?: string[];
   demoMaxDurationSeconds?: number;
   firstMessage?: string;
+  preferredVoiceId?: string | null;
 };
 
 type ElevenLabsOutboundCallResponse = {
@@ -129,13 +130,22 @@ export async function startOutboundCheckInCall(input: StartOutboundCheckInCallIn
           avoid_repeating: input.avoidRepeating?.join("; ") || "Do not use a generic scripted wellness survey opening.",
           demo_max_duration_seconds: input.demoMaxDurationSeconds ?? null,
         },
-        conversation_config_override: input.firstMessage
-          ? {
-              agent: {
-                first_message: input.firstMessage,
-              },
-            }
-          : undefined,
+        conversation_config_override: {
+          ...(input.firstMessage
+            ? {
+                agent: {
+                  first_message: input.firstMessage,
+                },
+              }
+            : {}),
+          ...(input.preferredVoiceId
+            ? {
+                tts: {
+                  voice_id: input.preferredVoiceId,
+                },
+              }
+            : {}),
+        },
       },
     }),
   });

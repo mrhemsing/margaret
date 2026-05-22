@@ -1,8 +1,10 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Image from "next/image";
 
 import { formatNorthAmericanPhoneInput } from "@/lib/phone";
+import { defaultVoiceId, voiceOptions } from "@/lib/voice/voice-options";
 
 type DemoStatus =
   | { state: "idle" }
@@ -19,6 +21,7 @@ function isValidPhoneNumber(value: string) {
 
 export function DemoCallForm() {
   const [status, setStatus] = useState<DemoStatus>({ state: "idle" });
+  const [selectedVoiceId, setSelectedVoiceId] = useState(defaultVoiceId);
 
   async function submitDemoCall(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,6 +43,7 @@ export function DemoCallForm() {
         body: JSON.stringify({
           phoneNumber,
           firstName: formData.get("firstName"),
+          preferredVoiceId: formData.get("preferredVoiceId"),
           company: formData.get("company"),
         }),
       });
@@ -51,6 +55,7 @@ export function DemoCallForm() {
       }
 
       form.reset();
+      setSelectedVoiceId(defaultVoiceId);
       setStatus({ state: "success", message: "Demo call started. Your phone should ring shortly." });
     } catch (error) {
       setStatus({
@@ -94,6 +99,40 @@ export function DemoCallForm() {
           }}
         />
       </label>
+      <fieldset className="grid gap-2">
+        <legend className="text-sm font-semibold text-ink">Choose a demo voice</legend>
+        <div className="grid grid-cols-2 gap-3">
+          {voiceOptions.map((voice) => (
+            <label
+              key={voice.id}
+              className={
+                "flex min-w-0 cursor-pointer items-center gap-3 rounded-2xl border bg-white p-3 transition " +
+                (selectedVoiceId === voice.id ? "border-brandButtonBlue ring-4 ring-brandBlue/20" : "border-slate-200")
+              }
+            >
+              <Image
+                src={voice.imagePath}
+                alt=""
+                width={56}
+                height={56}
+                className="h-14 w-14 shrink-0 rounded-2xl bg-white object-cover"
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-ink">{voice.gender}</span>
+                <span className="mt-0.5 block text-xs font-semibold leading-5 text-slate-500">{voice.name}</span>
+              </span>
+              <input
+                name="preferredVoiceId"
+                type="radio"
+                value={voice.id}
+                checked={selectedVoiceId === voice.id}
+                onChange={() => setSelectedVoiceId(voice.id)}
+                className="sr-only"
+              />
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <button
         type="submit"
         disabled={status.state === "loading"}
