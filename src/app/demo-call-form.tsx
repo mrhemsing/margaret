@@ -66,7 +66,7 @@ export function DemoCallForm() {
   }
 
   return (
-    <form onSubmit={submitDemoCall} className="grid gap-3 rounded-[2rem] bg-white p-4 shadow-sm ring-1 ring-black/5 sm:p-5 md:min-h-[360px] md:content-center">
+    <form onSubmit={submitDemoCall} className="grid gap-3 rounded-[2rem] bg-white p-4 shadow-sm ring-1 ring-black/5 sm:p-5 md:h-full md:min-h-[360px] md:content-center">
       <div className="hidden">
         <label htmlFor="company">Company</label>
         <input id="company" name="company" tabIndex={-1} autoComplete="off" />

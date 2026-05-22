@@ -242,8 +242,8 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
 
       <section data-mobile-reveal id="demo" className="scroll-mt-24 relative overflow-hidden rounded-[2rem] bg-brandBlue/10 shadow-sm ring-1 ring-brandBlue/15 md:scroll-mt-28">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/90 to-transparent" />
-        <div className="relative grid gap-6 p-6 md:grid-cols-[0.95fr_1.05fr] md:items-end md:p-10">
-          <div>
+        <div className="relative grid items-stretch gap-6 p-6 md:grid-cols-[0.95fr_1.05fr] md:p-10">
+          <div className="md:flex md:flex-col">
             <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Try a demo call</p>
             <h2 className="mt-3 text-3xl font-bold text-ink">Hear what a DailyCall feels like.</h2>
             <p className="mt-4 leading-7 text-slate-600">
@@ -254,7 +254,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                 <div key={item} className="rounded-full bg-white/80 px-4 py-2 text-center shadow-sm ring-1 ring-black/5">{item}</div>
               ))}
             </div>
-            <div className="mt-6 rounded-[2rem] bg-ink p-5 text-cream shadow-sm md:flex md:min-h-[360px] md:flex-col md:justify-center">
+            <div className="mt-6 rounded-[2rem] bg-ink p-5 text-cream shadow-sm md:flex md:min-h-[360px] md:flex-1 md:flex-col md:justify-center">
               <p className="text-sm md:text-xs font-semibold uppercase tracking-wide text-cream/50">Sample conversation</p>
               <div className="mt-4 grid gap-3 text-base md:text-sm leading-6">
                 <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Hi, this is DailyCall calling for your daily check-in! How are you feeling today?</p>
