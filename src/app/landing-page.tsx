@@ -240,7 +240,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
         </div>
       </section>
 
-      <section data-mobile-reveal id="demo" className="relative overflow-hidden rounded-[2rem] bg-brandBlue/10 shadow-sm ring-1 ring-brandBlue/15">
+      <section data-mobile-reveal id="demo" className="scroll-mt-24 relative overflow-hidden rounded-[2rem] bg-brandBlue/10 shadow-sm ring-1 ring-brandBlue/15 md:scroll-mt-28">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/90 to-transparent" />
         <div className="relative grid gap-6 p-6 md:grid-cols-[0.95fr_1.05fr] md:items-end md:p-10">
           <div>
