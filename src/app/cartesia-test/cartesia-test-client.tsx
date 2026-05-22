@@ -16,13 +16,13 @@ const defaultTranscript =
   "Hi Margaret, this is DailyCall with your quick check-in. I am here if anything is on your mind, or if you would just like a short chat. How are you doing today?";
 
 const voiceOptions = [
-  { label: "Sarah - Mindful Woman (soothing female)", value: "694f9389-aac1-45b6-b726-9d9369183238" },
-  { label: "Katie - Friendly Fixer (clear female)", value: "f786b574-daa5-4673-aa0c-cbe3e8534c02" },
-  { label: "Jacqueline - Reassuring Agent (empathetic female)", value: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc" },
-  { label: "Caroline - Southern Guide (slow friendly female)", value: "f9836c6e-a0bd-460e-9d3c-f7299fa60f94" },
-  { label: "Skylar - Friendly Guide (customer care female)", value: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4" },
-  { label: "Greg - Supporter (deep male)", value: "a0e99841-438c-4a64-b679-ae501e7d6091" },
-  { label: "Rupert - Caring Dad (warm mature male)", value: "0ad65e7f-006c-47cf-bd31-52279d487913" },
+  { label: "Sarah - Mindful Woman\n(soothing female)", value: "694f9389-aac1-45b6-b726-9d9369183238" },
+  { label: "Katie - Friendly Fixer\n(clear female)", value: "f786b574-daa5-4673-aa0c-cbe3e8534c02" },
+  { label: "Jacqueline - Reassuring Agent\n(empathetic female)", value: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc" },
+  { label: "Caroline - Southern Guide\n(slow friendly female)", value: "f9836c6e-a0bd-460e-9d3c-f7299fa60f94" },
+  { label: "Skylar - Friendly Guide\n(customer care female)", value: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4" },
+  { label: "Greg - Supporter\n(deep male)", value: "a0e99841-438c-4a64-b679-ae501e7d6091" },
+  { label: "Rupert - Caring Dad\n(warm mature male)", value: "0ad65e7f-006c-47cf-bd31-52279d487913" },
 ];
 
 const modelOptions = [
