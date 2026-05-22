@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react";
 
+import { TestCallButtons } from "@/app/components/test-call-buttons";
+
 type TestStatus = "idle" | "loading" | "ready" | "error";
-type CallStatus = "idle" | "calling" | "success" | "error";
 
 type LogLine = {
   id: number;
@@ -78,13 +79,10 @@ function SelectControl({
 
 export function CartesiaTestClient({ configured, callConfigured }: { configured: boolean; callConfigured: boolean }) {
   const [status, setStatus] = useState<TestStatus>("idle");
-  const [callStatus, setCallStatus] = useState<CallStatus>("idle");
   const [message, setMessage] = useState<string | null>(configured ? null : "Set CARTESIA_API_KEY before running a sample.");
-  const [callMessage, setCallMessage] = useState<string | null>(callConfigured ? null : "Set Cartesia and Twilio credentials before running a test call.");
   const [transcript, setTranscript] = useState(defaultTranscript);
   const [modelId, setModelId] = useState("sonic-3.5");
   const [voiceId, setVoiceId] = useState(voiceOptions[0].value);
-  const [testNumber, setTestNumber] = useState("+16043138398");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [upstreamMs, setUpstreamMs] = useState<number | null>(null);
@@ -151,55 +149,6 @@ export function CartesiaTestClient({ configured, callConfigured }: { configured:
     }
   }
 
-  async function runTestCall() {
-    if (!callConfigured) {
-      setCallStatus("error");
-      setCallMessage("Cartesia and Twilio credentials are not configured on the server.");
-      return;
-    }
-
-    const trimmedTranscript = transcript.trim();
-    const trimmedNumber = testNumber.trim();
-
-    if (!trimmedTranscript || !trimmedNumber) {
-      setCallStatus("error");
-      setCallMessage("Enter a phone number and test phrase first.");
-      return;
-    }
-
-    setCallStatus("calling");
-    setCallMessage("Calling with the selected Cartesia voice...");
-    addLog(`Starting Cartesia phone test to ${trimmedNumber}.`);
-
-    try {
-      const response = await fetch("/api/cartesia-test/call", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          transcript: trimmedTranscript,
-          modelId,
-          voiceId,
-          toNumber: trimmedNumber,
-          memberName: "Matt",
-        }),
-      });
-      const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string; result?: { sid?: string | null } } | null;
-
-      if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error ?? "Cartesia test call failed.");
-      }
-
-      setCallStatus("success");
-      setCallMessage(`Cartesia test call started${payload.result?.sid ? ` (${payload.result.sid})` : ""}.`);
-      addLog("Cartesia phone test started.");
-    } catch (error) {
-      const nextMessage = error instanceof Error ? error.message : "Cartesia test call failed.";
-      setCallStatus("error");
-      setCallMessage(nextMessage);
-      addLog(nextMessage);
-    }
-  }
-
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
@@ -244,32 +193,21 @@ export function CartesiaTestClient({ configured, callConfigured }: { configured:
         {message ? <p className="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-700 ring-1 ring-red-100">{message}</p> : null}
 
         <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end">
-            <label className="grid flex-1 gap-2 text-sm font-semibold text-slate-700">
-              Test call number
-              <input
-                value={testNumber}
-                onChange={(event) => setTestNumber(event.target.value)}
-                className="h-12 rounded-xl border border-slate-200 bg-white px-4 font-mono font-normal text-ink outline-none focus:border-brandPink"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={runTestCall}
-              disabled={callStatus === "calling"}
-              className="h-12 rounded-xl bg-brandPink px-5 text-sm font-bold text-white shadow-sm transition hover:bg-brandPink/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {callStatus === "calling" ? "Calling..." : "Test call"}
-            </button>
-          </div>
+          <TestCallButtons
+            endpoint="/api/cartesia-test/call"
+            caregiverName="DailyCall Cartesia test reviewer"
+            disabled={!callConfigured}
+            onLog={addLog}
+            buildPayload={() => ({
+              transcript: transcript.trim(),
+              modelId,
+              voiceId,
+            })}
+          />
           <p className="mt-3 text-xs leading-5 text-slate-600">
-            Calls the number, plays the selected Cartesia phrase over Twilio, then hangs up. This does not change dashboard calls.
+            Plays the selected Cartesia phrase over Twilio, then hangs up. This does not change dashboard calls.
           </p>
-          {callMessage ? (
-            <p className={`mt-3 text-sm font-semibold ${callStatus === "error" ? "text-red-700" : callStatus === "success" ? "text-sage" : "text-slate-500"}`}>
-              {callMessage}
-            </p>
-          ) : null}
+          {!callConfigured ? <p className="mt-3 text-sm font-semibold text-red-700">Set Cartesia and Twilio credentials before running a test call.</p> : null}
         </div>
 
         {audioUrl ? (

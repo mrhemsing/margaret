@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AdminTopNav } from "@/app/components/admin-top-nav";
 import { SiteHeader } from "@/app/components/site-header";
+import { TestCallButtons } from "@/app/components/test-call-buttons";
 import { ADMIN_AUTH_COOKIE, isAdminAuthenticated } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +54,17 @@ export default async function BridgeTestPage() {
         <p className="max-w-3xl text-base leading-7 text-slate-600">
           Next step is wiring this page into the streaming bridge service so we can trigger test calls, watch WebSocket events, and measure phone-path latency without touching production calls.
         </p>
+      </section>
+
+      <section className="grid gap-4 rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brandButtonBlue">phone path</p>
+          <h2 className="mt-2 text-2xl font-bold text-ink">Bridge test calls</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Calls through the isolated OpenAI text plus ElevenLabs Twilio bridge path. Dashboard calls stay on the production ElevenLabs path.
+          </p>
+        </div>
+        <TestCallButtons endpoint="/api/bridge-test/call" caregiverName="DailyCall bridge test reviewer" />
       </section>
     </main>
   );

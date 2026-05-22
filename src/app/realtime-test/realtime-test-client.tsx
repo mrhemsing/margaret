@@ -2,8 +2,9 @@
 
 import { useMemo, useRef, useState } from "react";
 
+import { TestCallButtons } from "@/app/components/test-call-buttons";
+
 type Status = "idle" | "connecting" | "connected" | "stopping" | "error";
-type PhoneCallStatus = "idle" | "calling" | "success" | "error";
 
 type LogLine = {
   id: number;
@@ -129,8 +130,6 @@ function SelectControl({
 
 export function RealtimeTestClient() {
   const [status, setStatus] = useState<Status>("idle");
-  const [phoneCallStatus, setPhoneCallStatus] = useState<PhoneCallStatus>("idle");
-  const [phoneCallMessage, setPhoneCallMessage] = useState<string | null>(null);
   const [voice, setVoice] = useState("marin");
   const [pacingProfile, setPacingProfile] = useState<PacingProfile>("snappy");
   const [reasoningEffort, setReasoningEffort] = useState("low");
@@ -359,40 +358,6 @@ export function RealtimeTestClient() {
     addLog("sent greeting request");
   }
 
-  async function startPhoneTestCall() {
-    if (phoneCallStatus === "calling") return;
-
-    setPhoneCallStatus("calling");
-    setPhoneCallMessage("Calling Matt through OpenAI Realtime phone path...");
-    addLog("starting OpenAI Realtime phone test call");
-
-    try {
-      const response = await fetch("/api/openai/realtime-test-call", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          toNumber: "+16043138398",
-          memberName: "Matt",
-          caregiverName: "DailyCall realtime test reviewer",
-        }),
-      });
-      const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string; result?: { sid?: string } } | null;
-
-      if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error ?? "Phone test call failed.");
-      }
-
-      setPhoneCallStatus("success");
-      setPhoneCallMessage(`OpenAI Realtime phone test started${payload.result?.sid ? ` (${payload.result.sid})` : ""}.`);
-      addLog("OpenAI Realtime phone test call started");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Phone test call failed.";
-      setPhoneCallStatus("error");
-      setPhoneCallMessage(message);
-      addLog(message);
-    }
-  }
-
   return (
     <div className="grid items-start gap-5 xl:grid-cols-[0.9fr_1.1fr]">
       <section className="grid content-start gap-4 rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-black/5 md:p-6">
@@ -479,25 +444,13 @@ export function RealtimeTestClient() {
         </button>
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-bold text-ink">Phone path</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">Calls Matt through OpenAI Realtime over Twilio. Dashboard calls stay on ElevenLabs.</p>
-            </div>
-            <button
-              type="button"
-              onClick={startPhoneTestCall}
-              disabled={phoneCallStatus === "calling"}
-              className="h-11 whitespace-nowrap rounded-xl bg-brandPink px-4 text-sm font-semibold text-white shadow-sm hover:bg-brandPink/90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {phoneCallStatus === "calling" ? "Calling..." : "Test call"}
-            </button>
+          <div>
+            <p className="text-sm font-bold text-ink">Phone path</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">Calls through OpenAI Realtime over Twilio. Dashboard calls stay on ElevenLabs.</p>
           </div>
-          {phoneCallMessage ? (
-            <p className={`mt-3 text-sm ${phoneCallStatus === "error" ? "text-red-700" : phoneCallStatus === "success" ? "text-sage" : "text-slate-500"}`}>
-              {phoneCallMessage}
-            </p>
-          ) : null}
+          <div className="mt-4">
+            <TestCallButtons endpoint="/api/openai/realtime-test-call" caregiverName="DailyCall realtime test reviewer" onLog={addLog} />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
