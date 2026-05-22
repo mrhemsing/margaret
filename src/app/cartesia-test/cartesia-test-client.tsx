@@ -239,7 +239,7 @@ export function CartesiaTestClient({ configured, callConfigured }: { configured:
           />
         </label>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3">
+        <div className="mt-5">
           <button
             type="button"
             onClick={runTest}
@@ -248,11 +248,22 @@ export function CartesiaTestClient({ configured, callConfigured }: { configured:
           >
             {status === "loading" ? "Generating..." : "Generate sample"}
           </button>
-          {elapsedMs !== null ? <span className="text-sm font-semibold text-slate-600">Round trip: {elapsedMs}ms</span> : null}
-          {upstreamMs !== null ? <span className="text-sm font-semibold text-slate-600">Cartesia: {upstreamMs}ms</span> : null}
+          {elapsedMs !== null || upstreamMs !== null ? (
+            <div className="mt-4 grid gap-2 text-sm font-semibold text-slate-600">
+              {elapsedMs !== null ? <span>Round trip: {elapsedMs}ms</span> : null}
+              {upstreamMs !== null ? <span>Cartesia: {upstreamMs}ms</span> : null}
+            </div>
+          ) : null}
         </div>
 
         {message ? <p className="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-700 ring-1 ring-red-100">{message}</p> : null}
+
+        {audioUrl ? (
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="mb-3 text-sm font-bold text-ink">Latest sample</p>
+            <audio controls src={audioUrl} className="w-full" />
+          </div>
+        ) : null}
 
         <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <TestCallButtons
@@ -271,13 +282,6 @@ export function CartesiaTestClient({ configured, callConfigured }: { configured:
           </p>
           {!callConfigured ? <p className="mt-3 text-sm font-semibold text-red-700">Set Cartesia and Twilio credentials before running a test call.</p> : null}
         </div>
-
-        {audioUrl ? (
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="mb-3 text-sm font-bold text-ink">Latest sample</p>
-            <audio controls src={audioUrl} className="w-full" />
-          </div>
-        ) : null}
       </div>
 
       <aside className="rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5">
