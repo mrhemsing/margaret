@@ -15,13 +15,6 @@ const heroProof = [
   { label: "Family updates after calls" },
 ];
 
-const proofStats = [
-  { value: "2 min", label: "typical setup" },
-  { value: "0 apps", label: "for your parent" },
-  { value: "14 days", label: "free trial" },
-  { value: "Every call", label: "family summary" },
-];
-
 const steps = [
   { title: "You set it up", copy: "Choose a name, call time, and topics your parent loves. Takes about 2 minutes." },
   { title: "They get a call", copy: "DailyCall rings their regular phone - no app, no screen, just a warm voice that knows them by name." },
@@ -195,15 +188,6 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           </div>
         </div>
       </header>
-
-      <section data-mobile-reveal aria-label="DailyCall proof points" className="grid grid-cols-2 gap-3 rounded-[2rem] bg-white/80 p-4 shadow-sm ring-1 ring-black/5 lg:grid-cols-4">
-        {proofStats.map((item) => (
-          <div key={item.label} className="rounded-2xl bg-brandBlue/10 p-4 text-center ring-1 ring-brandBlue/15">
-            <p className="text-2xl font-bold text-ink">{item.value}</p>
-            <p className="mt-1 text-base md:text-sm font-semibold leading-5 text-slate-600">{item.label}</p>
-          </div>
-        ))}
-      </section>
 
       <section data-mobile-reveal id="how-it-works" className="rounded-[2rem] bg-ink p-8 text-cream shadow-sm md:p-10">
         <div className="grid gap-8 md:grid-cols-[0.75fr_1fr] md:items-center">
