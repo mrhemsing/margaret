@@ -99,14 +99,14 @@ export function DemoCallForm() {
           }}
         />
       </label>
-      <fieldset className="grid gap-3">
+      <fieldset className="grid gap-2 sm:gap-3">
         <legend className="text-sm font-semibold text-ink">Choose a demo voice</legend>
-        <div className="mt-3 grid grid-cols-2 gap-3">
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3">
           {voiceOptions.map((voice) => (
             <label
               key={voice.id}
               className={
-                "flex min-w-0 cursor-pointer items-center gap-3 rounded-2xl border bg-white p-3 transition " +
+                "flex min-w-0 cursor-pointer items-center gap-2 rounded-2xl border bg-white p-2.5 transition sm:gap-3 sm:p-3 " +
                 (selectedVoiceId === voice.id ? "border-brandButtonBlue ring-4 ring-brandBlue/20" : "border-slate-200")
               }
             >
@@ -115,7 +115,7 @@ export function DemoCallForm() {
                 alt=""
                 width={56}
                 height={56}
-                className="h-14 w-14 shrink-0 rounded-2xl bg-white object-cover"
+                className="h-12 w-12 shrink-0 rounded-2xl bg-white object-cover sm:h-14 sm:w-14"
               />
               <span className="min-w-0">
                 <span className="block text-sm font-bold text-ink">{voice.gender}</span>
