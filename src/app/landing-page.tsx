@@ -72,21 +72,18 @@ const rituals = [
 const testimonials = [
   {
     quote: "I live a flight away from my dad. DailyCall gives him a friendly routine and gives me a little more confidence that I am not missing something important.",
-    name: "Michael Turner",
+    name: "Michael",
     location: "Seattle, WA",
-    image: "/testimonials/long-distance-family.png",
   },
   {
     quote: "It is nice having someone call just to talk. The conversations feel easy, and I do not have to learn any new app or remember a password.",
-    name: "Margaret Ross",
-    location: "DailyCall member",
-    image: "/testimonials/lonely-senior.png",
+    name: "Margaret",
+    location: "Early access member",
   },
   {
     quote: "My daughter says I sound brighter on days when the call comes. I like that it is just a regular phone call, not another thing to learn.",
-    name: "Emily Keller",
+    name: "Emily",
     location: "Portland, OR",
-    image: "/testimonials/emily.png",
   },
 ];
 
@@ -100,8 +97,6 @@ const plans = [
     includes: [
       "120 included minutes per month",
       "A friendly daily check-in call",
-      "Missed-call alert after 2 unanswered attempts",
-      "1 family alert contact",
       "Access to call transcripts",
     ],
     cta: "Start Free 14-Day Trial",
@@ -116,11 +111,9 @@ const plans = [
     includes: [
       "250 included minutes per month",
       "Up to 3 preferred daily call windows",
-      "Up to 10 family alert contacts",
       "Up to 10 custom questions for the companion to ask",
       "Richer, more personalized conversations",
-      "Daily planning help - weather, activities, shopping, and routines",
-      "Optional encouragement, prayer, reflection, or memory prompts",
+      "Call-anytime access for flexible conversations",
     ],
     cta: "Start Free 14-Day Trial",
     featured: true,
@@ -178,7 +171,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
             className="desktop-splash-image absolute inset-0 hidden h-full w-full object-cover sm:block"
           />
           <div className="absolute inset-0 bg-[linear-gradient(to_top,white_0%,rgba(255,255,255,0.97)_35%,rgba(255,255,255,0.84)_46%,transparent_63%)] sm:bg-[linear-gradient(to_right,white_0%,rgba(255,255,255,0.88)_36%,transparent_62%)]" />
-          <div className="relative flex max-w-3xl flex-col justify-between p-6 sm:block sm:p-8 md:p-12">
+          <div className="relative flex max-w-2xl flex-col justify-between p-6 sm:block sm:p-8 md:p-12">
             <div>
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl md:text-4xl xl:text-5xl">
                 Someone to talk to when<span className="hidden md:inline"><br /></span><span className="md:hidden"> </span>you can&apos;t be there.
@@ -334,7 +327,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
               <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
                 <div>
                   <p className="text-sm font-bold uppercase tracking-wide text-sage">Today&apos;s check-in</p>
-                  <h3 className="mt-1 text-xl font-bold">Margaret Ross</h3>
+                  <h3 className="mt-1 text-xl font-bold">Margaret</h3>
                 </div>
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">Answered</span>
               </div>
@@ -424,7 +417,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
       <section data-mobile-reveal className="rounded-[2rem] bg-brandBlue/10 p-6 shadow-sm ring-1 ring-brandBlue/15 md:p-10">
         <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Why daily connection matters</p>
         <h2 className="mt-3 text-3xl font-bold text-ink">Loneliness is not a small problem.</h2>
-        <p className="mt-4 max-w-3xl leading-7 text-slate-600">
+        <p className="mt-4 max-w-2xl leading-7 text-slate-600">
           A short daily call will not replace family or professional care. It can, however, create a steady moment of conversation that helps families notice changes sooner and helps older adults feel less alone.
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -436,15 +429,24 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           ))}
         </div>
         <p className="mt-4 text-sm leading-6 text-slate-500">
-          Source: National Academies report on social isolation and loneliness in older adults.
+          Source:{" "}
+          <a
+            href="https://www.nationalacademies.org/publications/25663/social-isolation-and-loneliness-in-older-adults"
+            className="font-semibold text-brandButtonBlue underline decoration-brandBlue/40 underline-offset-4 hover:text-ink"
+            target="_blank"
+            rel="noreferrer"
+          >
+            National Academies report on social isolation and loneliness in older adults
+          </a>
+          .
         </p>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/70 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
-        <div className="max-w-3xl">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">What families are saying</p>
+        <div className="max-w-2xl">
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Early access feedback</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Warm, comforting, and emotionally safe.</h2>
-          <p className="mt-4 leading-7 text-slate-600">The strongest stories are simple: more peace of mind, less loneliness, and an easier daily routine for everyone involved.</p>
+          <p className="mt-4 leading-7 text-slate-600">Early families describe simple wins: more peace of mind, less loneliness, and an easier daily routine for everyone involved.</p>
         </div>
         <TestimonialsCarousel testimonials={testimonials} />
       </section>
@@ -552,7 +554,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                   <span>{question}</span>
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brandBlue/10 text-lg leading-none text-brandButtonBlue transition group-open:rotate-45">+</span>
                 </span>
-                <span className="mt-3 hidden max-w-3xl text-base font-normal leading-6 text-slate-600 group-open:block md:text-sm">{answer}</span>
+                <span className="mt-3 hidden max-w-2xl text-base font-normal leading-6 text-slate-600 group-open:block md:text-sm">{answer}</span>
               </summary>
             </details>
           ))}
@@ -578,9 +580,6 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
             <Link href="/signup" className="inline-flex rounded-full bg-cream px-6 py-3 font-semibold text-ink shadow-sm hover:bg-white">
               Start free 14-day trial
             </Link>
-            <a href="tel:+18005552255" className="inline-flex rounded-full bg-white/10 px-6 py-3 font-semibold text-cream ring-1 ring-white/20 hover:bg-white/15">
-              Talk to a person first
-            </a>
           </div>
         </div>
       </section>
@@ -606,8 +605,8 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
 
         <div className="grid justify-center gap-5 lg:mt-[2.3rem] lg:justify-start">
           <div className="flex items-center justify-center gap-4 lg:justify-start">
-            <Image src="/trust/pipeda.webp" alt="PIPEDA privacy standards" width={625} height={625} className="h-auto w-20 rounded-2xl sm:w-24" />
-            <Image src="/trust/hipaa.png" alt="HIPAA privacy standards" width={1455} height={677} className="h-auto w-36 rounded-2xl sm:w-40" />
+            <Image src="/trust/pipeda.webp" alt="PIPEDA privacy standards" width={625} height={625} className="h-auto w-[4.5rem] rounded-2xl sm:w-[5.4rem]" />
+            <Image src="/trust/hipaa.png" alt="HIPAA privacy standards" width={1455} height={677} className="h-auto w-[8.1rem] rounded-2xl sm:w-36" />
           </div>
           <ul className="grid gap-y-1 text-base md:text-sm font-semibold leading-6 text-slate-600">
             <li>• HIPAA Ready</li>

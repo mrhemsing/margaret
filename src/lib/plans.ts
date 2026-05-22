@@ -11,7 +11,7 @@ export const planOptions = [
     price: "$19.95",
     trialMinutes: 90,
     monthlyMinutes: 120,
-    detail: "120 included minutes per month for a friendly daily check-in call, missed-call alerts, 1 family alert contact, and call transcripts.",
+    detail: "120 included minutes per month for a friendly daily check-in call and access to call transcripts.",
     envKeys: {
       CA: "STRIPE_PRICE_ONE_CALL_DAILY_CAD",
       US: "STRIPE_PRICE_ONE_CALL_DAILY_USD",
@@ -23,7 +23,7 @@ export const planOptions = [
     price: "$34.95",
     trialMinutes: 120,
     monthlyMinutes: 250,
-    detail: "250 included minutes per month for richer personalized conversations, call-anytime access, up to 10 alert contacts, custom questions, daily planning help, and optional encouragement or memory prompts.",
+    detail: "250 included minutes per month for richer personalized conversations, call-anytime access, up to 3 preferred daily call windows, and custom questions.",
     envKeys: {
       CA: "STRIPE_PRICE_THREE_CALLS_DAILY_CAD",
       US: "STRIPE_PRICE_THREE_CALLS_DAILY_USD",

@@ -35,7 +35,7 @@ export default async function CartesiaTestPage() {
   const configured = Boolean(process.env.CARTESIA_API_KEY);
 
   return (
-    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-5 md:px-10">
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 pb-5 pt-0 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <AdminTopNav activePath="/cartesia-test" signOutAction={signOutAdminDashboard} />
       <SiteHeader showLoginLink={false} showAccountControls={false} />

@@ -69,7 +69,7 @@ async function signOutAdminDashboard() {
 
 function AdminPasswordGate({ failed, nextPath }: { failed: boolean; nextPath: string }) {
   return (
-    <main className="relative isolate mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 pb-8 pt-4 md:gap-6 md:px-10 md:py-5">
+    <main className="relative isolate mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 pb-8 pt-0 md:gap-6 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <SiteHeader showLoginLink={false} showAccountControls={false} />
       <section className="mx-auto mt-2 w-full max-w-xl rounded-[2rem] bg-white/90 p-7 shadow-sm ring-1 ring-black/5 sm:p-8 md:mt-4">
@@ -353,7 +353,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
   const demoReportRows = allReportRows.filter((attempt) => attempt.isDemo).slice(0, 8);
 
   return (
-    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-5 md:px-10">
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 pb-5 pt-0 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <AdminTopNav activePath="/admin" signOutAction={signOutAdminDashboard} />

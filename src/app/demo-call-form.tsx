@@ -87,7 +87,7 @@ export function DemoCallForm() {
           minLength={10}
           pattern="[+]?[-().\\s\\d]{10,}"
           title="Enter a valid phone number with area code."
-          placeholder="(555) 123-4567"
+          placeholder="(604) 123-4567"
           className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-medium text-ink outline-none transition placeholder:text-slate-400 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20"
           onChange={(event) => {
             event.currentTarget.value = formatNorthAmericanPhoneInput(event.currentTarget.value);

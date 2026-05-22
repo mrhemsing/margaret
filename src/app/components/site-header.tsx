@@ -160,7 +160,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
   return (
     <>
       {showDemoBar ? (
-        <div className="relative left-1/2 z-40 -mb-4 flex w-screen -translate-x-1/2 justify-center bg-ink px-4 py-3 text-left text-sm font-bold text-white shadow-sm md:text-center">
+        <div className="relative left-1/2 z-40 -mb-4 hidden w-screen -translate-x-1/2 justify-center bg-ink px-4 py-3 text-left text-sm font-bold text-white shadow-sm md:flex md:text-center">
           <span>Hear what DailyCall sounds like - get a free 1-minute demo call right now.</span>
           <Link href="/#demo" className="ml-2 inline-flex items-center gap-1 whitespace-nowrap pl-2 text-emerald-300 hover:text-emerald-200">
             <PhoneIcon className="h-3.5 w-3.5" />
@@ -169,7 +169,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
         </div>
       ) : null}
 
-      <nav className="sticky top-0 z-50 ml-[calc(50%-50vw)] w-screen bg-white/75 shadow-sm backdrop-blur">
+      <nav className="sticky top-0 z-50 ml-[calc(50%-50vw)] mt-2 w-screen bg-white/75 shadow-sm backdrop-blur md:mt-0">
         <div className="mx-auto flex min-h-[3.75rem] w-full max-w-6xl items-center justify-between px-4 py-2 md:px-10">
         <Link href="/" className="block h-[3.05rem] w-[12.2rem] shrink-0 sm:h-[3.2rem] sm:w-52" aria-label="DailyCall home">
           <Image src="/dailycall-logo.svg" alt="DailyCall" width={632} height={150} priority className="h-full w-full object-contain object-left" />

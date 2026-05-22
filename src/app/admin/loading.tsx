@@ -6,7 +6,7 @@ function SkeletonBlock({ className }: { className: string }) {
 
 export default function AdminLoading() {
   return (
-    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-5 md:px-10">
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 pb-5 pt-0 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <div className="absolute right-6 top-4 z-10 inline-flex w-20 items-center justify-end whitespace-nowrap text-sm font-bold text-ink md:right-10" aria-live="polite">
         Loading<span className="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>

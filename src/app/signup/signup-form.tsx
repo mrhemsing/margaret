@@ -2,7 +2,7 @@
 
 import { SubscriptionPlan } from "@prisma/client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { planOptions, trialLengthDays } from "@/lib/plans";
 import { formatNorthAmericanPhoneInput, normalizeNorthAmericanPhone } from "@/lib/phone";
@@ -20,8 +20,8 @@ const areaCodeTimezones: Record<string, { value: string; label: string }> = {
   206: { value: "America/Los_Angeles", label: "Pacific Time" },
   209: { value: "America/Los_Angeles", label: "Pacific Time" },
   213: { value: "America/Los_Angeles", label: "Pacific Time" },
-  236: { value: "America/Vancouver", label: "Pacific Time" },
-  250: { value: "America/Vancouver", label: "Pacific Time" },
+  236: { value: "America/Los_Angeles", label: "Pacific Time" },
+  250: { value: "America/Los_Angeles", label: "Pacific Time" },
   253: { value: "America/Los_Angeles", label: "Pacific Time" },
   310: { value: "America/Los_Angeles", label: "Pacific Time" },
   323: { value: "America/Los_Angeles", label: "Pacific Time" },
@@ -30,11 +30,11 @@ const areaCodeTimezones: Record<string, { value: string; label: string }> = {
   415: { value: "America/Los_Angeles", label: "Pacific Time" },
   425: { value: "America/Los_Angeles", label: "Pacific Time" },
   503: { value: "America/Los_Angeles", label: "Pacific Time" },
-  604: { value: "America/Vancouver", label: "Pacific Time" },
+  604: { value: "America/Los_Angeles", label: "Pacific Time" },
   619: { value: "America/Los_Angeles", label: "Pacific Time" },
   650: { value: "America/Los_Angeles", label: "Pacific Time" },
   702: { value: "America/Los_Angeles", label: "Pacific Time" },
-  778: { value: "America/Vancouver", label: "Pacific Time" },
+  778: { value: "America/Los_Angeles", label: "Pacific Time" },
   805: { value: "America/Los_Angeles", label: "Pacific Time" },
   818: { value: "America/Los_Angeles", label: "Pacific Time" },
   858: { value: "America/Los_Angeles", label: "Pacific Time" },
@@ -43,20 +43,20 @@ const areaCodeTimezones: Record<string, { value: string; label: string }> = {
   // Mountain
   303: { value: "America/Denver", label: "Mountain Time" },
   306: { value: "America/Regina", label: "Central Time (Saskatchewan)" },
-  403: { value: "America/Edmonton", label: "Mountain Time" },
+  403: { value: "America/Denver", label: "Mountain Time" },
   406: { value: "America/Denver", label: "Mountain Time" },
   435: { value: "America/Denver", label: "Mountain Time" },
   480: { value: "America/Phoenix", label: "Mountain Time (Arizona)" },
   520: { value: "America/Phoenix", label: "Mountain Time (Arizona)" },
   602: { value: "America/Phoenix", label: "Mountain Time (Arizona)" },
   623: { value: "America/Phoenix", label: "Mountain Time (Arizona)" },
-  780: { value: "America/Edmonton", label: "Mountain Time" },
+  780: { value: "America/Denver", label: "Mountain Time" },
   801: { value: "America/Denver", label: "Mountain Time" },
-  825: { value: "America/Edmonton", label: "Mountain Time" },
+  825: { value: "America/Denver", label: "Mountain Time" },
   928: { value: "America/Phoenix", label: "Mountain Time (Arizona)" },
 
   // Central
-  204: { value: "America/Winnipeg", label: "Central Time" },
+  204: { value: "America/Chicago", label: "Central Time" },
   214: { value: "America/Chicago", label: "Central Time" },
   224: { value: "America/Chicago", label: "Central Time" },
   281: { value: "America/Chicago", label: "Central Time" },
@@ -84,30 +84,30 @@ const areaCodeTimezones: Record<string, { value: string; label: string }> = {
   202: { value: "America/New_York", label: "Eastern Time" },
   212: { value: "America/New_York", label: "Eastern Time" },
   215: { value: "America/New_York", label: "Eastern Time" },
-  226: { value: "America/Toronto", label: "Eastern Time" },
-  289: { value: "America/Toronto", label: "Eastern Time" },
+  226: { value: "America/New_York", label: "Eastern Time" },
+  289: { value: "America/New_York", label: "Eastern Time" },
   305: { value: "America/New_York", label: "Eastern Time" },
-  313: { value: "America/Detroit", label: "Eastern Time" },
+  313: { value: "America/New_York", label: "Eastern Time" },
   321: { value: "America/New_York", label: "Eastern Time" },
-  343: { value: "America/Toronto", label: "Eastern Time" },
+  343: { value: "America/New_York", label: "Eastern Time" },
   404: { value: "America/New_York", label: "Eastern Time" },
-  416: { value: "America/Toronto", label: "Eastern Time" },
-  437: { value: "America/Toronto", label: "Eastern Time" },
-  514: { value: "America/Toronto", label: "Eastern Time" },
+  416: { value: "America/New_York", label: "Eastern Time" },
+  437: { value: "America/New_York", label: "Eastern Time" },
+  514: { value: "America/New_York", label: "Eastern Time" },
   518: { value: "America/New_York", label: "Eastern Time" },
-  519: { value: "America/Toronto", label: "Eastern Time" },
+  519: { value: "America/New_York", label: "Eastern Time" },
   561: { value: "America/New_York", label: "Eastern Time" },
-  613: { value: "America/Toronto", label: "Eastern Time" },
-  647: { value: "America/Toronto", label: "Eastern Time" },
-  705: { value: "America/Toronto", label: "Eastern Time" },
+  613: { value: "America/New_York", label: "Eastern Time" },
+  647: { value: "America/New_York", label: "Eastern Time" },
+  705: { value: "America/New_York", label: "Eastern Time" },
   716: { value: "America/New_York", label: "Eastern Time" },
   718: { value: "America/New_York", label: "Eastern Time" },
   781: { value: "America/New_York", label: "Eastern Time" },
-  905: { value: "America/Toronto", label: "Eastern Time" },
+  905: { value: "America/New_York", label: "Eastern Time" },
   917: { value: "America/New_York", label: "Eastern Time" },
 
   // Atlantic / Newfoundland
-  506: { value: "America/Moncton", label: "Atlantic Time" },
+  506: { value: "America/Halifax", label: "Atlantic Time" },
   709: { value: "America/St_Johns", label: "Newfoundland Time" },
   782: { value: "America/Halifax", label: "Atlantic Time" },
   902: { value: "America/Halifax", label: "Atlantic Time" },
@@ -115,18 +115,12 @@ const areaCodeTimezones: Record<string, { value: string; label: string }> = {
 
 const timezoneOptions = [
   { value: "America/St_Johns", label: "Newfoundland Time" },
-  { value: "America/Moncton", label: "Atlantic Time" },
   { value: "America/Halifax", label: "Atlantic Time" },
   { value: "America/New_York", label: "Eastern Time" },
-  { value: "America/Detroit", label: "Eastern Time" },
-  { value: "America/Toronto", label: "Eastern Time" },
   { value: "America/Chicago", label: "Central Time" },
-  { value: "America/Winnipeg", label: "Central Time" },
   { value: "America/Regina", label: "Central Time - Saskatchewan" },
-  { value: "America/Edmonton", label: "Mountain Time" },
   { value: "America/Denver", label: "Mountain Time" },
   { value: "America/Phoenix", label: "Mountain Time - Arizona" },
-  { value: "America/Vancouver", label: "Pacific Time" },
   { value: "America/Los_Angeles", label: "Pacific Time" },
   { value: "America/Anchorage", label: "Alaska Time" },
   { value: "Pacific/Honolulu", label: "Hawaii Time" },
@@ -139,6 +133,9 @@ function detectTimezoneFromNorthAmericanPhone(value: string) {
 }
 
 export function SignupForm() {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [stepError, setStepError] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>(SubscriptionPlan.ONE_CALL_DAILY);
   const [enabledCallTimes, setEnabledCallTimes] = useState([true, true, true]);
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({ status: "idle" });
@@ -194,6 +191,73 @@ export function SignupForm() {
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
     window.location.reload();
+  }
+
+  const wizardSteps = [
+    { eyebrow: "Step 1 of 4", title: "Your account", fields: accountEmail ? ["customerName", "customerPhone", "customerCountry"] : ["customerEmail", "accountPassword", "customerName", "customerPhone", "customerCountry"] },
+    { eyebrow: "Step 2 of 4", title: "Plan and schedule", fields: ["plan", "parentName", "parentPhone", "timezone", "preferredCallTimes"] },
+    { eyebrow: "Step 3 of 4", title: "Make calls feel familiar", fields: ["preferredVoiceId", "preferredTone"] },
+    { eyebrow: "Step 4 of 4", title: "Review and start trial", fields: [] },
+  ];
+
+  function validateCurrentStep() {
+    const form = formRef.current;
+    if (!form) return true;
+
+    const fields = wizardSteps[currentStep]?.fields ?? [];
+    for (const field of fields) {
+      const controls = Array.from(form.elements.namedItem(field) instanceof RadioNodeList ? (form.elements.namedItem(field) as RadioNodeList) : [form.elements.namedItem(field)]).filter(Boolean) as HTMLInputElement[];
+      if (field === "plan" || field === "preferredVoiceId" || field === "preferredCallTimes") {
+        if (!controls.some((control) => !control.disabled && ((control.type === "radio" || control.type === "checkbox") ? control.checked : Boolean(control.value)))) {
+          setStepError("Choose an option before continuing.");
+          return false;
+        }
+        continue;
+      }
+
+      const control = controls.find((item) => !item.disabled);
+      if (!control || !control.value.trim()) {
+        control?.focus();
+        setStepError("Fill in the required fields before continuing.");
+        return false;
+      }
+
+      if (control.type === "email" && !control.checkValidity()) {
+        control.focus();
+        setStepError("Enter a valid email address before continuing.");
+        return false;
+      }
+
+      if (control.type === "tel") {
+        const normalized = normalizeNorthAmericanPhone(control.value);
+        if (!normalized || normalized.replace(/\D/g, "").length < 11) {
+          control.focus();
+          setStepError("Enter a 10-digit US or Canadian phone number with area code.");
+          return false;
+        }
+      }
+
+      if (field === "accountPassword" && control.value.length < 8) {
+        control.focus();
+        setStepError("Use a password with at least 8 characters.");
+        return false;
+      }
+    }
+
+    setStepError(null);
+    return true;
+  }
+
+  function goToNextStep() {
+    if (!validateCurrentStep()) return;
+    setCurrentStep((step) => Math.min(step + 1, wizardSteps.length - 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goToPreviousStep() {
+    setStepError(null);
+    setCurrentStep((step) => Math.max(step - 1, 0));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function startCheckout(formData: FormData) {
@@ -311,7 +375,7 @@ export function SignupForm() {
   }
 
   return (
-    <form action={startCheckout} className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
+    <form ref={formRef} action={startCheckout} className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
       <div className="grid gap-6">
         {accountEmail && accountCheckStatus === "checking" ? (
           <section className="rounded-3xl bg-brandBlue/10 p-5 text-sm font-semibold text-slate-600 ring-1 ring-brandBlue/15">
@@ -337,8 +401,21 @@ export function SignupForm() {
           </section>
         ) : (
           <>
-        <fieldset className="grid gap-4 rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15">
-          <h2 className="text-xl font-bold text-ink">1. {accountEmail ? "Dashboard login connected" : "Create your dashboard login"}</h2>
+        <div className="grid gap-4 rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-sage">{wizardSteps[currentStep].eyebrow}</p>
+              <h2 className="mt-1 text-2xl font-bold text-ink">{wizardSteps[currentStep].title}</h2>
+            </div>
+            <p className="text-sm font-bold text-slate-500">{currentStep + 1}/{wizardSteps.length}</p>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-white">
+            <div className="h-full rounded-full bg-brandButtonBlue transition-all" style={{ width: `${((currentStep + 1) / wizardSteps.length) * 100}%` }} />
+          </div>
+        </div>
+
+        <fieldset className={`${currentStep === 0 ? "grid" : "hidden"} gap-4 rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15`}>
+          <h2 className="text-xl font-bold text-ink">{accountEmail ? "Dashboard login connected" : "Create your dashboard login"}</h2>
           <p className="text-sm leading-6 text-slate-600">
             {accountEmail ? (
               <>
@@ -360,7 +437,7 @@ export function SignupForm() {
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 text-sm font-semibold text-slate-700">
                   Email for login and billing
-                  <input name="customerEmail" type="email" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="jane@example.com" />
+                  <input name="customerEmail" type="email" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="jane@example.com" />
                 </label>
                 <label className="grid gap-2 text-sm font-semibold text-slate-700">
                   Password
@@ -372,11 +449,11 @@ export function SignupForm() {
           ) : null}
         </fieldset>
 
-        <fieldset className="grid gap-4">
-          <legend className="mb-2 text-xl font-bold text-ink">2. Adult child / family contact</legend>
+        <fieldset className={`${currentStep === 0 ? "grid" : "hidden"} gap-4`}>
+          <legend className="mb-2 text-xl font-bold text-ink">Adult child / family contact</legend>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Your name
-            <input name="customerName" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="Jane Caregiver" />
+            <input name="customerName" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="Jane Caregiver" />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Your mobile number for reports and alerts
@@ -385,12 +462,11 @@ export function SignupForm() {
               type="tel"
               inputMode="tel"
               autoComplete="tel"
-              required
               minLength={10}
               pattern="[+]?[-().\s\d]{10,}"
               title="Enter a 10-digit US or Canadian phone number with area code."
               className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink"
-              placeholder="(604) 555-0100"
+              placeholder="(604) 123-4567"
               onChange={(event) => {
                 event.currentTarget.value = formatNorthAmericanPhoneInput(event.currentTarget.value);
               }}
@@ -399,7 +475,7 @@ export function SignupForm() {
           </label>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Billing country
-            <select name="customerCountry" defaultValue="CA" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink">
+            <select name="customerCountry" defaultValue="CA" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink">
               <option value="CA">Canada</option>
               <option value="US">United States</option>
             </select>
@@ -407,11 +483,11 @@ export function SignupForm() {
           </label>
         </fieldset>
 
-        <fieldset className="grid gap-4">
-          <legend className="mb-2 text-xl font-bold text-ink">3. Parent receiving calls</legend>
+        <fieldset className={`${currentStep === 1 ? "grid" : "hidden"} gap-4`}>
+          <legend className="mb-2 text-xl font-bold text-ink">Parent receiving calls</legend>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Parent name
-            <input name="parentName" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="Eleanor" />
+            <input name="parentName" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="Eleanor" />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Loved one&apos;s phone number to call
@@ -420,12 +496,11 @@ export function SignupForm() {
               type="tel"
               inputMode="tel"
               autoComplete="tel"
-              required
               minLength={10}
               pattern="[+]?[-().\s\d]{10,}"
               title="Enter a 10-digit US or Canadian phone number with area code."
               className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink"
-              placeholder="(306) 555-0100"
+              placeholder="(206) 123-4567"
               onChange={(event) => {
                 event.currentTarget.value = formatNorthAmericanPhoneInput(event.currentTarget.value);
                 const nextTimezone = detectTimezoneFromNorthAmericanPhone(event.currentTarget.value);
@@ -439,9 +514,9 @@ export function SignupForm() {
           </label>
         </fieldset>
 
-        <fieldset className="grid gap-4">
+        <fieldset className={`${currentStep === 2 ? "grid" : "hidden"} gap-4`}>
           <div>
-            <legend className="mb-2 text-xl font-bold text-ink">4. Choose a voice</legend>
+            <legend className="mb-2 text-xl font-bold text-ink">Choose a voice</legend>
             <p className="text-sm leading-6 text-slate-600">Pick the OpenAI Realtime voice your loved one will hear. You can change this later in My Dashboard.</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
@@ -484,9 +559,9 @@ export function SignupForm() {
           </div>
         </fieldset>
 
-        <fieldset className="grid gap-4 rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15">
+        <fieldset className={`${currentStep === 2 ? "grid" : "hidden"} gap-4 rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15`}>
           <div>
-            <legend className="text-xl font-bold text-ink">5. Help us make the calls feel personal</legend>
+            <legend className="text-xl font-bold text-ink">Help us make the calls feel personal</legend>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Optional, but powerful: the more you share, the more familiar, warm, and natural the daily calls will feel.
             </p>
@@ -581,9 +656,9 @@ export function SignupForm() {
           </div>
         </fieldset>
 
-        <fieldset className="grid gap-4">
+        <fieldset className={`${currentStep === 1 ? "grid" : "hidden"} gap-4`}>
           <div>
-            <legend className="text-xl font-bold text-ink">6. Choose your trial experience</legend>
+            <legend className="text-xl font-bold text-ink">Choose your trial experience</legend>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Your {trialLengthDays}-day trial is free. No credit card today. Choose the experience you want to try — you can change plans before billing starts.
             </p>
@@ -613,7 +688,7 @@ export function SignupForm() {
                 <span className="mt-2 block text-xs font-semibold text-slate-500">
                   Trial includes {plan.trialMinutes} minutes. Then {plan.monthlyMinutes} minutes/month.
                 </span>
-                <span className="mt-3 block text-xs font-semibold text-slate-500">After trial: {plan.price} CAD/USD / mo</span>
+                <span className="mt-3 block text-xs font-semibold text-slate-500">After trial: {plan.price} / mo</span>
               </label>
             ))}
           </div>
@@ -646,7 +721,6 @@ export function SignupForm() {
                         type="time"
                         defaultValue={callTime.defaultValue}
                         disabled={!enabledCallTimes[index]}
-                        required={enabledCallTimes[index] && enabledCallTimes.filter(Boolean).length === 1}
                         aria-label={`${callTime.label} preferred time`}
                         className="time-input w-full min-w-0 rounded-2xl border border-slate-200 bg-white py-3 pl-4 pr-12 text-base font-normal text-ink outline-none focus:border-brandPink disabled:bg-slate-100 disabled:text-slate-400"
                       />
@@ -662,7 +736,7 @@ export function SignupForm() {
               <label className="grid gap-2 text-sm font-semibold text-slate-700">
                 Preferred call time
                 <div className="relative">
-                  <input name="preferredCallTimes" type="time" defaultValue="09:00" required className="time-input w-full rounded-2xl border border-slate-200 bg-white py-3 pl-4 pr-12 font-normal text-ink outline-none focus:border-brandPink" />
+                  <input name="preferredCallTimes" type="time" defaultValue="09:00" className="time-input w-full rounded-2xl border border-slate-200 bg-white py-3 pl-4 pr-12 font-normal text-ink outline-none focus:border-brandPink" />
                   <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink">
                     <path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm.75-13h-1.5v5.25l4.35 2.61.75-1.23-3.6-2.13V7Z" />
                   </svg>
@@ -695,7 +769,16 @@ export function SignupForm() {
           </div>
         </fieldset>
 
-        <div className="grid gap-4 md:grid-cols-[auto_1fr] md:items-center">
+        {currentStep === 3 ? (
+          <section className="grid gap-4 rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15">
+            <h2 className="text-xl font-bold text-ink">Ready to start the free trial</h2>
+            <p className="text-sm leading-6 text-slate-600">
+              Your account, loved one&apos;s call details, plan, schedule, and personalization are ready. No credit card today.
+            </p>
+          </section>
+        ) : null}
+
+        <div className={`${currentStep === 3 ? "grid" : "hidden"} gap-4 md:grid-cols-[auto_1fr] md:items-center`}>
           <p className="order-1 rounded-2xl bg-brandBlue/10 p-4 text-sm font-semibold leading-6 text-ink ring-1 ring-brandBlue/15 md:order-2">
             Your {trialLengthDays}-day trial is free. No credit card today. You can change plans before billing starts.
           </p>
@@ -714,6 +797,28 @@ export function SignupForm() {
             {checkoutState.message}
           </p>
         ) : null}
+
+        {stepError ? <p className="text-sm font-semibold text-red-700">{stepError}</p> : null}
+
+        <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-between">
+          <button
+            type="button"
+            onClick={goToPreviousStep}
+            disabled={currentStep === 0 || checkoutState.status === "loading"}
+            className="rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-600 ring-1 ring-slate-200 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Back
+          </button>
+          {currentStep < wizardSteps.length - 1 ? (
+            <button
+              type="button"
+              onClick={goToNextStep}
+              className="rounded-full bg-brandButtonBlue px-6 py-3 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover"
+            >
+              Continue
+            </button>
+          ) : null}
+        </div>
           </>
         )}
       </div>

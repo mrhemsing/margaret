@@ -1,13 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Testimonial = {
   quote: string;
   name: string;
   location: string;
-  image: string;
 };
 
 export function TestimonialsCarousel({ testimonials }: { testimonials: Testimonial[] }) {
@@ -99,7 +97,9 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
         {testimonials.map((testimonial) => (
           <blockquote key={testimonial.quote} className="relative flex min-w-[82%] snap-center flex-col overflow-hidden rounded-[2rem] bg-white/90 p-5 shadow-sm ring-1 ring-black/5 transition duration-300 hover:-translate-y-1 hover:shadow-md md:w-[calc((100%_-_1.25rem)/2)] md:min-w-[calc((100%_-_1.25rem)/2)] md:flex-none md:snap-start">
             <div className="relative flex items-center gap-4">
-              <Image src={testimonial.image} alt={`Portrait for ${testimonial.name}`} width={88} height={88} className="h-20 w-20 rounded-3xl object-cover shadow-sm ring-1 ring-black/10" />
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brandBlue/10 text-xl font-bold text-brandButtonBlue ring-1 ring-brandBlue/20">
+                {testimonial.name.charAt(0)}
+              </div>
               <div>
                 <p className="font-bold text-ink">{testimonial.name}</p>
                 <p className="text-sm font-semibold text-sage">{testimonial.location}</p>

@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function SignupPage() {
   return (
-    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 pb-5 pt-0 md:px-10 md:pt-5">
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 pb-5 pt-0 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-t from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
       <SiteHeader />
@@ -42,9 +42,9 @@ export default function SignupPage() {
         <SignupForm />
 
         <aside className="rounded-[2rem] bg-ink p-6 text-cream shadow-sm md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-cream/60">Simple setup</p>
-          <h2 className="mt-3 text-2xl font-bold">What happens next</h2>
-          <ul className="mt-5 space-y-4 text-sm leading-6 text-cream/80">
+          <p className="hidden text-sm font-semibold uppercase tracking-wide text-cream/60 md:block">Simple setup</p>
+          <h2 className="mt-3 hidden text-2xl font-bold md:block">What happens next</h2>
+          <ul className="mt-5 hidden space-y-4 text-sm leading-6 text-cream/80 md:block">
             <li>• Add your loved one&apos;s phone number.</li>
             <li>• Choose a comfortable call schedule.</li>
             <li>• Select a simple monthly plan.</li>
@@ -52,7 +52,7 @@ export default function SignupPage() {
             <li>• Your loved one uses their regular phone — no app or password required.</li>
             <li>• Most families complete setup in under 2 minutes.</li>
           </ul>
-          <p className="mt-6 rounded-2xl bg-white/10 p-4 text-sm font-semibold leading-6 text-cream ring-1 ring-white/10">
+          <p className="rounded-2xl bg-white/10 p-4 text-sm font-semibold leading-6 text-cream ring-1 ring-white/10 md:mt-6">
             Your privacy matters. We never sell or share your personal data. Calls are securely protected and used only to provide and improve the service.
           </p>
         </aside>

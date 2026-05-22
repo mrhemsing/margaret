@@ -1271,7 +1271,7 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
               <a href={`#call-history-${member.id}`} className="rounded-full bg-white px-4 py-2 text-sm font-bold text-red-700 shadow-sm ring-1 ring-red-100 hover:bg-red-50">
                 View details
               </a>
-              <a href="tel:+18005552255" className="rounded-full bg-red-700 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-red-800">
+              <a href="mailto:support@dailycall.care" className="rounded-full bg-red-700 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-red-800">
                 Contact support
               </a>
             </div>
