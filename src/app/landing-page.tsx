@@ -174,12 +174,12 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           <div className="relative flex max-w-2xl flex-col justify-between p-6 sm:block sm:p-8 md:p-12">
             <div>
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl md:text-4xl xl:text-5xl">
-                Someone to talk to when<span className="hidden md:inline"><br /></span><span className="md:hidden"> </span>you can&apos;t be there.
+                A friendly daily phone call for aging parents
               </h1>
             </div>
             <div className="pt-10 sm:pt-0">
               <p className="mt-4 w-[65%] max-w-[65%] -translate-y-10 text-lg leading-8 text-slate-600 md:mt-5 md:w-auto md:max-w-[72%] md:translate-y-0">
-                DailyCall gives aging parents a warm, familiar conversation by regular phone - and gives families simple updates after each call.
+                Warm AI companion calls by regular phone - with simple updates for family after each call.
               </p>
               <p className="mt-4 hidden text-sm font-extrabold uppercase tracking-normal text-ink sm:flex sm:flex-wrap sm:gap-x-2 sm:gap-y-1 sm:text-base">
                 <span className="block whitespace-nowrap sm:inline">NO CREDIT CARD REQUIRED</span>
