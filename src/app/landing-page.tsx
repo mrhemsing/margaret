@@ -204,7 +204,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                   Start Your Free 14-Day Trial
                 </Link>
                 <a href="#demo-call" className="rounded-full bg-white/85 px-6 py-3 text-center font-semibold text-ink shadow-sm ring-1 ring-black/10 hover:bg-white">
-                  Try a demo call
+                  Try a free demo call
                 </a>
               </div>
             </div>
