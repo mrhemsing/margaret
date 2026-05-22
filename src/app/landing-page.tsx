@@ -91,11 +91,10 @@ const plans = [
   {
     name: "Wellness",
     price: "$19.95",
-    eyebrow: "120 monthly minutes",
-    bestFor: "A reliable daily check-in to help your loved one feel connected, supported, and safe.",
+    includedMinutes: "Includes 120 minutes/month",
+    bestFor: "Daily check-ins, summaries, missed-call visibility",
     trial: "14-day free trial included",
     includes: [
-      "120 included minutes per month",
       "A friendly daily check-in call",
       "Access to call transcripts",
     ],
@@ -105,11 +104,10 @@ const plans = [
   {
     name: "Companion",
     price: "$34.95",
-    eyebrow: "250 monthly minutes",
-    bestFor: "More frequent support, deeper companionship, and flexible conversations throughout the day.",
+    includedMinutes: "Includes 250 minutes/month",
+    bestFor: "More flexible calls, call-anytime access, deeper personalization",
     trial: "14-day free trial included",
     includes: [
-      "250 included minutes per month",
       "Up to 3 preferred daily call windows",
       "Up to 10 custom questions for the companion to ask",
       "Richer, more personalized conversations",
@@ -466,9 +464,9 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                 {plan.featured ? <span className="rounded-full bg-brandPink px-3 py-1 text-sm md:text-xs font-bold text-white">Recommended</span> : null}
               </div>
               <p className="mt-3 text-4xl font-bold">{plan.price}<span className={`text-base font-medium ${plan.featured ? "text-cream/60" : "text-slate-500"}`}> / mo</span></p>
-              <p className={`mt-2 text-base md:text-sm font-semibold ${plan.featured ? "text-brandPink" : "text-sage"}`}>{plan.trial}</p>
-              <p className={`mt-2 text-base md:text-sm font-bold ${plan.featured ? "text-cream" : "text-ink"}`}>{plan.eyebrow}</p>
-              <p className={`mt-3 min-h-12 text-base md:text-sm leading-6 ${plan.featured ? "text-cream/75" : "text-slate-600"}`}>{plan.bestFor}</p>
+              <p className={`mt-3 min-h-12 text-base md:text-sm font-semibold leading-6 ${plan.featured ? "text-cream" : "text-ink"}`}>{plan.bestFor}</p>
+              <p className={`mt-2 text-base md:text-sm font-bold ${plan.featured ? "text-brandPink" : "text-sage"}`}>{plan.includedMinutes}</p>
+              <p className={`mt-2 text-base md:text-sm font-semibold ${plan.featured ? "text-cream/65" : "text-slate-500"}`}>{plan.trial}</p>
               <ul className={`mt-5 grid gap-2 text-base md:text-sm leading-6 ${plan.featured ? "text-cream/80" : "text-slate-600"}`}>
                 {plan.includes.map((item) => <li key={item} className="flex gap-3"><CheckIcon /><span>{item}</span></li>)}
               </ul>
