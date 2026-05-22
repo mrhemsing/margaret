@@ -255,7 +255,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
               ))}
             </div>
           </div>
-          <div className="mt-6 grid items-stretch gap-6 md:grid-cols-[0.95fr_1.05fr]">
+          <div className="mt-6 grid items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]">
             <div className="rounded-[2rem] bg-ink p-5 text-cream shadow-sm md:flex md:min-h-[360px] md:flex-col md:justify-center">
               <p className="text-sm md:text-xs font-semibold uppercase tracking-wide text-cream/50">Sample conversation</p>
               <div className="mt-4 grid gap-3 text-base md:text-sm leading-6">
@@ -266,7 +266,9 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                 <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">That&apos;s wonderful! Is there anything else you&apos;d like to talk about or I can help with? If not, enjoy your lunch with her!</p>
               </div>
             </div>
-            <DemoCallForm />
+            <div className="md:order-first">
+              <DemoCallForm />
+            </div>
           </div>
         </div>
       </section>
