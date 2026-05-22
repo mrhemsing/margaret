@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { getCachedCallCurrentContext, refreshCallCurrentInfoSnapshots } from "@/lib/voice/current-info";
 import { scheduleTwilioCallEnd, startOutboundCheckInCall } from "@/lib/voice/elevenlabs";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
@@ -15,6 +14,7 @@ const requestSchema = z.object({
 const demoCallAttempts = new Map<string, number>();
 const DEMO_COOLDOWN_MS = 10 * 60 * 1000;
 const DEMO_MAX_DURATION_SECONDS = 60;
+const DEMO_CURRENT_CONTEXT = "Landing-page demo call. Do not perform or wait on live current-events, news, weather, or sports lookup. Keep responses short, warm, and immediate.";
 
 function normalizePhoneNumber(value: string) {
   const trimmed = value.trim();
@@ -34,29 +34,6 @@ function normalizePhoneNumber(value: string) {
   }
 
   return null;
-}
-
-async function preloadDemoCurrentContext() {
-  const refreshStartedAt = Date.now();
-
-  try {
-    const refreshResults = await refreshCallCurrentInfoSnapshots(prisma);
-    const currentContext = await getCachedCallCurrentContext(prisma);
-
-    return {
-      currentContext,
-      refreshMs: Date.now() - refreshStartedAt,
-      refreshResults: refreshResults.map((result) => ({ key: result.key, ok: result.ok, error: result.error })),
-    };
-  } catch (error) {
-    console.error("Demo current context preload failed", error);
-
-    return {
-      currentContext: await getCachedCallCurrentContext(prisma),
-      refreshMs: Date.now() - refreshStartedAt,
-      refreshResults: [{ key: "fallback:cached-current-context", ok: false, error: error instanceof Error ? error.message : "Unknown refresh error" }],
-    };
-  }
 }
 
 export async function POST(request: Request) {
@@ -93,13 +70,12 @@ export async function POST(request: Request) {
   const preferredVoiceId = isAllowedVoiceId(parsed.data.preferredVoiceId) ? parsed.data.preferredVoiceId : defaultVoiceId;
 
   try {
-    const currentInfo = await preloadDemoCurrentContext();
     const providerStartedAt = Date.now();
     const result = await startOutboundCheckInCall({
       toNumber: phoneNumber,
       memberName,
       caregiverName: "your family",
-      currentContext: currentInfo.currentContext,
+      currentContext: DEMO_CURRENT_CONTEXT,
       demoMaxDurationSeconds: DEMO_MAX_DURATION_SECONDS,
       preferredVoiceId,
       firstMessage: `Hi ${memberName}, this is DailyCall. I am an AI companion calling with a quick demo, just so you can hear what the service feels like. How are you doing today?`,
@@ -149,7 +125,7 @@ export async function POST(request: Request) {
         status: "IN_PROGRESS",
         providerCallSid: result.callSid ?? null,
         providerConversationId: result.conversation_id ?? null,
-        summary: `Landing page demo call started for ${member.name}. Preloaded current context for light news, weather, and NHL sports.`,
+        summary: `Landing page demo call started for ${member.name}. Demo calls skip live current-info lookup to keep turn-taking fast.`,
       },
     });
 
@@ -157,8 +133,6 @@ export async function POST(request: Request) {
       phoneNumber,
       providerMs,
       totalMs: Date.now() - startedAt,
-      currentInfoRefreshMs: currentInfo.refreshMs,
-      currentInfoRefreshResults: currentInfo.refreshResults,
       hasCallSid: Boolean(result.callSid),
       hasConversationId: Boolean(result.conversation_id),
     });
