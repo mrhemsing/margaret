@@ -19,6 +19,7 @@ const voiceOptions = [
 ];
 
 const modelOptions = [
+  { label: "Sonic 3.5", value: "sonic-3.5" },
   { label: "Sonic 2", value: "sonic-2" },
   { label: "Sonic 3", value: "sonic-3" },
 ];
@@ -73,7 +74,7 @@ export function CartesiaTestClient({ configured }: { configured: boolean }) {
   const [status, setStatus] = useState<TestStatus>("idle");
   const [message, setMessage] = useState<string | null>(configured ? null : "Set CARTESIA_API_KEY before running a sample.");
   const [transcript, setTranscript] = useState(defaultTranscript);
-  const [modelId, setModelId] = useState("sonic-2");
+  const [modelId, setModelId] = useState("sonic-3.5");
   const [voiceId, setVoiceId] = useState(voiceOptions[0].value);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);

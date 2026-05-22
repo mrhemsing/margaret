@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const requestSchema = z.object({
   transcript: z.string().trim().min(1).max(1000),
-  modelId: z.enum(["sonic-2", "sonic-3"]).default("sonic-2"),
+  modelId: z.enum(["sonic-3.5", "sonic-2", "sonic-3"]).default("sonic-3.5"),
   voiceId: z.string().uuid(),
 });
 
