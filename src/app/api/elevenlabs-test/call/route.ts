@@ -1,0 +1,111 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+
+import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { prisma } from "@/lib/db";
+import { scheduleTwilioCallEnd, startOutboundCheckInCall } from "@/lib/voice/elevenlabs";
+import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
+
+export const dynamic = "force-dynamic";
+
+const TEST_CALL_MAX_DURATION_SECONDS = 90;
+
+const requestSchema = z.object({
+  toNumber: z.string().min(8),
+  memberName: z.string().min(1).optional(),
+  caregiverName: z.string().min(1).optional(),
+  preferredVoiceId: z.string().optional().default(defaultVoiceId),
+  firstMessage: z.string().trim().min(1).max(500).optional(),
+});
+
+export async function POST(request: Request) {
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ ok: false, error: "Not authenticated." }, { status: 401 });
+  }
+
+  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: "Invalid ElevenLabs test call request." }, { status: 400 });
+  }
+
+  try {
+    const normalizedPhone = parsed.data.toNumber.replace(/\s+/g, "");
+    const preferredVoiceId = isAllowedVoiceId(parsed.data.preferredVoiceId) ? parsed.data.preferredVoiceId : defaultVoiceId;
+    const customer = await prisma.customer.upsert({
+      where: { email: "elevenlabs-test@dailycall.local" },
+      update: { fullName: "ElevenLabs Test", phoneNumber: "+16043138398" },
+      create: {
+        email: "elevenlabs-test@dailycall.local",
+        fullName: "ElevenLabs Test",
+        phoneNumber: "+16043138398",
+      },
+    });
+    const existingMember = await prisma.member.findFirst({
+      where: { customerId: customer.id, phoneNumber: normalizedPhone },
+    });
+    const member = existingMember
+      ? await prisma.member.update({
+          where: { id: existingMember.id },
+          data: { name: parsed.data.memberName ?? existingMember.name, preferredVoiceId },
+        })
+      : await prisma.member.create({
+          data: {
+            customerId: customer.id,
+            name: parsed.data.memberName ?? "ElevenLabs phone test",
+            phoneNumber: normalizedPhone,
+            timezone: "America/Los_Angeles",
+            preferredCallTime: "ElevenLabs phone test",
+            preferredVoiceId,
+          },
+        });
+
+    const result = await startOutboundCheckInCall({
+      toNumber: normalizedPhone,
+      memberName: member.name,
+      caregiverName: parsed.data.caregiverName ?? "DailyCall ElevenLabs test reviewer",
+      currentContext: "Internal ElevenLabs voice test. Do not perform or wait on live current-events, news, weather, or sports lookup. Keep responses short, warm, and immediate.",
+      demoMaxDurationSeconds: TEST_CALL_MAX_DURATION_SECONDS,
+      preferredVoiceId,
+      firstMessage:
+        parsed.data.firstMessage ??
+        `Hi ${member.name}, this is DailyCall calling through the ElevenLabs test path. How are you doing today?`,
+    });
+
+    if (!result) {
+      throw new Error("ElevenLabs did not return a call result.");
+    }
+
+    if (result.callSid) {
+      scheduleTwilioCallEnd(result.callSid, TEST_CALL_MAX_DURATION_SECONDS * 1000);
+    }
+
+    const callAttempt = await prisma.callAttempt.create({
+      data: {
+        memberId: member.id,
+        scheduledFor: new Date(),
+        startedAt: new Date(),
+        status: "IN_PROGRESS",
+        providerCallSid: result.callSid ?? null,
+        providerConversationId: result.conversation_id ?? null,
+        summary: `ElevenLabs direct test call started for ${member.name}.`,
+      },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      provider: "elevenlabs_twilio",
+      member,
+      callAttempt,
+      result,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown ElevenLabs test call error.",
+      },
+      { status: 502 },
+    );
+  }
+}
