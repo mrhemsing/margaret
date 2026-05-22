@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { HeroSplashImage } from "@/app/components/hero-splash-image";
 import { SiteHeader } from "@/app/components/site-header";
 import { trialLengthDays } from "@/lib/plans";
 import { DemoCallForm } from "./demo-call-form";
@@ -151,23 +152,8 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
       />
 
       <header className="-mt-2 overflow-hidden rounded-[2rem] bg-white/75 shadow-sm ring-1 ring-black/5">
-        <div className="relative">
-          <Image
-            src="/home-splash-mobile-senior-call-straight-phone.png"
-            alt="Smiling senior on a phone call for a DailyCall check-in"
-            width={1024}
-            height={828}
-            priority
-            className="mobile-splash-image absolute inset-0 h-full w-full object-cover sm:hidden"
-          />
-          <Image
-            src="/home-splash-desktop-phone-smile.jpg"
-            alt="Smiling senior on the phone for a DailyCall check-in"
-            width={1280}
-            height={1099}
-            priority
-            className="desktop-splash-image absolute inset-0 hidden h-full w-full object-cover sm:block"
-          />
+        <div className="hero-splash-layer relative">
+          <HeroSplashImage />
           <div className="absolute inset-0 bg-[linear-gradient(to_top,white_0%,rgba(255,255,255,0.97)_35%,rgba(255,255,255,0.84)_46%,transparent_63%)] sm:bg-[linear-gradient(to_right,white_0%,rgba(255,255,255,0.88)_36%,transparent_62%)]" />
           <div className="relative flex max-w-2xl flex-col justify-between p-6 sm:block sm:p-8 md:p-12">
             <div>

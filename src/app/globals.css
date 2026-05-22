@@ -41,17 +41,23 @@ a {
   margin-top: calc((1lh - 0.5rem) / 2);
 }
 
+.hero-splash-layer {
+  background:
+    linear-gradient(to bottom, rgba(248, 181, 203, 0.64), rgba(255, 255, 255, 0.86) 68%, #ffffff),
+    #f8c1d3;
+}
+
 .mobile-splash-image {
-  bottom: auto;
-  height: 78%;
+  height: clamp(29rem, 128vw, 36rem);
   -o-object-position: 72% center;
   object-position: 33% center;
-  top: -10%;
+  top: -1.75rem;
+  width: 100%;
 }
 
 @media (min-width: 425px) and (max-width: 639px) {
   .mobile-splash-image {
-    top: -5%;
+    top: -1.25rem;
   }
 }
 
