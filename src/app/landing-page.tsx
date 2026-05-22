@@ -549,7 +549,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           <h2 className="text-3xl font-bold">You can&apos;t always be there. This can.</h2>
           <p className="mt-3 max-w-xl leading-7 text-cream/75">Set up a warm daily phone companion for your loved one in minutes. No app, no password, just a friendly call.</p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link href="/signup" className="inline-flex rounded-full bg-cream px-6 py-3 font-semibold text-ink shadow-sm hover:bg-white">
+            <Link href="/signup" className="inline-flex justify-center rounded-full bg-cream px-6 py-3 text-center font-semibold text-ink shadow-sm hover:bg-white">
               Start free 14-day trial
             </Link>
           </div>
