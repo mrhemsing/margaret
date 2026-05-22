@@ -203,7 +203,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                 <Link href="/signup" className="rounded-full bg-brandButtonBlue px-6 py-3 text-center font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover">
                   Start Your Free 14-Day Trial
                 </Link>
-                <a href="#demo-call" className="rounded-full bg-white/85 px-6 py-3 text-center font-semibold text-ink shadow-sm ring-1 ring-black/10 hover:bg-white">
+                <a href="#demo" className="rounded-full bg-white/85 px-6 py-3 text-center font-semibold text-ink shadow-sm ring-1 ring-black/10 hover:bg-white">
                   Try a free demo call
                 </a>
               </div>
