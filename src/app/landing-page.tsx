@@ -78,7 +78,7 @@ const testimonials = [
   },
   {
     quote: "It is nice having someone call just to talk. The conversations feel easy, and I do not have to learn any new app or remember a password.",
-    name: "Margaret",
+    name: "Helen",
     location: "Early access member",
   },
   {
