@@ -605,8 +605,8 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
 
         <div className="grid justify-center gap-5 lg:mt-[2.3rem] lg:justify-start">
           <div className="flex items-center justify-center gap-4 lg:justify-start">
-            <Image src="/trust/pipeda.webp" alt="PIPEDA privacy standards" width={625} height={625} className="h-auto w-[4.5rem] rounded-2xl sm:w-[5.4rem]" />
-            <Image src="/trust/hipaa.png" alt="HIPAA privacy standards" width={1455} height={677} className="h-auto w-[8.1rem] rounded-2xl sm:w-36" />
+            <Image src="/trust/pipeda.webp" alt="PIPEDA privacy standards" width={625} height={625} className="h-auto w-[4.5rem] rounded-2xl sm:w-[4.86rem]" />
+            <Image src="/trust/hipaa.png" alt="HIPAA privacy standards" width={1455} height={677} className="h-auto w-[8.1rem] rounded-2xl sm:w-[8.1rem]" />
           </div>
           <ul className="grid gap-y-1 text-base md:text-sm font-semibold leading-6 text-slate-600">
             <li>• HIPAA Ready</li>
