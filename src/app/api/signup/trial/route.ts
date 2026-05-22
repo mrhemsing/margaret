@@ -1,4 +1,4 @@
-import { SubscriptionPlan } from "@prisma/client";
+import { Prisma, SubscriptionPlan } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -79,20 +79,31 @@ export async function POST(request: Request) {
 
   try {
     const { customer, member } = await prisma.$transaction(async (tx) => {
-      const customer = await tx.customer.upsert({
-        where: { email: customerEmail },
-        update: {
-          fullName: input.customerName,
-          phoneNumber: input.customerPhone,
-          supabaseUserId: authData.user.id,
+      const existingCustomer = await tx.customer.findFirst({
+        where: {
+          OR: [{ supabaseUserId: authData.user.id }, { email: customerEmail }],
         },
-        create: {
-          fullName: input.customerName,
-          email: customerEmail,
-          phoneNumber: input.customerPhone,
-          supabaseUserId: authData.user.id,
-        },
+        select: { id: true },
       });
+
+      const customer = existingCustomer
+        ? await tx.customer.update({
+            where: { id: existingCustomer.id },
+            data: {
+              fullName: input.customerName,
+              email: customerEmail,
+              phoneNumber: input.customerPhone,
+              supabaseUserId: authData.user.id,
+            },
+          })
+        : await tx.customer.create({
+            data: {
+              fullName: input.customerName,
+              email: customerEmail,
+              phoneNumber: input.customerPhone,
+              supabaseUserId: authData.user.id,
+            },
+          });
 
       const member = await tx.member.create({
         data: {
@@ -171,8 +182,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, dashboardUrl: "/dashboard?trial=started", customerId: customer.id, memberId: member.id });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json(
+        { ok: false, error: "That login is already connected to another DailyCall account. Please log in with that account or contact support." },
+        { status: 409 },
+      );
+    }
+
+    console.error("Trial signup failed", error);
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Could not start trial." },
+      { ok: false, error: "Could not start trial. Please try again, or contact support if it keeps happening." },
       { status: 502 },
     );
   }

@@ -187,6 +187,18 @@ export function SignupForm() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!accountEmail) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("step") !== "2") return;
+
+    setCurrentStep(1);
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }, [accountEmail]);
+
   async function signOutForNewSignup() {
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
@@ -251,13 +263,13 @@ export function SignupForm() {
   function goToNextStep() {
     if (!validateCurrentStep()) return;
     setCurrentStep((step) => Math.min(step + 1, wizardSteps.length - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function goToPreviousStep() {
     setStepError(null);
     setCurrentStep((step) => Math.max(step - 1, 0));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function startCheckout(formData: FormData) {
@@ -428,7 +440,7 @@ export function SignupForm() {
           {accountEmail ? <input name="customerEmail" type="hidden" value={accountEmail} /> : null}
           {!accountEmail ? (
             <>
-              <SocialSigninButtons />
+              <SocialSigninButtons next="/signup?step=2" />
               <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-slate-400">
                 <span className="h-px flex-1 bg-slate-200" />
                 or use email
@@ -517,7 +529,9 @@ export function SignupForm() {
         <fieldset className={`${currentStep === 2 ? "grid" : "hidden"} gap-4`}>
           <div>
             <legend className="mb-2 text-xl font-bold text-ink">Choose a voice</legend>
-            <p className="text-sm leading-6 text-slate-600">Pick the OpenAI Realtime voice your loved one will hear. You can change this later in My Dashboard.</p>
+            <p className="text-sm leading-6 text-slate-600">
+              Pick the voice your loved one will hear. You can change this later in <strong className="font-bold text-ink">My Dashboard</strong>.
+            </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {voiceOptions.map((voice) => (

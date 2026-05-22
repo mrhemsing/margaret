@@ -26,11 +26,11 @@ export default function SignupPage() {
         <div className="absolute inset-y-0 left-[42%] right-0 hidden bg-gradient-to-r from-white via-white/90 to-white/0 md:block" />
         <div className="relative max-w-3xl md:max-w-[62%]">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">signup</p>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink md:text-5xl">Let&apos;s schedule your loved one&apos;s first companion call.</h1>
+          <h1 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight text-ink sm:text-4xl md:text-[2.65rem] md:leading-[1.08]">Let&apos;s schedule your loved one&apos;s first companion call.</h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
             Start your free 14-day trial. <span className="hidden md:block" />No credit card required. Setup takes less than 2 minutes, works with regular phones, and can be canceled anytime.
           </p>
-          <div className="mt-6 grid gap-3 text-sm font-bold text-ink sm:grid-cols-2">
+          <div className="mt-6 grid gap-3 text-base font-bold text-ink sm:grid-cols-2 md:text-sm">
             {["No credit card required", "Cancel anytime", "Works with any phone", "No app required"].map((item) => (
               <div key={item} className="rounded-full bg-brandBlue/10 px-4 py-2 text-center ring-1 ring-brandBlue/15">{item}</div>
             ))}

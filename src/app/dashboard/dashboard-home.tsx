@@ -119,7 +119,7 @@ function formatPreferredCallTime(value: string | null | undefined) {
 }
 
 function prepareMemberPhotoPreview(file: File) {
-  return new Promise<string>((resolve, reject) => {
+  return new Promise<{ file: File; previewUrl: string }>((resolve, reject) => {
     if (!file.type.startsWith("image/")) {
       reject(new Error("Please choose an image file."));
       return;
@@ -149,7 +149,19 @@ function prepareMemberPhotoPreview(file: File) {
         }
 
         context.drawImage(image, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("Could not prepare that photo."));
+              return;
+            }
+
+            const uploadFile = new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+            resolve({ file: uploadFile, previewUrl: URL.createObjectURL(blob) });
+          },
+          "image/jpeg",
+          0.82,
+        );
       };
       image.onerror = () => reject(new Error("Could not read that photo."));
       image.src = String(reader.result);
@@ -769,10 +781,10 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
     setError(null);
 
     try {
-      const photoUrl = await prepareMemberPhotoPreview(file);
-      setSelectedPhotoFile(file);
+      const preparedPhoto = await prepareMemberPhotoPreview(file);
+      setSelectedPhotoFile(preparedPhoto.file);
       setRemovePhoto(false);
-      setProfileForm((current) => ({ ...current, photoUrl }));
+      setProfileForm((current) => ({ ...current, photoUrl: preparedPhoto.previewUrl }));
     } catch (photoError) {
       setError(photoError instanceof Error ? photoError.message : "Could not prepare that photo.");
     }
