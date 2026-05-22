@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { cartesiaTestCallSchema, createCartesiaTestCallToken, getPublicBaseUrl } from "@/lib/cartesia-test-call";
+import { cartesiaTestCallSchema, getPublicBaseUrl } from "@/lib/cartesia-test-call";
+import { prisma } from "@/lib/db";
 import { getServerEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -33,13 +35,62 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Twilio call credentials are not configured." }, { status: 503 });
   }
 
-  const token = createCartesiaTestCallToken(parsed.data);
   const baseUrl = getPublicBaseUrl();
-  const voiceUrl = new URL(`${baseUrl}/api/cartesia-test/twiml`);
-  voiceUrl.searchParams.set("token", token);
+  const normalizedPhone = parsed.data.toNumber.replace(/\s+/g, "");
+
+  const customer = await prisma.customer.upsert({
+    where: { email: "cartesia-test@dailycall.local" },
+    update: { fullName: "Cartesia Test", phoneNumber: "+16043138398" },
+    create: {
+      email: "cartesia-test@dailycall.local",
+      fullName: "Cartesia Test",
+      phoneNumber: "+16043138398",
+    },
+  });
+
+  const existingMember = await prisma.member.findFirst({
+    where: { customerId: customer.id, phoneNumber: normalizedPhone },
+  });
+  const member = existingMember
+    ? await prisma.member.update({
+        where: { id: existingMember.id },
+        data: { name: parsed.data.memberName },
+      })
+    : await prisma.member.create({
+        data: {
+          customerId: customer.id,
+          name: parsed.data.memberName,
+          phoneNumber: normalizedPhone,
+          timezone: "America/Los_Angeles",
+          preferredCallTime: "Cartesia live phone test",
+        },
+      });
+
+  const callAttempt = await prisma.callAttempt.create({
+    data: {
+      memberId: member.id,
+      scheduledFor: new Date(),
+      startedAt: new Date(),
+      status: "IN_PROGRESS",
+      summary: `Cartesia live phone test started for ${member.name}.`,
+      conversationRaw: {
+        provider: "openai_text_cartesia_twilio",
+        cartesiaConfig: {
+          modelId: parsed.data.modelId,
+          voiceId: parsed.data.voiceId,
+        },
+        initialPrompt: parsed.data.transcript,
+        hybridTranscript: [],
+      } as Prisma.InputJsonValue,
+      syncedAt: new Date(),
+    },
+  });
+
+  const voiceUrl = new URL(`${baseUrl}/api/cartesia-test/live`);
+  voiceUrl.searchParams.set("callAttemptId", callAttempt.id);
 
   const body = new URLSearchParams({
-    To: parsed.data.toNumber.replace(/\s+/g, ""),
+    To: normalizedPhone,
     From: env.TWILIO_FROM_NUMBER,
     Url: voiceUrl.toString(),
     Method: "POST",
@@ -57,10 +108,27 @@ export async function POST(request: Request) {
   const payload = (await response.json().catch(() => null)) as TwilioCallResponse | null;
 
   if (!response.ok) {
+    await prisma.callAttempt.update({
+      where: { id: callAttempt.id },
+      data: {
+        status: "FAILED",
+        completedAt: new Date(),
+        summary: payload?.message ?? `Twilio call failed with status ${response.status}.`,
+        syncedAt: new Date(),
+      },
+    });
+
     return NextResponse.json(
       { ok: false, error: payload?.message ?? `Twilio call failed with status ${response.status}.` },
       { status: 502 },
     );
+  }
+
+  if (payload?.sid) {
+    await prisma.callAttempt.update({
+      where: { id: callAttempt.id },
+      data: { providerCallSid: payload.sid, syncedAt: new Date() },
+    });
   }
 
   return NextResponse.json({

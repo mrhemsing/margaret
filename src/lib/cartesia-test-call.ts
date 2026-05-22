@@ -13,6 +13,62 @@ export type CartesiaTestCallPayload = z.infer<typeof cartesiaTestCallSchema> & {
   exp: number;
 };
 
+export type CartesiaVoiceConfig = {
+  modelId: z.infer<typeof cartesiaTestCallSchema>["modelId"];
+  voiceId: string;
+};
+
+export function getCartesiaConfigFromRaw(raw: unknown): CartesiaVoiceConfig | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+
+  const config = (raw as Record<string, unknown>).cartesiaConfig;
+  if (!config || typeof config !== "object" || Array.isArray(config)) return null;
+
+  const parsed = cartesiaTestCallSchema
+    .pick({ modelId: true, voiceId: true })
+    .safeParse(config);
+
+  return parsed.success ? parsed.data : null;
+}
+
+export async function synthesizeCartesiaPhoneSpeech(input: CartesiaVoiceConfig & { transcript: string }) {
+  const { getServerEnv } = await import("@/lib/env");
+  const env = getServerEnv();
+
+  if (!env.CARTESIA_API_KEY) {
+    throw new Error("CARTESIA_API_KEY is not configured.");
+  }
+
+  const response = await fetch("https://api.cartesia.ai/tts/bytes", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.CARTESIA_API_KEY}`,
+      "Cartesia-Version": "2025-04-16",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      transcript: input.transcript,
+      model_id: input.modelId,
+      voice: {
+        mode: "id",
+        id: input.voiceId,
+      },
+      output_format: {
+        container: "wav",
+        encoding: "pcm_mulaw",
+        sample_rate: 8000,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(body || `Cartesia audio failed with status ${response.status}.`);
+  }
+
+  return response;
+}
+
 function getSigningSecret() {
   const secret = process.env.ADMIN_DASHBOARD_PASSWORD || process.env.TWILIO_AUTH_TOKEN || process.env.CARTESIA_API_KEY;
 

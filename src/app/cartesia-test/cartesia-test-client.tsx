@@ -278,7 +278,7 @@ export function CartesiaTestClient({ configured, callConfigured }: { configured:
             })}
           />
           <p className="mt-3 text-xs leading-5 text-slate-600">
-            Plays the selected Cartesia phrase over Twilio, then hangs up. This does not change dashboard calls.
+            Starts a live phone test so you can talk with an OpenAI text loop speaking through the selected Cartesia voice. This does not change dashboard calls.
           </p>
           {!callConfigured ? <p className="mt-3 text-sm font-semibold text-red-700">Set Cartesia and Twilio credentials before running a test call.</p> : null}
         </div>
