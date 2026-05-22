@@ -33,6 +33,7 @@ export default async function CartesiaTestPage() {
   }
 
   const configured = Boolean(process.env.CARTESIA_API_KEY);
+  const callConfigured = Boolean(process.env.CARTESIA_API_KEY && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER);
 
   return (
     <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 pb-5 pt-0 md:px-10">
@@ -48,7 +49,7 @@ export default async function CartesiaTestPage() {
         </p>
       </header>
 
-      <CartesiaTestClient configured={configured} />
+      <CartesiaTestClient configured={configured} callConfigured={callConfigured} />
     </main>
   );
 }
