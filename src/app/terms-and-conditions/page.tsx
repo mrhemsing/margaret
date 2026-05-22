@@ -1,5 +1,9 @@
 import { LegalPageShell } from "@/app/components/legal-page-shell";
 
+export const metadata = {
+  title: "Terms & Conditions",
+};
+
 export default function TermsAndConditionsPage() {
   return (
     <LegalPageShell title="Terms & Conditions">

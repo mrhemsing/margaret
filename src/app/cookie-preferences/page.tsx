@@ -3,7 +3,7 @@ import { LegalPageShell } from "@/app/components/legal-page-shell";
 import { CookiePreferencesForm } from "./cookie-preferences-form";
 
 export const metadata = {
-  title: "Cookies Preferences",
+  title: "Cookie Preferences",
 };
 
 export default function CookiePreferencesPage() {
