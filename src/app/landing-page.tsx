@@ -536,7 +536,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
             </p>
           </div>
           <p className="mt-6 max-w-xl text-base md:text-sm leading-7 text-slate-600">
-            Your loved one&apos;s conversations stay private. Family summaries are written to support connection - never to surveil, score, or pathologize. We don&apos;t sell your data, we don&apos;t share it with third parties, and we encrypt everything end-to-end.
+            Your loved one&apos;s conversations stay private. Family summaries are written to support connection - never to surveil, score, or pathologize. We don&apos;t sell your data, and we use encryption in transit and at rest while limiting access to what is needed to operate DailyCall.
           </p>
         </div>
       </section>
