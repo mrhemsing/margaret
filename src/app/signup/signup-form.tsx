@@ -456,7 +456,7 @@ export function SignupForm() {
                   <input name="accountPassword" type="password" minLength={8} autoComplete="new-password" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="8+ characters" />
                 </label>
               </div>
-              <p className="text-xs leading-5 text-slate-500">No credit card is needed for the {trialLengthDays}-day trial. Password is only needed if you are not using Google.</p>
+              <p className="text-sm leading-6 text-slate-500 md:text-xs md:leading-5">No credit card is needed for the {trialLengthDays}-day trial. Password is only needed if you are not using Google.</p>
             </>
           ) : null}
         </fieldset>
@@ -483,7 +483,7 @@ export function SignupForm() {
                 event.currentTarget.value = formatNorthAmericanPhoneInput(event.currentTarget.value);
               }}
             />
-            <span className="text-xs font-normal leading-5 text-slate-500">Use a 10-digit US or Canadian number with area code. You do not need to enter 1.</span>
+            <span className="text-sm font-normal leading-6 text-slate-500 md:text-xs md:leading-5">Use a 10-digit US or Canadian number with area code. You do not need to enter 1.</span>
           </label>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Billing country
@@ -491,7 +491,7 @@ export function SignupForm() {
               <option value="CA">Canada</option>
               <option value="US">United States</option>
             </select>
-            <span className="text-xs font-normal leading-5 text-slate-500">DailyCall is initially available only in Canada and the United States.</span>
+            <span className="text-sm font-normal leading-6 text-slate-500 md:text-xs md:leading-5">DailyCall is initially available only in Canada and the United States.</span>
           </label>
         </fieldset>
 
@@ -627,7 +627,7 @@ export function SignupForm() {
               className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink disabled:bg-slate-100 disabled:text-slate-400 disabled:placeholder:text-slate-400"
               placeholder="Ask about her childhood in Winnipeg. Ask what music she played with Robert."
             />
-            <span className="text-xs font-normal leading-5 text-slate-500">
+            <span className="text-sm font-normal leading-6 text-slate-500 md:text-xs md:leading-5">
               {selectedPlan === SubscriptionPlan.THREE_CALLS_DAILY ? "Included with Companion." : "Available with Companion."}
             </span>
           </label>
@@ -665,7 +665,7 @@ export function SignupForm() {
                   </label>
                 ))}
               </div>
-              <span className="text-xs font-normal leading-5 text-slate-500">Choose any recurring topics they may enjoy during calls.</span>
+              <span className="text-sm font-normal leading-6 text-slate-500 md:text-xs md:leading-5">Choose any recurring topics they may enjoy during calls.</span>
             </div>
           </div>
         </fieldset>
@@ -698,11 +698,11 @@ export function SignupForm() {
                 <span className="mt-2 inline-flex rounded-full bg-sage/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sage">
                   Free for {trialLengthDays} days
                 </span>
-                <span className="mt-3 block text-xs font-normal leading-5 text-slate-500">{plan.detail}</span>
-                <span className="mt-2 block text-xs font-semibold text-slate-500">
+                <span className="mt-3 block text-sm font-normal leading-6 text-slate-500 md:text-xs md:leading-5">{plan.detail}</span>
+                <span className="mt-2 block text-sm font-semibold leading-6 text-slate-500 md:text-xs md:leading-5">
                   Trial includes {plan.trialMinutes} minutes. Then {plan.monthlyMinutes} minutes/month.
                 </span>
-                <span className="mt-3 block text-xs font-semibold text-slate-500">After trial: {plan.price} / mo</span>
+                <span className="mt-3 block text-sm font-semibold leading-6 text-slate-500 md:text-xs md:leading-5">After trial: {plan.price} / mo</span>
               </label>
             ))}
           </div>
@@ -744,7 +744,7 @@ export function SignupForm() {
                     </div>
                   </div>
                 ))}
-                <p className="text-xs font-normal leading-5 text-slate-500 xl:col-span-3">Companion can include up to three preferred daily call windows. Uncheck any call slots you do not want.</p>
+                <p className="text-sm font-normal leading-6 text-slate-500 md:text-xs md:leading-5 xl:col-span-3">Companion can include up to three preferred daily call windows. Uncheck any call slots you do not want.</p>
               </div>
             ) : (
               <label className="grid gap-2 text-sm font-semibold text-slate-700">
@@ -775,7 +775,7 @@ export function SignupForm() {
                 ))}
               </select>
             </label>
-            <p className="rounded-2xl bg-slate-50 px-4 py-3 text-xs font-semibold leading-5 text-slate-600 ring-1 ring-slate-200">
+            <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold leading-6 text-slate-600 ring-1 ring-slate-200 md:text-xs md:leading-5">
               {detectedTimezone
                 ? `Detected from loved one's phone number: ${detectedTimezone.label}`
                 : "Enter the loved one's phone number above and we'll suggest a timezone from the area code. You can change it if needed."}
