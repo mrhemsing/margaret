@@ -8,9 +8,10 @@ const comparisonIntroTemplate =
 
 const comparisonRows = [
   {
-    title: "ElevenLabs native",
+    title: "ElevenLabs Conversational AI",
+    badge: "Native Agent",
     subtitle: "Current native ElevenLabs outbound-call baseline.",
-    stack: "ElevenLabs agent, ElevenLabs ASR/turn-taking, ElevenLabs TTS",
+    stack: "Twilio, ElevenLabs Agent, ElevenLabs ASR/turn-taking, ElevenLabs TTS",
     endpoint: "/api/elevenlabs-test/call",
     caregiverName: "DailyCall ElevenLabs comparison reviewer",
     buildPayload: (target: TestCallTarget) => ({
@@ -20,6 +21,7 @@ const comparisonRows = [
   },
   {
     title: "ElevenLabs streaming bridge",
+    badge: "Custom Bridge",
     subtitle: "Custom bridge matching the Cartesia architecture.",
     stack: "Twilio Media Stream, OpenAI transcription/text, ElevenLabs Flash v2.5",
     endpoint: "/api/bridge-test/call",
@@ -29,7 +31,8 @@ const comparisonRows = [
     }),
   },
   {
-    title: "OpenAI Realtime",
+    title: "OpenAI Realtime SIP",
+    badge: "Direct SIP",
     subtitle: "Single-provider realtime voice path.",
     stack: "Twilio SIP, gpt-realtime-2, gpt-realtime-whisper, Marin voice",
     endpoint: "/api/openai/realtime-test-call",
@@ -40,6 +43,7 @@ const comparisonRows = [
   },
   {
     title: "OpenAI Realtime bridge",
+    badge: "Custom Bridge",
     subtitle: "Custom Twilio Media Stream bridge for apples-to-apples bridge testing.",
     stack: "Twilio Media Stream, gpt-realtime-2 speech-to-speech, Marin voice",
     endpoint: "/api/openai-realtime-bridge/call",
@@ -49,7 +53,8 @@ const comparisonRows = [
     }),
   },
   {
-    title: "Cartesia streaming bridge",
+    title: "Cartesia low-latency bridge",
+    badge: "Custom Bridge",
     subtitle: "Best Cartesia voice path for low-latency bridge testing.",
     stack: "Twilio Media Stream, OpenAI transcription/text, Cartesia Sonic 3.5",
     endpoint: "/api/cartesia-test/call",
@@ -81,7 +86,12 @@ export function CallComparisonClient() {
         {comparisonRows.map((row) => (
           <article key={row.title} className="grid content-between gap-5 rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sage">comparison lane</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sage">comparison lane</p>
+                <span className="rounded-full bg-brandButtonBlue/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-brandButtonBlue">
+                  {row.badge}
+                </span>
+              </div>
               <h2 className="mt-2 text-2xl font-bold text-ink">{row.title}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">{row.subtitle}</p>
               <p className="mt-4 rounded-2xl bg-slate-50 p-3 text-xs font-semibold leading-5 text-slate-600 ring-1 ring-slate-200">
