@@ -13,6 +13,10 @@ export default function PrivacyPolicyPage() {
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-ink">What DailyCall Does</h2>
           <p>
+            DailyCall is a service operated by Hpro Web Development Inc. References to DailyCall, we, us, or our in
+            this Privacy Policy mean Hpro Web Development Inc. operating the DailyCall service.
+          </p>
+          <p>
             DailyCall helps families arrange friendly, AI-assisted companion calls for older loved ones and receive
             concise service updates. We collect and use personal information only as needed to create accounts, schedule
             calls, place calls, personalize conversations, send notifications, provide support, protect the service, and
@@ -62,9 +66,10 @@ export default function PrivacyPolicyPage() {
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-ink">How We Share Information</h2>
           <p>
-            We do not sell personal data. We may share information with the account owner and family contacts authorized
-            by the account owner, such as call summaries, transcripts, call status, missed-call information, and service
-            updates.
+            We do not sell personal data. We do not share SMS opt-in, phone numbers, or SMS consent information with
+            third parties or affiliates for marketing or promotional purposes. We may share information with the account
+            owner and family contacts authorized by the account owner, such as call summaries, transcripts, call status,
+            missed-call information, and service updates.
           </p>
           <p>
             We use trusted service providers for hosting, authentication, payments, telephony, SMS, email, voice AI,

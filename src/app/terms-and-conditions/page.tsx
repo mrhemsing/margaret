@@ -9,6 +9,10 @@ export default function TermsAndConditionsPage() {
     <LegalPageShell title="Terms & Conditions">
       <div className="mt-8 space-y-6 text-base leading-7 text-slate-700">
         <p>
+          DailyCall is a service operated by Hpro Web Development Inc. References to DailyCall, we, us, or our in these
+          Terms & Conditions mean Hpro Web Development Inc. operating the DailyCall service.
+        </p>
+        <p>
           By using DailyCall, you agree to provide accurate account, contact, and scheduling information and to use the
           service only for lawful, consent-based communication.
         </p>
