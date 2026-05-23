@@ -48,6 +48,17 @@ function getCartesiaConfig(raw) {
   };
 }
 
+function getElevenLabsConfig(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const config = raw.elevenLabsConfig;
+  if (!config || typeof config !== "object" || Array.isArray(config)) return null;
+  if (!config.voiceId) return null;
+  return {
+    voiceId: String(config.voiceId),
+    modelId: String(config.modelId || "eleven_flash_v2_5"),
+  };
+}
+
 function getInitialPrompt(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   return typeof raw.initialPrompt === "string" && raw.initialPrompt.trim() ? raw.initialPrompt.trim() : null;
@@ -82,7 +93,7 @@ function fillPrompt(input) {
 function buildInstructions(input) {
   return [
     fillPrompt(input),
-    "This call is running through a streaming Cartesia bridge.",
+    `This call is running through a streaming ${input.bridgeProvider} bridge.`,
     "Return only the exact words DailyCall should say next. No labels, markdown, bullets, SSML, or stage directions.",
     "Keep each turn brief and responsive: usually one sentence, two only when necessary.",
   ].join("\n\n");
@@ -121,6 +132,45 @@ async function loadCallSession(callAttemptId) {
       recentTopics: "none yet",
       topicsToRevisit: memory?.followUpTopics || "none yet",
       avoidRepeating: "Do not use a generic scripted wellness survey opening.",
+      bridgeProvider: "Cartesia",
+    }),
+  };
+}
+
+async function loadElevenLabsCallSession(callAttemptId) {
+  const callAttempt = await prisma.callAttempt.findUnique({
+    where: { id: callAttemptId },
+    include: { member: { include: { customer: true, memory: true } } },
+  });
+
+  if (!callAttempt) throw new Error(`Call attempt not found: ${callAttemptId}`);
+  const elevenLabsConfig = getElevenLabsConfig(callAttempt.conversationRaw);
+  if (!elevenLabsConfig) throw new Error(`ElevenLabs config not found for call attempt: ${callAttemptId}`);
+
+  const memory = callAttempt.member.memory;
+  const companionBits = [
+    `You are calling ${callAttempt.member.name}. Sound like a familiar, warm daily companion, not a clinical checklist.`,
+    memory?.moodSummary ? `Recent mood: ${memory.moodSummary}.` : null,
+    memory?.favoriteTopics ? `Known hobbies/interests: ${memory.favoriteTopics}.` : null,
+    memory?.routines ? `Known routines: ${memory.routines}.` : null,
+    memory?.healthNotes ? `Health/context notes: ${memory.healthNotes}.` : null,
+    memory?.followUpTopics ? `Topics to revisit warmly: ${memory.followUpTopics}.` : null,
+    "Keep turn spacing responsive; do not add long dead-air pauses unless the senior is truly silent.",
+  ].filter(Boolean);
+
+  return {
+    callAttempt,
+    elevenLabsConfig,
+    turns: getTranscript(callAttempt.conversationRaw),
+    initialPrompt: getInitialPrompt(callAttempt.conversationRaw),
+    instructions: buildInstructions({
+      memberName: callAttempt.member.name,
+      caregiverName: callAttempt.member.customer.fullName || "your family",
+      companionContext: companionBits.join("\n"),
+      recentTopics: "none yet",
+      topicsToRevisit: memory?.followUpTopics || "none yet",
+      avoidRepeating: "Do not use a generic scripted wellness survey opening.",
+      bridgeProvider: "ElevenLabs",
     }),
   };
 }
@@ -172,6 +222,25 @@ function createCartesiaSocket() {
       "X-API-Key": apiKey,
       Authorization: `Bearer ${apiKey}`,
       "Cartesia-Version": "2026-03-01",
+    },
+  });
+}
+
+function createElevenLabsSocket(config) {
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  if (!apiKey) throw new Error("ELEVENLABS_API_KEY is not configured.");
+
+  const url = new URL(`wss://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(config.voiceId)}/stream-input`);
+  url.searchParams.set("model_id", config.modelId || "eleven_flash_v2_5");
+  url.searchParams.set("output_format", "ulaw_8000");
+  url.searchParams.set("optimize_streaming_latency", "4");
+  url.searchParams.set("auto_mode", "true");
+  url.searchParams.set("inactivity_timeout", "180");
+  url.searchParams.set("apply_text_normalization", "off");
+
+  return new WebSocket(url.toString(), {
+    headers: {
+      "xi-api-key": apiKey,
     },
   });
 }
@@ -247,8 +316,29 @@ function sendCartesiaText(cartesiaSocket, state, text, isFinal = false) {
   );
 }
 
+function sendElevenLabsText(elevenLabsSocket, state, text, isFinal = false) {
+  if (!text && !isFinal) return;
+
+  if (!elevenLabsSocket || elevenLabsSocket.readyState !== WebSocket.OPEN) {
+    state.pendingElevenLabsMessages.push({ text, isFinal });
+    return;
+  }
+
+  elevenLabsSocket.send(
+    JSON.stringify(
+      isFinal
+        ? { text: "" }
+        : {
+            text: text.endsWith(" ") ? text : `${text} `,
+            try_trigger_generation: true,
+          },
+    ),
+  );
+}
+
 async function persistTurnState(state, completed = false) {
   if (!state.callAttemptId) return;
+  const isElevenLabs = state.bridgeProvider === "elevenlabs";
 
   await prisma.callAttempt.update({
     where: { id: state.callAttemptId },
@@ -256,10 +346,12 @@ async function persistTurnState(state, completed = false) {
       status: completed ? "ANSWERED_OK" : "IN_PROGRESS",
       completedAt: completed ? new Date() : undefined,
       transcript: formatTranscript(state.turns),
-      summary: `Cartesia streaming bridge captured ${state.turns.length} transcript turn${state.turns.length === 1 ? "" : "s"}.`,
+      summary: `${isElevenLabs ? "ElevenLabs" : "Cartesia"} streaming bridge captured ${state.turns.length} transcript turn${state.turns.length === 1 ? "" : "s"}.`,
       conversationRaw: {
-        provider: "openai_realtime_stt_openai_text_cartesia_stream_twilio",
-        cartesiaConfig: state.cartesiaConfig,
+        provider: isElevenLabs
+          ? "openai_realtime_stt_openai_text_elevenlabs_stream_twilio"
+          : "openai_realtime_stt_openai_text_cartesia_stream_twilio",
+        ...(isElevenLabs ? { elevenLabsConfig: state.elevenLabsConfig } : { cartesiaConfig: state.cartesiaConfig }),
         initialPrompt: state.initialPrompt,
         hybridTranscript: state.turns,
         lastTurnTiming: state.lastTurnTiming ?? null,
@@ -269,7 +361,16 @@ async function persistTurnState(state, completed = false) {
   });
 }
 
-async function streamOpenAIReplyToCartesia(state, userText) {
+function sendTtsText(state, text, isFinal = false) {
+  if (state.bridgeProvider === "elevenlabs") {
+    sendElevenLabsText(state.elevenLabsSocket, state, text, isFinal);
+    return;
+  }
+
+  sendCartesiaText(state.cartesiaSocket, state, text, isFinal);
+}
+
+async function streamOpenAIReplyToTts(state, userText) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured.");
 
@@ -279,6 +380,15 @@ async function streamOpenAIReplyToCartesia(state, userText) {
   state.activeAssistantText = "";
   state.pendingCartesiaText = "";
   state.cartesiaContextId = randomUUID();
+  if (
+    state.bridgeProvider === "elevenlabs" &&
+    state.elevenLabsConfig &&
+    (!state.elevenLabsSocket ||
+      state.elevenLabsSocket.readyState === WebSocket.CLOSING ||
+      state.elevenLabsSocket.readyState === WebSocket.CLOSED)
+  ) {
+    attachElevenLabsSocket(state, state.twilioSocket);
+  }
 
   state.turns.push({ speaker: state.memberName, text: userText });
 
@@ -314,7 +424,7 @@ async function streamOpenAIReplyToCartesia(state, userText) {
     if (!state.pendingCartesiaText) return;
     const shouldFlush = force || /[.!?]\s$/.test(state.pendingCartesiaText) || state.pendingCartesiaText.length >= 32;
     if (!shouldFlush) return;
-    sendCartesiaText(state.cartesiaSocket, state, state.pendingCartesiaText, false);
+    sendTtsText(state, state.pendingCartesiaText, false);
     state.pendingCartesiaText = "";
   }
 
@@ -351,7 +461,7 @@ async function streamOpenAIReplyToCartesia(state, userText) {
   }
 
   flush(true);
-  sendCartesiaText(state.cartesiaSocket, state, "", true);
+  sendTtsText(state, "", true);
 
   const assistantText = state.activeAssistantText.replace(/\s+/g, " ").trim();
   if (assistantText) {
@@ -375,19 +485,67 @@ function cancelActiveOutput(state) {
     state.cartesiaSocket.send(JSON.stringify({ context_id: state.cartesiaContextId, cancel: true }));
   }
 
+  if (state.elevenLabsSocket?.readyState === WebSocket.OPEN) {
+    state.elevenLabsSocket.close();
+  }
+
   state.cartesiaContextId = null;
 }
 
-function wireBridge(twilioSocket) {
+function attachElevenLabsSocket(state, twilioSocket) {
+  const elevenLabsSocket = createElevenLabsSocket(state.elevenLabsConfig);
+  state.elevenLabsSocket = elevenLabsSocket;
+
+  elevenLabsSocket.on("message", (data) => {
+    const message = safeJson(data.toString());
+    if (!message) return;
+
+    if (typeof message.audio === "string" && message.audio) {
+      sendTwilioAudio(twilioSocket, state.streamSid, message.audio);
+      return;
+    }
+
+    if (message.error) {
+      console.error("ElevenLabs websocket error event", message);
+    }
+  });
+
+  elevenLabsSocket.on("open", () => {
+    elevenLabsSocket.send(
+      JSON.stringify({
+        text: " ",
+        voice_settings: {
+          stability: 0.6,
+          similarity_boost: 0.82,
+          speed: 1,
+        },
+      }),
+    );
+
+    const pending = state.pendingElevenLabsMessages.splice(0);
+    for (const message of pending) {
+      sendElevenLabsText(elevenLabsSocket, state, message.text, message.isFinal);
+    }
+  });
+
+  elevenLabsSocket.on("error", (error) => console.error("ElevenLabs TTS socket error", error));
+  return elevenLabsSocket;
+}
+
+function wireBridge(twilioSocket, bridgeProvider = "cartesia") {
   const state = {
+    bridgeProvider,
+    twilioSocket,
     callAttemptId: null,
     memberName: "there",
     streamSid: null,
     turns: [],
     cartesiaConfig: null,
+    elevenLabsConfig: null,
     initialPrompt: null,
     instructions: "",
     cartesiaSocket: null,
+    elevenLabsSocket: null,
     cartesiaContextId: null,
     pendingCartesiaText: "",
     activeAssistantText: "",
@@ -395,14 +553,17 @@ function wireBridge(twilioSocket) {
     lastTurnTiming: null,
     pendingAudioPayloads: [],
     pendingCartesiaMessages: [],
+    pendingElevenLabsMessages: [],
     userSpeaking: false,
     speechFrames: 0,
     silenceFrames: 0,
     lastCommitAt: 0,
   };
   const openAISocket = createOpenAITranscriptionSocket();
-  const cartesiaSocket = createCartesiaSocket();
-  state.cartesiaSocket = cartesiaSocket;
+  const cartesiaSocket = bridgeProvider === "cartesia" ? createCartesiaSocket() : null;
+  if (cartesiaSocket) {
+    state.cartesiaSocket = cartesiaSocket;
+  }
 
   openAISocket.on("message", (data) => {
     const message = safeJson(data.toString());
@@ -410,8 +571,8 @@ function wireBridge(twilioSocket) {
 
     if (message.type === "conversation.item.input_audio_transcription.completed") {
       const transcript = typeof message.transcript === "string" ? message.transcript.trim() : "";
-      if (!transcript || !state.cartesiaSocket) return;
-      void streamOpenAIReplyToCartesia(state, transcript).catch((error) => console.error("stream reply failed", error));
+      if (!transcript) return;
+      void streamOpenAIReplyToTts(state, transcript).catch((error) => console.error("stream reply failed", error));
       return;
     }
 
@@ -431,25 +592,27 @@ function wireBridge(twilioSocket) {
     }
   });
 
-  cartesiaSocket.on("message", (data) => {
-    const message = safeJson(data.toString());
-    if (!message) return;
+  if (cartesiaSocket) {
+    cartesiaSocket.on("message", (data) => {
+      const message = safeJson(data.toString());
+      if (!message) return;
 
-    if (message.type === "chunk" && typeof message.data === "string") {
-      sendTwilioAudio(twilioSocket, state.streamSid, message.data);
-      return;
-    }
+      if (message.type === "chunk" && typeof message.data === "string") {
+        sendTwilioAudio(twilioSocket, state.streamSid, message.data);
+        return;
+      }
 
-    if (message.type === "error") {
-      console.error("Cartesia websocket error event", message);
-    }
-  });
-  cartesiaSocket.on("open", () => {
-    const pending = state.pendingCartesiaMessages.splice(0);
-    for (const message of pending) {
-      sendCartesiaText(cartesiaSocket, state, message.text, message.isFinal);
-    }
-  });
+      if (message.type === "error") {
+        console.error("Cartesia websocket error event", message);
+      }
+    });
+    cartesiaSocket.on("open", () => {
+      const pending = state.pendingCartesiaMessages.splice(0);
+      for (const message of pending) {
+        sendCartesiaText(cartesiaSocket, state, message.text, message.isFinal);
+      }
+    });
+  }
 
   twilioSocket.on("message", (data) => {
     const message = safeJson(data.toString());
@@ -458,18 +621,23 @@ function wireBridge(twilioSocket) {
     if (message.event === "start") {
       state.streamSid = message.start?.streamSid ?? message.streamSid ?? null;
       state.callAttemptId = message.start?.customParameters?.callAttemptId ?? null;
-      void loadCallSession(state.callAttemptId)
+      const loadSession = bridgeProvider === "elevenlabs" ? loadElevenLabsCallSession : loadCallSession;
+      void loadSession(state.callAttemptId)
         .then((session) => {
           state.memberName = session.callAttempt.member.name;
           state.turns = session.turns;
-          state.cartesiaConfig = session.cartesiaConfig;
+          state.cartesiaConfig = session.cartesiaConfig ?? null;
+          state.elevenLabsConfig = session.elevenLabsConfig ?? null;
           state.initialPrompt = session.initialPrompt;
           state.instructions = session.instructions;
-          console.log("Cartesia stream bridge started", {
+          if (bridgeProvider === "elevenlabs") {
+            attachElevenLabsSocket(state, twilioSocket);
+          }
+          console.log(`${bridgeProvider === "elevenlabs" ? "ElevenLabs" : "Cartesia"} stream bridge started`, {
             callAttemptId: state.callAttemptId,
             streamSid: state.streamSid,
-            modelId: state.cartesiaConfig.modelId,
-            voiceId: state.cartesiaConfig.voiceId,
+            modelId: state.cartesiaConfig?.modelId ?? state.elevenLabsConfig?.modelId,
+            voiceId: state.cartesiaConfig?.voiceId ?? state.elevenLabsConfig?.voiceId,
           });
 
           const opener =
@@ -477,11 +645,11 @@ function wireBridge(twilioSocket) {
             `Hi ${state.memberName}, it is your scheduled check-in call from DailyCall. Is there anything I can help you with, or anything you would like to chat about?`;
           state.turns.push({ speaker: "DailyCall", text: opener });
           state.cartesiaContextId = randomUUID();
-          sendCartesiaText(cartesiaSocket, state, opener, true);
+          sendTtsText(state, opener, true);
           void persistTurnState(state).catch((error) => console.error("persist opener failed", error));
         })
         .catch((error) => {
-          console.error("failed to load Cartesia stream session", error);
+          console.error(`failed to load ${bridgeProvider} stream session`, error);
           twilioSocket.close();
         });
       return;
@@ -538,20 +706,21 @@ function wireBridge(twilioSocket) {
   twilioSocket.on("close", () => {
     cancelActiveOutput(state);
     if (openAISocket.readyState === WebSocket.OPEN) openAISocket.close();
-    if (cartesiaSocket.readyState === WebSocket.OPEN) cartesiaSocket.close();
+    if (cartesiaSocket?.readyState === WebSocket.OPEN) cartesiaSocket.close();
+    if (state.elevenLabsSocket?.readyState === WebSocket.OPEN) state.elevenLabsSocket.close();
   });
 
   twilioSocket.on("error", (error) => console.error("Twilio stream socket error", error));
   openAISocket.on("error", (error) => console.error("OpenAI transcription socket error", error));
-  cartesiaSocket.on("error", (error) => console.error("Cartesia TTS socket error", error));
+  cartesiaSocket?.on("error", (error) => console.error("Cartesia TTS socket error", error));
 }
 
 await app.prepare();
 
 const server = http.createServer((request, response) => {
-  if (request.url === "/api/cartesia-test/stream-health") {
+  if (request.url === "/api/cartesia-test/stream-health" || request.url === "/api/bridge-test/stream-health") {
     response.writeHead(200, { "content-type": "application/json" });
-    response.end(JSON.stringify({ ok: true, service: "dailycall-cartesia-streaming-server" }));
+    response.end(JSON.stringify({ ok: true, service: "dailycall-streaming-bridge-server" }));
     return;
   }
 
@@ -562,17 +731,18 @@ const wss = new WebSocketServer({ noServer: true });
 server.on("upgrade", (request, socket, head) => {
   const url = new URL(request.url ?? "", `http://${request.headers.host ?? "localhost"}`);
 
-  if (url.pathname !== "/api/cartesia-test/stream") {
+  if (url.pathname !== "/api/cartesia-test/stream" && url.pathname !== "/api/bridge-test/stream") {
     socket.destroy();
     return;
   }
 
   wss.handleUpgrade(request, socket, head, (ws) => {
-    wireBridge(ws);
+    wireBridge(ws, url.pathname === "/api/bridge-test/stream" ? "elevenlabs" : "cartesia");
   });
 });
 
 server.listen(port, hostname, () => {
-  console.log(`DailyCall Next + Cartesia streaming bridge listening on http://${hostname}:${port}`);
+  console.log(`DailyCall Next + streaming bridges listening on http://${hostname}:${port}`);
   console.log(`Cartesia bridge WebSocket path: ws://${hostname}:${port}/api/cartesia-test/stream`);
+  console.log(`ElevenLabs bridge WebSocket path: ws://${hostname}:${port}/api/bridge-test/stream`);
 });

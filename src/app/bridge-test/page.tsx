@@ -40,19 +40,19 @@ export default async function BridgeTestPage() {
 
       <header className="rounded-[2rem] bg-white/85 p-8 shadow-sm ring-1 ring-black/5 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">internal voice lab</p>
-        <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-ink md:text-5xl">Streaming bridge test</h1>
+        <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-ink md:text-5xl">ElevenLabs streaming bridge test</h1>
         <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
-          Isolated workspace for the OpenAI text plus ElevenLabs Twilio bridge path, separate from the live ElevenLabs dashboard path and the OpenAI Realtime browser test.
+          Isolated workspace for the Twilio Media Stream bridge using OpenAI transcription, OpenAI text responses, and ElevenLabs streaming TTS.
         </p>
       </header>
 
       <section className="grid gap-4 rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brandButtonBlue">bridge status</p>
-          <h2 className="mt-2 text-2xl font-bold text-ink">Prototype lane ready</h2>
+          <h2 className="mt-2 text-2xl font-bold text-ink">Streaming lane ready</h2>
         </div>
         <p className="max-w-3xl text-base leading-7 text-slate-600">
-          This page uses Twilio gather turns with OpenAI text replies and ElevenLabs playback. It is not the Cartesia streaming bridge.
+          This page now uses a live WebSocket bridge instead of Twilio Gather turns, so it can be compared more fairly against the Cartesia streaming bridge.
         </p>
       </section>
 
@@ -61,7 +61,7 @@ export default async function BridgeTestPage() {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brandButtonBlue">phone path</p>
           <h2 className="mt-2 text-2xl font-bold text-ink">Bridge test calls</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Calls through the isolated OpenAI text plus ElevenLabs Twilio bridge path. Dashboard calls stay on the production ElevenLabs path.
+            Calls through Twilio Media Streams with OpenAI Realtime transcription, OpenAI text replies, and ElevenLabs Flash v2.5 streaming audio. Dashboard calls stay unchanged.
           </p>
         </div>
         <TestCallButtons endpoint="/api/bridge-test/call" caregiverName="DailyCall bridge test reviewer" />

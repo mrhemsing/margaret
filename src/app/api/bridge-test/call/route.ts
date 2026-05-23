@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
-import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
+import { getServerEnv } from "@/lib/env";
+import { getPublicBaseUrl } from "@/lib/cartesia-test-call";
+import { defaultVoiceId } from "@/lib/voice/voice-options";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +15,12 @@ const requestSchema = z.object({
   memberName: z.string().min(1).optional(),
   caregiverName: z.string().min(1).optional(),
 });
+
+type TwilioCallResponse = {
+  sid?: string;
+  status?: string;
+  message?: string;
+};
 
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) {
@@ -56,29 +65,78 @@ export async function POST(request: Request) {
           },
         });
 
-    const result = await startAmdProtectedCheckInCall({
-      toNumber: normalizedPhone,
-      memberName: member.name,
-      caregiverName: parsed.data.caregiverName ?? "DailyCall bridge test reviewer",
-      voiceProvider: "openai_text_elevenlabs_twilio",
-      machineDetection: false,
-      refreshCurrentContext: false,
-    });
-
     const callAttempt = await prisma.callAttempt.create({
       data: {
         memberId: member.id,
         scheduledFor: new Date(),
         startedAt: new Date(),
         status: "IN_PROGRESS",
-        providerCallSid: result.sid ?? null,
         summary: `Streaming bridge phone test started for ${member.name}.`,
+        conversationRaw: {
+          provider: "openai_realtime_stt_openai_text_elevenlabs_stream_twilio",
+          elevenLabsConfig: {
+            voiceId: defaultVoiceId,
+            modelId: "eleven_flash_v2_5",
+          },
+          initialPrompt: `Hi ${member.name}, this is DailyCall through the ElevenLabs streaming bridge. I am here if anything is on your mind, or if you would just like a quick chat. How are you doing today?`,
+          hybridTranscript: [],
+        } as Prisma.InputJsonValue,
+        syncedAt: new Date(),
       },
     });
 
+    const env = getServerEnv();
+    if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_FROM_NUMBER) {
+      throw new Error("Twilio credentials are not configured.");
+    }
+
+    if (!env.ELEVENLABS_API_KEY) {
+      throw new Error("ELEVENLABS_API_KEY is not configured.");
+    }
+
+    const baseUrl = getPublicBaseUrl();
+    const voiceUrl = new URL(`${baseUrl}/api/bridge-test/stream-twiml`);
+    voiceUrl.searchParams.set("callAttemptId", callAttempt.id);
+
+    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Calls.json`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`).toString("base64")}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: normalizedPhone,
+        From: env.TWILIO_FROM_NUMBER,
+        Url: voiceUrl.toString(),
+        Method: "POST",
+      }),
+    });
+
+    const result = (await response.json().catch(() => null)) as TwilioCallResponse | null;
+
+    if (!response.ok) {
+      await prisma.callAttempt.update({
+        where: { id: callAttempt.id },
+        data: {
+          status: "FAILED",
+          completedAt: new Date(),
+          summary: result?.message ?? `Twilio call failed with status ${response.status}.`,
+          syncedAt: new Date(),
+        },
+      });
+      throw new Error(result?.message ?? `Twilio call failed with status ${response.status}.`);
+    }
+
+    if (result?.sid) {
+      await prisma.callAttempt.update({
+        where: { id: callAttempt.id },
+        data: { providerCallSid: result.sid, syncedAt: new Date() },
+      });
+    }
+
     return NextResponse.json({
       ok: true,
-      provider: "openai_text_elevenlabs_twilio",
+      provider: "openai_realtime_stt_openai_text_elevenlabs_stream_twilio",
       member,
       callAttempt,
       result,
