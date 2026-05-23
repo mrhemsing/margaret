@@ -32,10 +32,10 @@ Next:
 Status: **Active**
 
 Defaults:
-- `OPENAI_REALTIME_MODEL=gpt-realtime-2`
+- `OPENAI_REALTIME_MODEL=gpt-realtime`
 - `OPENAI_REALTIME_VOICE=marin`
 - `OPENAI_REALTIME_REASONING_EFFORT=low`
-- `OPENAI_REALTIME_VAD_EAGERNESS=high`
+- `OPENAI_REALTIME_VAD_EAGERNESS=low`
 - soft, caring, understanding senior companion tone
 - snappy turn-taking with short replies
 

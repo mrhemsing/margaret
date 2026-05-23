@@ -34,10 +34,10 @@ Reference:
 OPENAI_API_KEY=
 OPENAI_PROJECT_ID=
 OPENAI_WEBHOOK_SECRET=
-OPENAI_REALTIME_MODEL=gpt-realtime-2
+OPENAI_REALTIME_MODEL=gpt-realtime
 OPENAI_REALTIME_VOICE=marin
 OPENAI_REALTIME_REASONING_EFFORT=low
-OPENAI_REALTIME_VAD_EAGERNESS=high
+OPENAI_REALTIME_VAD_EAGERNESS=low
 ```
 
 Twilio is still required:
@@ -74,19 +74,19 @@ DailyCall passes Twilio call metadata as custom SIP headers so the webhook can m
 
 Current defaults are intentionally optimized for the senior companion use case:
 
-- Model: `gpt-realtime-2`
+- Model: `gpt-realtime`
 - Default voice: `marin`
 - Female dashboard/signup choice: `marin`
 - Male dashboard/signup choice: `cedar`
 - Reasoning: `low`
-- Turn detection: conservative `server_vad` with `threshold=0.65`, `silence_duration_ms=700`, and `interrupt_response=false`
+- Turn detection: conservative `semantic_vad` with `eagerness=low`, `create_response=true`, and `interrupt_response=false`
 - Input transcription: `gpt-realtime-whisper`
 - Transcription language hint: `en`
 - Transcription delay: `minimal`
 - Input noise reduction: disabled for SIP phone calls while tuning audio stability
 - Response cap: `max_output_tokens=320`
 
-Use `low` reasoning for ordinary check-ins because OpenAI recommends it as the starting point for `gpt-realtime-2` voice agents while still keeping calls responsive. Increase reasoning only for harder workflows such as complex tool use, conflicting context, or post-call extraction.
+Use `low` reasoning for ordinary check-ins because it keeps `gpt-realtime` voice agents responsive. Increase reasoning only for harder workflows such as complex tool use, conflicting context, or post-call extraction.
 
 Use `high` semantic VAD for the active check-in caller because DailyCall should respond quickly after the senior finishes speaking. If testing shows the agent interrupts slower speakers too often, lower to `medium` for that member or profile.
 

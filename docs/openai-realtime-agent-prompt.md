@@ -57,10 +57,10 @@ Keep the first greeting short. The goal is warmth and a quick open question, not
 ## Current production settings
 
 ```env
-OPENAI_REALTIME_MODEL=gpt-realtime-2
+OPENAI_REALTIME_MODEL=gpt-realtime
 OPENAI_REALTIME_VOICE=marin
 OPENAI_REALTIME_REASONING_EFFORT=low
-OPENAI_REALTIME_VAD_EAGERNESS=high
+OPENAI_REALTIME_VAD_EAGERNESS=low
 ```
 
 Session settings:
@@ -68,7 +68,7 @@ Session settings:
 - Default voice: `marin`
 - Female dashboard/signup choice: `marin`
 - Male dashboard/signup choice: `cedar`
-- Turn detection: conservative `server_vad` with `threshold=0.65`, `silence_duration_ms=700`, and `interrupt_response=false`
+- Turn detection: conservative `semantic_vad` with `eagerness=low`, `create_response=true`, and `interrupt_response=false`
 - `create_response: true`
 - `interrupt_response: false`
 - Input transcription: `gpt-realtime-whisper`

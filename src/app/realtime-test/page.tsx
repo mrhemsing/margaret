@@ -42,7 +42,7 @@ export default async function RealtimeTestPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">internal voice lab</p>
         <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-ink md:text-5xl">OpenAI Realtime test page</h1>
         <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
-          Standalone browser test for evaluating gpt-realtime-2 against DailyCall&apos;s senior companion call experience.
+          Standalone browser test for evaluating gpt-realtime against DailyCall&apos;s senior companion call experience.
         </p>
       </header>
 

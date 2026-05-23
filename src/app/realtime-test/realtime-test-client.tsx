@@ -133,7 +133,7 @@ export function RealtimeTestClient() {
   const [voice, setVoice] = useState("marin");
   const [pacingProfile, setPacingProfile] = useState<PacingProfile>("snappy");
   const [reasoningEffort, setReasoningEffort] = useState("low");
-  const [vadEagerness, setVadEagerness] = useState("high");
+  const [vadEagerness, setVadEagerness] = useState("low");
   const [instructions, setInstructions] = useState(defaultInstructions);
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [startedAt, setStartedAt] = useState<number | null>(null);
@@ -256,14 +256,14 @@ export function RealtimeTestClient() {
                     type: "semantic_vad",
                     eagerness: vadEagerness,
                     create_response: true,
-                    interrupt_response: true,
+                    interrupt_response: false,
                   },
                 },
               },
             },
           }),
         );
-        addLog(`semantic VAD set to ${vadEagerness}`);
+        addLog(`semantic VAD set to ${vadEagerness} with model interruption disabled`);
       };
 
       dc.onmessage = (event) => {

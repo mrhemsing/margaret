@@ -19,6 +19,8 @@ const handle = app.getRequestHandler();
 const prisma = new PrismaClient();
 
 const DAILYCALL_PROMPT = fs.readFileSync(path.join(projectDir, "agent-prompt-dailycaller.txt"), "utf8");
+const DEFAULT_OPENAI_REALTIME_MODEL = "gpt-realtime";
+const DEFAULT_OPENAI_REALTIME_VAD_EAGERNESS = "low";
 
 function safeJson(value) {
   try {
@@ -252,7 +254,7 @@ function createOpenAIRealtimeSocket() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured.");
 
-  const model = process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2";
+  const model = process.env.OPENAI_REALTIME_MODEL || DEFAULT_OPENAI_REALTIME_MODEL;
   return new WebSocket(`wss://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -543,6 +545,7 @@ async function persistOpenAIRealtimeState(state, completed = false) {
         initialPrompt: state.initialPrompt,
         hybridTranscript: state.turns,
         lastTurnTiming: state.lastTurnTiming ?? null,
+        realtimeMetrics: state.metrics ?? null,
         events: state.events.slice(-80),
       },
       syncedAt: new Date(),
@@ -938,9 +941,14 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
     assistantTranscript: "",
     responseStartedAt: null,
     lastTurnTiming: null,
-    userSpeaking: false,
-    speechFrames: 0,
-    silenceFrames: 0,
+    metrics: {
+      sessionReadyAt: null,
+      openerSentAt: null,
+      firstAudioDeltaAt: null,
+      speechStartedCount: 0,
+      responseDoneCount: 0,
+      errorCount: 0,
+    },
   };
 
   function startOpener() {
@@ -951,11 +959,13 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
       `Hi ${state.memberName}, it is your scheduled check-in call from DailyCall. Is there anything I can help you with, or anything you would like to chat about?`;
     state.turns.push({ speaker: "DailyCall", text: opener });
     state.responseStartedAt = Date.now();
+    state.metrics.openerSentAt = new Date().toISOString();
     state.openAISocket.send(
       JSON.stringify({
         type: "response.create",
-          response: {
+        response: {
           instructions: `Say exactly this opening line and nothing else, then wait for the person to respond: ${opener}`,
+          max_output_tokens: 120,
         },
       }),
     );
@@ -968,7 +978,7 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
         type: "session.update",
         session: {
           type: "realtime",
-          model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2",
+          model: process.env.OPENAI_REALTIME_MODEL || DEFAULT_OPENAI_REALTIME_MODEL,
           instructions: state.instructions || "You are DailyCall. Keep responses warm, brief, and natural.",
           output_modalities: ["audio"],
           reasoning: {
@@ -987,12 +997,10 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
               },
               noise_reduction: null,
               turn_detection: {
-                type: "server_vad",
-                threshold: 0.65,
-                prefix_padding_ms: 300,
-                silence_duration_ms: 650,
+                type: "semantic_vad",
+                eagerness: process.env.OPENAI_REALTIME_VAD_EAGERNESS || DEFAULT_OPENAI_REALTIME_VAD_EAGERNESS,
                 create_response: true,
-                interrupt_response: true,
+                interrupt_response: false,
               },
             },
             output: {
@@ -1019,6 +1027,7 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
 
     if (message.type === "session.updated" || message.type === "session.created") {
       state.sessionReady = true;
+      state.metrics.sessionReadyAt = state.metrics.sessionReadyAt || new Date().toISOString();
       startOpener();
       return;
     }
@@ -1027,12 +1036,13 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
       (message.type === "response.output_audio.delta" || message.type === "response.audio.delta") &&
       typeof message.delta === "string"
     ) {
+      state.metrics.firstAudioDeltaAt = state.metrics.firstAudioDeltaAt || new Date().toISOString();
       sendTwilioAudio(twilioSocket, state.streamSid, message.delta);
       return;
     }
 
     if (message.type === "input_audio_buffer.speech_started") {
-      sendTwilioClear(twilioSocket, state.streamSid);
+      state.metrics.speechStartedCount += 1;
       return;
     }
 
@@ -1069,12 +1079,18 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
       return;
     }
 
+    if (message.type === "response.done") {
+      state.metrics.responseDoneCount += 1;
+      return;
+    }
+
     if (message.type === "response.created") {
       state.responseStartedAt = Date.now();
       return;
     }
 
     if (message.type === "error") {
+      state.metrics.errorCount += 1;
       console.error("OpenAI realtime bridge error", message);
     }
   });
@@ -1096,7 +1112,7 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
           console.log("OpenAI Realtime stream bridge started", {
             callAttemptId: state.callAttemptId,
             streamSid: state.streamSid,
-            model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2",
+            model: process.env.OPENAI_REALTIME_MODEL || DEFAULT_OPENAI_REALTIME_MODEL,
             voice: process.env.OPENAI_REALTIME_VOICE || "marin",
           });
 

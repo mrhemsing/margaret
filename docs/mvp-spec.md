@@ -136,10 +136,10 @@ Why:
 Current production defaults:
 
 - `VOICE_PROVIDER=openai_realtime_twilio`
-- `OPENAI_REALTIME_MODEL=gpt-realtime-2`
+- `OPENAI_REALTIME_MODEL=gpt-realtime`
 - `OPENAI_REALTIME_VOICE=marin`
 - `OPENAI_REALTIME_REASONING_EFFORT=low`
-- `OPENAI_REALTIME_VAD_EAGERNESS=high`
+- `OPENAI_REALTIME_VAD_EAGERNESS=low`
 - Turn detection: semantic VAD.
 - Transcription: `gpt-realtime-whisper` events captured for summaries and memory extraction.
 

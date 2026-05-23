@@ -25,6 +25,8 @@ type OpenAIRealtimeTranscriptTurn = {
 };
 
 const OPENAI_REALTIME_CALLS_URL = "https://api.openai.com/v1/realtime/calls";
+const DEFAULT_OPENAI_REALTIME_MODEL = "gpt-realtime";
+const DEFAULT_OPENAI_REALTIME_VAD_EAGERNESS = "low";
 
 function xmlEscape(value: string) {
   return value
@@ -39,6 +41,18 @@ function dedupe(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
 
+function buildOpenAISipDialAction(input: { baseUrl?: string | null; callSid?: string | null; callAttemptId?: string | null }) {
+  if (!input.baseUrl) return null;
+  const actionUrl = new URL("/api/twilio/openai-sip-dial-status", input.baseUrl);
+  if (input.callSid) {
+    actionUrl.searchParams.set("callSid", input.callSid);
+  }
+  if (input.callAttemptId) {
+    actionUrl.searchParams.set("callAttemptId", input.callAttemptId);
+  }
+  return actionUrl.toString();
+}
+
 function getOpenAIRealtimeConfig() {
   const env = getServerEnv();
 
@@ -49,10 +63,10 @@ function getOpenAIRealtimeConfig() {
   return {
     apiKey: env.OPENAI_API_KEY,
     projectId: env.OPENAI_PROJECT_ID,
-    model: env.OPENAI_REALTIME_MODEL ?? "gpt-realtime-2",
+    model: env.OPENAI_REALTIME_MODEL ?? DEFAULT_OPENAI_REALTIME_MODEL,
     defaultVoice: env.OPENAI_REALTIME_VOICE ?? "marin",
     reasoningEffort: env.OPENAI_REALTIME_REASONING_EFFORT ?? "low",
-    vadEagerness: env.OPENAI_REALTIME_VAD_EAGERNESS ?? "high",
+    vadEagerness: env.OPENAI_REALTIME_VAD_EAGERNESS ?? DEFAULT_OPENAI_REALTIME_VAD_EAGERNESS,
   };
 }
 
@@ -96,7 +110,7 @@ Pay attention to mood, notable moments, topics, possible memory updates, and fol
 }
 
 export function buildOpenAIRealtimeSipTwiml(input: {
-  callSid: string;
+  callSid?: string | null;
   callAttemptId?: string | null;
 }) {
   const env = getServerEnv();
@@ -107,16 +121,14 @@ export function buildOpenAIRealtimeSipTwiml(input: {
   }
 
   const sipUri = new URL(`sip:${projectId}@sip.api.openai.com;transport=tls`);
-  sipUri.searchParams.set("X-DailyCall-CallSid", input.callSid);
+  if (input.callSid) {
+    sipUri.searchParams.set("X-DailyCall-CallSid", input.callSid);
+  }
   if (input.callAttemptId) {
     sipUri.searchParams.set("X-DailyCall-AttemptId", input.callAttemptId);
   }
   const baseUrl = env.PUBLIC_APP_URL ?? env.APP_URL;
-  const dialAction = baseUrl
-    ? `${baseUrl}/api/twilio/openai-sip-dial-status?callSid=${encodeURIComponent(input.callSid)}${
-        input.callAttemptId ? `&callAttemptId=${encodeURIComponent(input.callAttemptId)}` : ""
-      }`
-    : null;
+  const dialAction = buildOpenAISipDialAction({ baseUrl, callSid: input.callSid, callAttemptId: input.callAttemptId });
 
   return [
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
@@ -235,10 +247,8 @@ export async function acceptOpenAIRealtimeCall(input: AcceptOpenAIRealtimeCallIn
           },
           noise_reduction: null,
           turn_detection: {
-            type: "server_vad",
-            threshold: 0.65,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 700,
+            type: "semantic_vad",
+            eagerness: config.vadEagerness,
             create_response: true,
             interrupt_response: false,
           },
@@ -297,9 +307,18 @@ async function updateCallFromRealtimeEvents(input: {
   memberName: string;
   turns: OpenAIRealtimeTranscriptTurn[];
   events: Record<string, unknown>[];
+  metrics: Record<string, unknown>;
   completed?: boolean;
 }) {
   const transcript = formatOpenAIRealtimeTranscript(input.turns);
+  const existing = await input.db.callAttempt.findUnique({
+    where: { id: input.callAttemptId },
+    select: { conversationRaw: true },
+  });
+  const existingRaw =
+    existing?.conversationRaw && typeof existing.conversationRaw === "object" && !Array.isArray(existing.conversationRaw)
+      ? (existing.conversationRaw as Record<string, unknown>)
+      : {};
 
   await input.db.callAttempt.update({
     where: { id: input.callAttemptId },
@@ -311,8 +330,10 @@ async function updateCallFromRealtimeEvents(input: {
         ? `OpenAI Realtime call captured ${input.turns.length} transcript turn${input.turns.length === 1 ? "" : "s"}.`
         : undefined,
       conversationRaw: {
+        ...existingRaw,
         provider: "openai_realtime",
         events: input.events.slice(-80),
+        realtimeMetrics: input.metrics,
       } as Prisma.InputJsonValue,
       syncedAt: new Date(),
     },
@@ -328,6 +349,14 @@ export function startOpenAIRealtimeCallMonitor(input: {
   const config = getOpenAIRealtimeConfig();
   const events: Record<string, unknown>[] = [];
   const turns: OpenAIRealtimeTranscriptTurn[] = [];
+  const metrics: Record<string, unknown> = {
+    monitorOpenedAt: null,
+    openerSentAt: null,
+    firstAudioDeltaAt: null,
+    responseDoneAt: null,
+    speechStartedCount: 0,
+    errorCount: 0,
+  };
   process.env.WS_NO_BUFFER_UTIL = "1";
   void import("ws")
     .then(({ default: WebSocket }) => {
@@ -336,8 +365,12 @@ export function startOpenAIRealtimeCallMonitor(input: {
           Authorization: `Bearer ${config.apiKey}`,
         },
       });
+      let openerSent = false;
 
-      ws.on("open", () => {
+      function sendOpener() {
+        if (openerSent || ws.readyState !== WebSocket.OPEN) return;
+        openerSent = true;
+        metrics.openerSentAt = new Date().toISOString();
         ws.send(
           JSON.stringify({
             type: "response.create",
@@ -345,15 +378,36 @@ export function startOpenAIRealtimeCallMonitor(input: {
               instructions: input.initialPrompt
                 ? `Say exactly this opening line and nothing else, then wait for the person to respond: ${input.initialPrompt}`
                 : "Start the DailyCall check-in with a brief, soft, caring greeting and ask how they are doing today. Keep it to one short sentence.",
+              max_output_tokens: 120,
             },
           }),
         );
+      }
+
+      ws.on("open", () => {
+        metrics.monitorOpenedAt = new Date().toISOString();
+        setTimeout(sendOpener, 750);
       });
 
       ws.on("message", (data) => {
         try {
           const event = JSON.parse(data.toString()) as Record<string, unknown>;
           events.push(event);
+          if (event.type === "session.created" || event.type === "session.updated") {
+            sendOpener();
+          }
+          if (event.type === "response.output_audio.delta" && !metrics.firstAudioDeltaAt) {
+            metrics.firstAudioDeltaAt = new Date().toISOString();
+          }
+          if (event.type === "response.done") {
+            metrics.responseDoneAt = new Date().toISOString();
+          }
+          if (event.type === "input_audio_buffer.speech_started") {
+            metrics.speechStartedCount = Number(metrics.speechStartedCount ?? 0) + 1;
+          }
+          if (event.type === "error") {
+            metrics.errorCount = Number(metrics.errorCount ?? 0) + 1;
+          }
 
           const turn = extractEventTranscript(event, input.memberName);
           if (turn?.text) {
@@ -364,6 +418,7 @@ export function startOpenAIRealtimeCallMonitor(input: {
               memberName: input.memberName,
               turns,
               events,
+              metrics,
             }).catch((error) => console.error("Failed to persist OpenAI Realtime transcript event", error));
           }
         } catch (error) {
@@ -378,6 +433,7 @@ export function startOpenAIRealtimeCallMonitor(input: {
           memberName: input.memberName,
           turns,
           events,
+          metrics,
           completed: true,
         }).catch((error) => console.error("Failed to finalize OpenAI Realtime call", error));
       });

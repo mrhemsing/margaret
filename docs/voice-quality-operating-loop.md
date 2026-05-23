@@ -37,7 +37,7 @@ The call should feel snappy and natural.
 Default settings:
 
 - `OPENAI_REALTIME_REASONING_EFFORT=low`
-- `OPENAI_REALTIME_VAD_EAGERNESS=high`
+- `OPENAI_REALTIME_VAD_EAGERNESS=low`
 - `semantic_vad`
 - short replies by default
 

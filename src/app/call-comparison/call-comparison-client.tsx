@@ -23,7 +23,7 @@ const comparisonRows = [
     title: "OpenAI Realtime SIP",
     badge: "Direct SIP",
     subtitle: "Single-provider realtime voice path.",
-    stack: "Twilio SIP, gpt-realtime-2, gpt-realtime-whisper, Marin voice",
+    stack: "Twilio SIP, gpt-realtime, gpt-realtime-whisper, Marin voice",
     endpoint: "/api/openai/realtime-test-call",
     caregiverName: "DailyCall OpenAI Realtime comparison reviewer",
     buildPayload: (target: TestCallTarget) => ({
@@ -34,7 +34,7 @@ const comparisonRows = [
     title: "OpenAI Realtime bridge",
     badge: "Custom Bridge",
     subtitle: "Custom Twilio Media Stream bridge for apples-to-apples bridge testing.",
-    stack: "Twilio Media Stream, gpt-realtime-2 speech-to-speech, Marin voice",
+    stack: "Twilio Media Stream, gpt-realtime speech-to-speech, Marin voice",
     endpoint: "/api/openai-realtime-bridge/call",
     caregiverName: "DailyCall OpenAI Realtime bridge comparison reviewer",
     buildPayload: (target: TestCallTarget) => ({

@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       session: {
         type: "realtime",
-        model: "gpt-realtime-2",
+        model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime",
         instructions,
         reasoning: {
           effort: reasoningEffort,
@@ -78,6 +78,12 @@ export async function POST(request: Request) {
               delay: "minimal",
             },
             noise_reduction: { type: "near_field" },
+            turn_detection: {
+              type: "semantic_vad",
+              eagerness: process.env.OPENAI_REALTIME_VAD_EAGERNESS || "low",
+              create_response: true,
+              interrupt_response: false,
+            },
           },
           output: {
             voice,

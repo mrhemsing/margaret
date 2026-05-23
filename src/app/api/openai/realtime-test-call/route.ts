@@ -4,6 +4,7 @@ import { z } from "zod";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
 import { getServerEnv } from "@/lib/env";
+import { buildOpenAIRealtimeSipTwiml } from "@/lib/voice/openai-realtime";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,6 @@ function getPublicBaseUrl() {
 async function startOpenAIRealtimeConferenceCall(input: {
   toNumber: string;
   callAttemptId: string;
-  conferenceName: string;
 }) {
   const env = getServerEnv();
 
@@ -35,20 +35,15 @@ async function startOpenAIRealtimeConferenceCall(input: {
     throw new Error("Twilio credentials are not configured.");
   }
 
-  const baseUrl = getPublicBaseUrl();
-  const voiceUrl = new URL(`${baseUrl}/api/openai/realtime-conference-twiml`);
-  voiceUrl.searchParams.set("conferenceName", input.conferenceName);
-
-  const statusUrl = new URL(`${baseUrl}/api/openai/realtime-conference-status`);
-  statusUrl.searchParams.set("callAttemptId", input.callAttemptId);
-  statusUrl.searchParams.set("conferenceName", input.conferenceName);
+  const twiml = buildOpenAIRealtimeSipTwiml({
+    callAttemptId: input.callAttemptId,
+  });
 
   const body = new URLSearchParams({
     To: input.toNumber,
     From: env.TWILIO_FROM_NUMBER,
-    Url: voiceUrl.toString(),
-    Method: "POST",
-    StatusCallback: statusUrl.toString(),
+    Twiml: twiml,
+    StatusCallback: `${getPublicBaseUrl()}/api/twilio/openai-sip-dial-status?callAttemptId=${encodeURIComponent(input.callAttemptId)}`,
     StatusCallbackMethod: "POST",
   });
 
@@ -130,16 +125,14 @@ export async function POST(request: Request) {
         summary: `OpenAI Realtime phone test started for ${member.name}.`,
         conversationRaw: {
           provider: "openai_realtime",
-          openAISipMode: "conference_on_answer",
+          openAISipMode: "direct_sip_clean",
           initialPrompt: parsed.data.firstMessage ?? null,
         },
       },
     });
-    const conferenceName = `openai-realtime-${callAttempt.id}`;
     const result = await startOpenAIRealtimeConferenceCall({
       toNumber: normalizedPhone,
       callAttemptId: callAttempt.id,
-      conferenceName,
     });
     const updatedCallAttempt = await prisma.callAttempt.update({
       where: { id: callAttempt.id },
@@ -147,8 +140,7 @@ export async function POST(request: Request) {
         providerCallSid: result.sid,
         conversationRaw: {
           provider: "openai_realtime",
-          openAISipMode: "conference_on_answer",
-          conferenceName,
+          openAISipMode: "direct_sip_clean",
           initialPrompt: parsed.data.firstMessage ?? null,
         },
       },

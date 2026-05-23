@@ -14,6 +14,11 @@ function getString(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function getRawObject(raw: Prisma.JsonValue | null | undefined) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return raw as Record<string, unknown>;
+}
+
 export async function POST(request: Request) {
   const url = new URL(request.url);
   const formData = await request.formData();
@@ -26,6 +31,11 @@ export async function POST(request: Request) {
   const raw = Object.fromEntries(formData.entries()) as Prisma.InputJsonObject;
 
   if (callSid) {
+    const existingCall = await prisma.callAttempt.findFirst({
+      where: callAttemptId ? { id: callAttemptId } : { providerCallSid: callSid },
+      select: { conversationRaw: true },
+    });
+    const existingRaw = getRawObject(existingCall?.conversationRaw);
     const failed = ["failed", "busy", "no-answer", "canceled"].includes(dialCallStatus);
     const connected = ["answered", "completed"].includes(dialCallStatus);
     const diagnosticParts = [
@@ -45,6 +55,7 @@ export async function POST(request: Request) {
           ? undefined
           : diagnosticParts.join(" ") || "OpenAI Realtime SIP dial ended before the call connected.",
         conversationRaw: {
+          ...existingRaw,
           provider: "openai_realtime",
           twilioOpenAISipDialStatus: raw,
         } as Prisma.InputJsonValue,
