@@ -977,8 +977,8 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
     state.openAISocket.send(
       JSON.stringify({
         type: "response.create",
-        response: {
-          instructions: `Say exactly this opener, then wait for the person to respond: ${opener}`,
+          response: {
+          instructions: `Say exactly this opening line and nothing else, then wait for the person to respond: ${opener}`,
         },
       }),
     );
@@ -1143,29 +1143,6 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
     }
 
     if (message.event === "media" && typeof message.media?.payload === "string") {
-      const rms = muLawRms(message.media.payload);
-      const isSpeechFrame = rms > 650;
-
-      if (isSpeechFrame) {
-        state.speechFrames += 1;
-        state.silenceFrames = 0;
-
-        if (!state.userSpeaking && state.speechFrames >= 3) {
-          state.userSpeaking = true;
-          sendTwilioClear(twilioSocket, state.streamSid);
-          cancelOpenAIRealtimeOutput(state);
-        }
-      } else {
-        state.silenceFrames += 1;
-        if (!state.userSpeaking) {
-          state.speechFrames = 0;
-        }
-      }
-
-      if (state.silenceFrames >= 24) {
-        state.userSpeaking = false;
-      }
-
       if (state.openAISocket.readyState !== WebSocket.OPEN) {
         state.pendingAudioPayloads.push(message.media.payload);
         return;
