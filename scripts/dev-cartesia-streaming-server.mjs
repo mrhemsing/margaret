@@ -489,16 +489,18 @@ function sendElevenLabsText(elevenLabsSocket, state, text, isFinal = false) {
     return;
   }
 
-  elevenLabsSocket.send(
-    JSON.stringify(
-      isFinal
-        ? { text: "" }
-        : {
-            text: text.endsWith(" ") ? text : `${text} `,
-            try_trigger_generation: true,
-          },
-    ),
-  );
+  if (text) {
+    elevenLabsSocket.send(
+      JSON.stringify({
+        text: text.endsWith(" ") ? text : `${text} `,
+        try_trigger_generation: true,
+      }),
+    );
+  }
+
+  if (isFinal) {
+    elevenLabsSocket.send(JSON.stringify({ text: "" }));
+  }
 }
 
 async function persistTurnState(state, completed = false) {
