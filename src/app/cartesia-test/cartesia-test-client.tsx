@@ -16,7 +16,6 @@ const defaultTranscript =
   "Hi there, this is DailyCall with your quick check-in. I am here if anything is on your mind, or if you would just like a short chat. How are you doing today?";
 
 const voiceOptions = [
-  { name: "Sarah - Mindful Woman", description: "(soothing female)", value: "694f9389-aac1-45b6-b726-9d9369183238" },
   { name: "Katie - Friendly Fixer", description: "(clear female)", value: "f786b574-daa5-4673-aa0c-cbe3e8534c02" },
   { name: "Jacqueline - Reassuring Agent", description: "(empathetic female)", value: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc" },
   { name: "Caroline - Southern Guide", description: "(slow friendly female)", value: "f9836c6e-a0bd-460e-9d3c-f7299fa60f94" },
