@@ -42,7 +42,7 @@ export default async function BridgeTestPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sage">internal voice lab</p>
         <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight text-ink md:text-5xl">Streaming bridge test</h1>
         <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
-          Isolated workspace for the Twilio media stream bridge prototype, separate from the live ElevenLabs dashboard path and the OpenAI Realtime browser test.
+          Isolated workspace for the OpenAI text plus ElevenLabs Twilio bridge path, separate from the live ElevenLabs dashboard path and the OpenAI Realtime browser test.
         </p>
       </header>
 
@@ -52,7 +52,7 @@ export default async function BridgeTestPage() {
           <h2 className="mt-2 text-2xl font-bold text-ink">Prototype lane ready</h2>
         </div>
         <p className="max-w-3xl text-base leading-7 text-slate-600">
-          Next step is wiring this page into the streaming bridge service so we can trigger test calls, watch WebSocket events, and measure phone-path latency without touching production calls.
+          This page uses Twilio gather turns with OpenAI text replies and ElevenLabs playback. It is not the Cartesia streaming bridge.
         </p>
       </section>
 

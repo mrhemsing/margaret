@@ -61,6 +61,8 @@ export async function POST(request: Request) {
       memberName: member.name,
       caregiverName: parsed.data.caregiverName ?? "DailyCall bridge test reviewer",
       voiceProvider: "openai_text_elevenlabs_twilio",
+      machineDetection: false,
+      refreshCurrentContext: false,
     });
 
     const callAttempt = await prisma.callAttempt.create({

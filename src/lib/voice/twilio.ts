@@ -4,6 +4,7 @@ type StartAmdProtectedCallInput = {
   caregiverName?: string;
   voiceProvider?: "openai_realtime_twilio" | "openai_text_elevenlabs_twilio" | "elevenlabs_twilio";
   machineDetection?: boolean;
+  refreshCurrentContext?: boolean;
 };
 
 type TwilioCallResponse = {
@@ -41,7 +42,9 @@ export async function startAmdProtectedCheckInCall(input: StartAmdProtectedCallI
     throw new Error("Twilio credentials are not configured.");
   }
 
-  await refreshCurrentContextBeforeCall();
+  if (input.refreshCurrentContext !== false) {
+    await refreshCurrentContextBeforeCall();
+  }
 
   const baseUrl = getPublicBaseUrl();
   const voiceUrl = new URL(`${baseUrl}/api/twilio/voice/amd`);
