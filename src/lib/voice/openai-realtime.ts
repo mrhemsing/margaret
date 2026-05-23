@@ -107,7 +107,11 @@ export function buildOpenAIRealtimeSipTwiml(input: {
     throw new Error("OPENAI_PROJECT_ID is not configured.");
   }
 
-  const sipUri = `sip:${projectId}@sip.api.openai.com;transport=tls`;
+  const sipUri = new URL(`sip:${projectId}@sip.api.openai.com;transport=tls`);
+  sipUri.searchParams.set("X-DailyCall-CallSid", input.callSid);
+  if (input.callAttemptId) {
+    sipUri.searchParams.set("X-DailyCall-AttemptId", input.callAttemptId);
+  }
   const baseUrl = env.PUBLIC_APP_URL ?? env.APP_URL;
   const dialAction = baseUrl
     ? `${baseUrl}/api/twilio/openai-sip-dial-status?callSid=${encodeURIComponent(input.callSid)}${
@@ -119,7 +123,7 @@ export function buildOpenAIRealtimeSipTwiml(input: {
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
     "<Response>",
     `<Dial answerOnBridge="true" timeout="20"${dialAction ? ` action="${xmlEscape(dialAction)}" method="POST"` : ""}>`,
-    `<Sip>${xmlEscape(sipUri)}</Sip>`,
+    `<Sip>${xmlEscape(sipUri.toString())}</Sip>`,
     "</Dial>",
     "</Response>",
   ].join("");

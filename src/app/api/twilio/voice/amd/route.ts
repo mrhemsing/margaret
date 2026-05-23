@@ -6,8 +6,7 @@ import { getServerEnv } from "@/lib/env";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
 import { getCachedCallCurrentContext } from "@/lib/voice/current-info";
 import {
-  buildOpenAIRealtimeConferenceTwiml,
-  createOpenAIRealtimeConferenceParticipant,
+  buildOpenAIRealtimeSipTwiml,
   getVoiceProvider,
 } from "@/lib/voice/openai-realtime";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
@@ -114,7 +113,6 @@ export async function POST(request: Request) {
   const answeredBy = String(formData.get("AnsweredBy") ?? "");
   const fromNumber = String(formData.get("From") ?? "");
   const toNumber = String(formData.get("To") ?? "");
-  const callToken = String(formData.get("CallToken") ?? "");
   const memberName = url.searchParams.get("memberName") ?? "there";
   const caregiverName = url.searchParams.get("caregiverName") ?? "your caregiver";
 
@@ -264,26 +262,20 @@ export async function POST(request: Request) {
     }
 
     if (voiceProvider === "openai_realtime_twilio") {
-      const conferenceName = `dailycall-${callSid}`;
-
-      const openAIParticipant = await createOpenAIRealtimeConferenceParticipant({
-        conferenceName,
-        fromNumber,
+      const openAITwiml = buildOpenAIRealtimeSipTwiml({
+        callSid,
         callAttemptId: callAttempt?.id,
-        callToken,
       });
-
-      const openAITwiml = buildOpenAIRealtimeConferenceTwiml({ conferenceName });
 
       if (callSid) {
         await prisma.callAttempt.updateMany({
           where: { providerCallSid: callSid },
           data: {
-            summary: "Human answer detected. DailyCall is connecting the call to an OpenAI Realtime conference.",
+            summary: "Human answer detected. DailyCall is dialing OpenAI Realtime directly over SIP.",
             conversationRaw: {
               provider: "openai_realtime",
               twilioAmd: Object.fromEntries(formData.entries()),
-              openAISipParticipant: openAIParticipant,
+              openAISipMode: "direct_dial",
             } as Prisma.InputJsonValue,
             syncedAt: new Date(),
           },
