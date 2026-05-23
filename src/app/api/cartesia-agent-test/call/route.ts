@@ -20,7 +20,48 @@ type CartesiaOutboundResponse = {
   call_id?: string;
   status?: string;
   message?: string;
+  error?: string;
+  detail?: string;
+  calls?: Array<{ id?: string; call_id?: string; status?: string }>;
 };
+
+type CartesiaAgentResponse = {
+  id?: string;
+  phone_numbers?: Array<{ id?: string; phone_number_id?: string }>;
+  message?: string;
+  error?: string;
+};
+
+function getCartesiaError(result: CartesiaOutboundResponse | null, status: number) {
+  return result?.message ?? result?.error ?? result?.detail ?? `Cartesia outbound call failed with status ${status}.`;
+}
+
+async function getCartesiaFromNumberId(input: { apiKey: string; agentId: string; configuredFromNumberId?: string }) {
+  if (input.configuredFromNumberId) return input.configuredFromNumberId;
+
+  const response = await fetch(`https://api.cartesia.ai/agents/${encodeURIComponent(input.agentId)}`, {
+    headers: {
+      Authorization: `Bearer ${input.apiKey}`,
+      "X-API-Key": input.apiKey,
+      "Cartesia-Version": "2026-03-01",
+    },
+  });
+  const agent = (await response.json().catch(() => null)) as CartesiaAgentResponse | null;
+
+  if (!response.ok) {
+    throw new Error(agent?.message ?? agent?.error ?? `Cartesia agent lookup failed with status ${response.status}.`);
+  }
+
+  const fromNumberId = agent?.phone_numbers?.[0]?.id ?? agent?.phone_numbers?.[0]?.phone_number_id;
+
+  if (!fromNumberId) {
+    throw new Error(
+      "Cartesia agent has no phone number assigned. In Cartesia, assign/import a phone number for this agent, then set CARTESIA_FROM_NUMBER_ID if it is not shown on the agent.",
+    );
+  }
+
+  return fromNumberId;
+}
 
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) {
@@ -93,16 +134,40 @@ export async function POST(request: Request) {
     },
   });
 
-  const response = await fetch("https://api.cartesia.ai/twilio/call/outbound", {
+  let fromNumberId: string;
+  try {
+    fromNumberId = await getCartesiaFromNumberId({
+      apiKey: env.CARTESIA_API_KEY,
+      agentId: env.CARTESIA_AGENT_ID,
+      configuredFromNumberId: env.CARTESIA_FROM_NUMBER_ID,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Cartesia phone number lookup failed.";
+    await prisma.callAttempt.update({
+      where: { id: callAttempt.id },
+      data: {
+        status: "FAILED",
+        completedAt: new Date(),
+        summary: message,
+        syncedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json({ ok: false, error: message }, { status: 503 });
+  }
+
+  const response = await fetch("https://api.cartesia.ai/agents/calls", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.CARTESIA_API_KEY}`,
-      "Cartesia-Version": "2025-04-16",
+      "X-API-Key": env.CARTESIA_API_KEY,
+      "Cartesia-Version": "2026-03-01",
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      target_numbers: [normalizedPhone],
       agent_id: env.CARTESIA_AGENT_ID,
+      from_number_id: fromNumberId,
+      to_number: normalizedPhone,
       metadata: {
         callAttemptId: callAttempt.id,
         memberName: member.name,
@@ -115,26 +180,26 @@ export async function POST(request: Request) {
   const result = (await response.json().catch(() => null)) as CartesiaOutboundResponse | null;
 
   if (!response.ok) {
+    const error = getCartesiaError(result, response.status);
     await prisma.callAttempt.update({
       where: { id: callAttempt.id },
       data: {
         status: "FAILED",
         completedAt: new Date(),
-        summary: result?.message ?? `Cartesia outbound call failed with status ${response.status}.`,
+        summary: error,
         syncedAt: new Date(),
       },
     });
 
-    return NextResponse.json(
-      { ok: false, error: result?.message ?? `Cartesia outbound call failed with status ${response.status}.` },
-      { status: 502 },
-    );
+    return NextResponse.json({ ok: false, error }, { status: 502 });
   }
+
+  const providerCallId = result?.call_id ?? result?.id ?? result?.calls?.[0]?.call_id ?? result?.calls?.[0]?.id ?? null;
 
   await prisma.callAttempt.update({
     where: { id: callAttempt.id },
     data: {
-      providerCallSid: result?.call_id ?? result?.id ?? null,
+      providerCallSid: providerCallId,
       syncedAt: new Date(),
     },
   });
@@ -142,8 +207,8 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     result: {
-      sid: result?.call_id ?? result?.id ?? null,
-      status: result?.status ?? null,
+      sid: providerCallId,
+      status: result?.status ?? result?.calls?.[0]?.status ?? null,
     },
   });
 }
