@@ -175,6 +175,41 @@ async function loadElevenLabsCallSession(callAttemptId) {
   };
 }
 
+async function loadOpenAIRealtimeCallSession(callAttemptId) {
+  const callAttempt = await prisma.callAttempt.findUnique({
+    where: { id: callAttemptId },
+    include: { member: { include: { customer: true, memory: true } } },
+  });
+
+  if (!callAttempt) throw new Error(`Call attempt not found: ${callAttemptId}`);
+
+  const memory = callAttempt.member.memory;
+  const companionBits = [
+    `You are calling ${callAttempt.member.name}. Sound like a familiar, warm daily companion, not a clinical checklist.`,
+    memory?.moodSummary ? `Recent mood: ${memory.moodSummary}.` : null,
+    memory?.favoriteTopics ? `Known hobbies/interests: ${memory.favoriteTopics}.` : null,
+    memory?.routines ? `Known routines: ${memory.routines}.` : null,
+    memory?.healthNotes ? `Health/context notes: ${memory.healthNotes}.` : null,
+    memory?.followUpTopics ? `Topics to revisit warmly: ${memory.followUpTopics}.` : null,
+    "Keep turn spacing responsive; do not add long dead-air pauses unless the senior is truly silent.",
+  ].filter(Boolean);
+
+  return {
+    callAttempt,
+    turns: getTranscript(callAttempt.conversationRaw),
+    initialPrompt: getInitialPrompt(callAttempt.conversationRaw),
+    instructions: buildInstructions({
+      memberName: callAttempt.member.name,
+      caregiverName: callAttempt.member.customer.fullName || "your family",
+      companionContext: companionBits.join("\n"),
+      recentTopics: "none yet",
+      topicsToRevisit: memory?.followUpTopics || "none yet",
+      avoidRepeating: "Do not use a generic scripted wellness survey opening.",
+      bridgeProvider: "OpenAI Realtime",
+    }),
+  };
+}
+
 function createOpenAITranscriptionSocket() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured.");
@@ -211,6 +246,18 @@ function createOpenAITranscriptionSocket() {
   });
 
   return ws;
+}
+
+function createOpenAIRealtimeSocket() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not configured.");
+
+  const model = process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2";
+  return new WebSocket(`wss://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
 }
 
 function createCartesiaSocket() {
@@ -361,6 +408,28 @@ async function persistTurnState(state, completed = false) {
   });
 }
 
+async function persistOpenAIRealtimeState(state, completed = false) {
+  if (!state.callAttemptId) return;
+
+  await prisma.callAttempt.update({
+    where: { id: state.callAttemptId },
+    data: {
+      status: completed ? "ANSWERED_OK" : "IN_PROGRESS",
+      completedAt: completed ? new Date() : undefined,
+      transcript: formatTranscript(state.turns),
+      summary: `OpenAI Realtime bridge captured ${state.turns.length} transcript turn${state.turns.length === 1 ? "" : "s"}.`,
+      conversationRaw: {
+        provider: "openai_realtime_stream_bridge",
+        initialPrompt: state.initialPrompt,
+        hybridTranscript: state.turns,
+        lastTurnTiming: state.lastTurnTiming ?? null,
+        events: state.events.slice(-80),
+      },
+      syncedAt: new Date(),
+    },
+  });
+}
+
 function sendTtsText(state, text, isFinal = false) {
   if (state.bridgeProvider === "elevenlabs") {
     sendElevenLabsText(state.elevenLabsSocket, state, text, isFinal);
@@ -492,6 +561,11 @@ function cancelActiveOutput(state) {
   state.cartesiaContextId = null;
 }
 
+function cancelOpenAIRealtimeOutput(state) {
+  if (state.openAISocket?.readyState !== WebSocket.OPEN) return;
+  state.openAISocket.send(JSON.stringify({ type: "response.cancel" }));
+}
+
 function attachElevenLabsSocket(state, twilioSocket) {
   const elevenLabsSocket = createElevenLabsSocket(state.elevenLabsConfig);
   state.elevenLabsSocket = elevenLabsSocket;
@@ -530,6 +604,252 @@ function attachElevenLabsSocket(state, twilioSocket) {
 
   elevenLabsSocket.on("error", (error) => console.error("ElevenLabs TTS socket error", error));
   return elevenLabsSocket;
+}
+
+function wireOpenAIRealtimeBridge(twilioSocket) {
+  const state = {
+    twilioSocket,
+    openAISocket: createOpenAIRealtimeSocket(),
+    callAttemptId: null,
+    memberName: "there",
+    streamSid: null,
+    turns: [],
+    initialPrompt: null,
+    instructions: "",
+    events: [],
+    pendingAudioPayloads: [],
+    sessionReady: false,
+    sessionLoaded: false,
+    openerStarted: false,
+    assistantTranscript: "",
+    responseStartedAt: null,
+    lastTurnTiming: null,
+    userSpeaking: false,
+    speechFrames: 0,
+    silenceFrames: 0,
+  };
+
+  function startOpener() {
+    if (!state.sessionReady || !state.sessionLoaded || state.openerStarted || state.openAISocket.readyState !== WebSocket.OPEN) return;
+    state.openerStarted = true;
+    const opener =
+      state.initialPrompt ||
+      `Hi ${state.memberName}, it is your scheduled check-in call from DailyCall. Is there anything I can help you with, or anything you would like to chat about?`;
+    state.turns.push({ speaker: "DailyCall", text: opener });
+    state.responseStartedAt = Date.now();
+    state.openAISocket.send(
+      JSON.stringify({
+        type: "response.create",
+        response: {
+          instructions: `Say exactly this opener, then wait for the person to respond: ${opener}`,
+        },
+      }),
+    );
+    void persistOpenAIRealtimeState(state).catch((error) => console.error("persist OpenAI Realtime opener failed", error));
+  }
+
+  state.openAISocket.on("open", () => {
+    state.openAISocket.send(
+      JSON.stringify({
+        type: "session.update",
+        session: {
+          type: "realtime",
+          model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2",
+          instructions: state.instructions || "You are DailyCall. Keep responses warm, brief, and natural.",
+          output_modalities: ["audio"],
+          reasoning: {
+            effort: process.env.OPENAI_REALTIME_REASONING_EFFORT || "low",
+          },
+          max_output_tokens: 220,
+          audio: {
+            input: {
+              format: {
+                type: "audio/pcmu",
+              },
+              transcription: {
+                model: process.env.OPENAI_REALTIME_TRANSCRIPTION_MODEL || "gpt-realtime-whisper",
+                language: "en",
+                delay: "minimal",
+              },
+              noise_reduction: null,
+              turn_detection: {
+                type: "server_vad",
+                threshold: 0.65,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 650,
+                create_response: true,
+                interrupt_response: true,
+              },
+            },
+            output: {
+              format: {
+                type: "audio/pcmu",
+              },
+              voice: process.env.OPENAI_REALTIME_VOICE || "marin",
+            },
+          },
+        },
+      }),
+    );
+
+    const pending = state.pendingAudioPayloads.splice(0);
+    for (const payload of pending) {
+      state.openAISocket.send(JSON.stringify({ type: "input_audio_buffer.append", audio: payload }));
+    }
+  });
+
+  state.openAISocket.on("message", (data) => {
+    const message = safeJson(data.toString());
+    if (!message) return;
+    state.events.push(message);
+
+    if (message.type === "session.updated" || message.type === "session.created") {
+      state.sessionReady = true;
+      startOpener();
+      return;
+    }
+
+    if (
+      (message.type === "response.output_audio.delta" || message.type === "response.audio.delta") &&
+      typeof message.delta === "string"
+    ) {
+      sendTwilioAudio(twilioSocket, state.streamSid, message.delta);
+      return;
+    }
+
+    if (message.type === "input_audio_buffer.speech_started") {
+      sendTwilioClear(twilioSocket, state.streamSid);
+      return;
+    }
+
+    if (message.type === "conversation.item.input_audio_transcription.completed" && typeof message.transcript === "string") {
+      const transcript = message.transcript.trim();
+      if (transcript) {
+        state.turns.push({ speaker: state.memberName, text: transcript });
+      }
+      return;
+    }
+
+    if (
+      (message.type === "response.output_audio_transcript.delta" || message.type === "response.audio_transcript.delta") &&
+      typeof message.delta === "string"
+    ) {
+      state.assistantTranscript += message.delta;
+      return;
+    }
+
+    if (message.type === "response.output_audio_transcript.done" || message.type === "response.audio_transcript.done") {
+      const transcript = String(message.transcript || state.assistantTranscript).replace(/\s+/g, " ").trim();
+      const lastTurn = state.turns.at(-1);
+      if (transcript && !(lastTurn?.speaker === "DailyCall" && lastTurn.text === transcript)) {
+        state.turns.push({ speaker: "DailyCall", text: transcript });
+      }
+      state.assistantTranscript = "";
+      state.lastTurnTiming = state.responseStartedAt
+        ? {
+            totalMs: Date.now() - state.responseStartedAt,
+            assistantText: transcript,
+          }
+        : null;
+      void persistOpenAIRealtimeState(state).catch((error) => console.error("persist OpenAI Realtime turn failed", error));
+      return;
+    }
+
+    if (message.type === "response.created") {
+      state.responseStartedAt = Date.now();
+      return;
+    }
+
+    if (message.type === "error") {
+      console.error("OpenAI realtime bridge error", message);
+    }
+  });
+
+  twilioSocket.on("message", (data) => {
+    const message = safeJson(data.toString());
+    if (!message) return;
+
+    if (message.event === "start") {
+      state.streamSid = message.start?.streamSid ?? message.streamSid ?? null;
+      state.callAttemptId = message.start?.customParameters?.callAttemptId ?? null;
+      void loadOpenAIRealtimeCallSession(state.callAttemptId)
+        .then((session) => {
+          state.memberName = session.callAttempt.member.name;
+          state.turns = session.turns;
+          state.initialPrompt = session.initialPrompt;
+          state.instructions = session.instructions;
+          state.sessionLoaded = true;
+          console.log("OpenAI Realtime stream bridge started", {
+            callAttemptId: state.callAttemptId,
+            streamSid: state.streamSid,
+            model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2",
+            voice: process.env.OPENAI_REALTIME_VOICE || "marin",
+          });
+
+          if (state.openAISocket.readyState === WebSocket.OPEN) {
+            state.openAISocket.send(
+              JSON.stringify({
+                type: "session.update",
+                session: {
+                  instructions: state.instructions,
+                },
+              }),
+            );
+          }
+          startOpener();
+        })
+        .catch((error) => {
+          console.error("failed to load OpenAI Realtime stream session", error);
+          twilioSocket.close();
+        });
+      return;
+    }
+
+    if (message.event === "media" && typeof message.media?.payload === "string") {
+      const rms = muLawRms(message.media.payload);
+      const isSpeechFrame = rms > 650;
+
+      if (isSpeechFrame) {
+        state.speechFrames += 1;
+        state.silenceFrames = 0;
+
+        if (!state.userSpeaking && state.speechFrames >= 3) {
+          state.userSpeaking = true;
+          sendTwilioClear(twilioSocket, state.streamSid);
+          cancelOpenAIRealtimeOutput(state);
+        }
+      } else {
+        state.silenceFrames += 1;
+        if (!state.userSpeaking) {
+          state.speechFrames = 0;
+        }
+      }
+
+      if (state.silenceFrames >= 24) {
+        state.userSpeaking = false;
+      }
+
+      if (state.openAISocket.readyState !== WebSocket.OPEN) {
+        state.pendingAudioPayloads.push(message.media.payload);
+        return;
+      }
+
+      state.openAISocket.send(JSON.stringify({ type: "input_audio_buffer.append", audio: message.media.payload }));
+      return;
+    }
+
+    if (message.event === "stop") {
+      void persistOpenAIRealtimeState(state, true).catch((error) => console.error("persist OpenAI Realtime stop failed", error));
+      twilioSocket.close();
+    }
+  });
+
+  twilioSocket.on("close", () => {
+    if (state.openAISocket.readyState === WebSocket.OPEN) state.openAISocket.close();
+  });
+
+  twilioSocket.on("error", (error) => console.error("Twilio OpenAI Realtime stream socket error", error));
+  state.openAISocket.on("error", (error) => console.error("OpenAI Realtime stream socket error", error));
 }
 
 function wireBridge(twilioSocket, bridgeProvider = "cartesia") {
@@ -718,7 +1038,11 @@ function wireBridge(twilioSocket, bridgeProvider = "cartesia") {
 await app.prepare();
 
 const server = http.createServer((request, response) => {
-  if (request.url === "/api/cartesia-test/stream-health" || request.url === "/api/bridge-test/stream-health") {
+  if (
+    request.url === "/api/cartesia-test/stream-health" ||
+    request.url === "/api/bridge-test/stream-health" ||
+    request.url === "/api/openai-realtime-bridge/stream-health"
+  ) {
     response.writeHead(200, { "content-type": "application/json" });
     response.end(JSON.stringify({ ok: true, service: "dailycall-streaming-bridge-server" }));
     return;
@@ -731,12 +1055,21 @@ const wss = new WebSocketServer({ noServer: true });
 server.on("upgrade", (request, socket, head) => {
   const url = new URL(request.url ?? "", `http://${request.headers.host ?? "localhost"}`);
 
-  if (url.pathname !== "/api/cartesia-test/stream" && url.pathname !== "/api/bridge-test/stream") {
+  if (
+    url.pathname !== "/api/cartesia-test/stream" &&
+    url.pathname !== "/api/bridge-test/stream" &&
+    url.pathname !== "/api/openai-realtime-bridge/stream"
+  ) {
     socket.destroy();
     return;
   }
 
   wss.handleUpgrade(request, socket, head, (ws) => {
+    if (url.pathname === "/api/openai-realtime-bridge/stream") {
+      wireOpenAIRealtimeBridge(ws);
+      return;
+    }
+
     wireBridge(ws, url.pathname === "/api/bridge-test/stream" ? "elevenlabs" : "cartesia");
   });
 });
@@ -745,4 +1078,5 @@ server.listen(port, hostname, () => {
   console.log(`DailyCall Next + streaming bridges listening on http://${hostname}:${port}`);
   console.log(`Cartesia bridge WebSocket path: ws://${hostname}:${port}/api/cartesia-test/stream`);
   console.log(`ElevenLabs bridge WebSocket path: ws://${hostname}:${port}/api/bridge-test/stream`);
+  console.log(`OpenAI Realtime bridge WebSocket path: ws://${hostname}:${port}/api/openai-realtime-bridge/stream`);
 });

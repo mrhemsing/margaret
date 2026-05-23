@@ -39,6 +39,16 @@ const comparisonRows = [
     }),
   },
   {
+    title: "OpenAI Realtime bridge",
+    subtitle: "Custom Twilio Media Stream bridge for apples-to-apples bridge testing.",
+    stack: "Twilio Media Stream, gpt-realtime-2 speech-to-speech, Marin voice",
+    endpoint: "/api/openai-realtime-bridge/call",
+    caregiverName: "DailyCall OpenAI Realtime bridge comparison reviewer",
+    buildPayload: (target: TestCallTarget) => ({
+      firstMessage: buildIntro(target.label),
+    }),
+  },
+  {
     title: "Cartesia streaming bridge",
     subtitle: "Best Cartesia voice path for low-latency bridge testing.",
     stack: "Twilio Media Stream, OpenAI transcription/text, Cartesia Sonic 3.5",
