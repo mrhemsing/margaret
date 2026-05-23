@@ -13,7 +13,7 @@ type LogLine = {
 };
 
 const defaultTranscript =
-  "Hi Margaret, this is DailyCall with your quick check-in. I am here if anything is on your mind, or if you would just like a short chat. How are you doing today?";
+  "Hi there, this is DailyCall with your quick check-in. I am here if anything is on your mind, or if you would just like a short chat. How are you doing today?";
 
 const voiceOptions = [
   { name: "Sarah - Mindful Woman", description: "(soothing female)", value: "694f9389-aac1-45b6-b726-9d9369183238" },
@@ -271,8 +271,8 @@ export function CartesiaTestClient({ configured, callConfigured }: { configured:
             caregiverName="DailyCall Cartesia test reviewer"
             disabled={!callConfigured}
             onLog={addLog}
-            buildPayload={() => ({
-              transcript: transcript.trim(),
+            buildPayload={(target) => ({
+              transcript: `Hi ${target.label}, this is DailyCall with your quick check-in. I am here if anything is on your mind, or if you would just like a short chat. How are you doing today?`,
               modelId,
               voiceId,
             })}
