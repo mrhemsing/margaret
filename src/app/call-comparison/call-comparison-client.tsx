@@ -19,6 +19,16 @@ const comparisonRows = [
     }),
   },
   {
+    title: "ElevenLabs streaming bridge",
+    subtitle: "Custom bridge matching the Cartesia architecture.",
+    stack: "Twilio Media Stream, OpenAI transcription/text, ElevenLabs Flash v2.5",
+    endpoint: "/api/bridge-test/call",
+    caregiverName: "DailyCall ElevenLabs bridge comparison reviewer",
+    buildPayload: (target: TestCallTarget) => ({
+      firstMessage: buildIntro(target.label),
+    }),
+  },
+  {
     title: "OpenAI Realtime",
     subtitle: "Single-provider realtime voice path.",
     stack: "Twilio SIP, gpt-realtime-2, gpt-realtime-whisper, Marin voice",
@@ -38,16 +48,6 @@ const comparisonRows = [
       transcript: buildIntro(target.label),
       modelId: "sonic-3.5",
       voiceId: "f786b574-daa5-4673-aa0c-cbe3e8534c02",
-    }),
-  },
-  {
-    title: "ElevenLabs streaming bridge",
-    subtitle: "Custom bridge matching the Cartesia architecture.",
-    stack: "Twilio Media Stream, OpenAI transcription/text, ElevenLabs Flash v2.5",
-    endpoint: "/api/bridge-test/call",
-    caregiverName: "DailyCall ElevenLabs bridge comparison reviewer",
-    buildPayload: (target: TestCallTarget) => ({
-      firstMessage: buildIntro(target.label),
     }),
   },
 ] as const;
