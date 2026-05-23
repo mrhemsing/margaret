@@ -7,7 +7,7 @@ export const testCallTargets = [
   { label: "Chuck", number: "+13068802055" },
 ];
 
-type TestCallTarget = (typeof testCallTargets)[number];
+export type TestCallTarget = (typeof testCallTargets)[number];
 
 type CallState = {
   status: "idle" | "calling" | "success" | "error";

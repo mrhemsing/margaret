@@ -3,12 +3,13 @@ import Link from "next/link";
 import { AutoCloseDetails } from "@/app/components/auto-close-details";
 
 type AdminTopNavProps = {
-  activePath: "/admin" | "/elevenlabs-test" | "/realtime-test" | "/bridge-test" | "/cartesia-test";
+  activePath: "/admin" | "/call-comparison" | "/elevenlabs-test" | "/realtime-test" | "/bridge-test" | "/cartesia-test";
   signOutAction: () => Promise<void>;
 };
 
 const adminLinks = [
   { href: "/admin", label: "Operations" },
+  { href: "/call-comparison", label: "Compare" },
   { href: "/elevenlabs-test", label: "ElevenLabs test" },
   { href: "/realtime-test", label: "Realtime test" },
   { href: "/cartesia-test", label: "Cartesia test" },
@@ -53,7 +54,7 @@ export function AdminTopNav({ activePath, signOutAction }: AdminTopNavProps) {
             <span className="block h-0.5 w-5 rounded-full bg-current" />
           </span>
         </summary>
-        <div className="absolute right-0 mt-2 w-44 rounded-2xl bg-white p-2 shadow-xl ring-1 ring-black/10">
+        <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white p-2 shadow-xl ring-1 ring-black/10">
           {adminLinks.map((link) => (
             <Link
               key={link.href}

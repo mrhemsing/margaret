@@ -324,6 +324,7 @@ export function startOpenAIRealtimeCallMonitor(input: {
   callId: string;
   callAttemptId: string;
   memberName: string;
+  initialPrompt?: string | null;
 }) {
   const config = getOpenAIRealtimeConfig();
   const events: Record<string, unknown>[] = [];
@@ -339,7 +340,9 @@ export function startOpenAIRealtimeCallMonitor(input: {
       JSON.stringify({
         type: "response.create",
         response: {
-          instructions: "Start the DailyCall check-in with a brief, soft, caring greeting and ask how they are doing today. Keep it to one short sentence.",
+          instructions: input.initialPrompt
+            ? `Start the call by saying exactly this opener, then wait for the person to respond: ${input.initialPrompt}`
+            : "Start the DailyCall check-in with a brief, soft, caring greeting and ask how they are doing today. Keep it to one short sentence.",
         },
       }),
     );

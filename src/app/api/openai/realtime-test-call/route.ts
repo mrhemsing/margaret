@@ -11,6 +11,7 @@ const requestSchema = z.object({
   toNumber: z.string().min(8),
   memberName: z.string().min(1).optional(),
   caregiverName: z.string().min(1).optional(),
+  firstMessage: z.string().trim().min(1).max(500).optional(),
 });
 
 export async function POST(request: Request) {
@@ -73,6 +74,11 @@ export async function POST(request: Request) {
         status: "IN_PROGRESS",
         providerCallSid: result.sid ?? null,
         summary: `OpenAI Realtime phone test started for ${member.name}.`,
+        conversationRaw: parsed.data.firstMessage
+          ? {
+              initialPrompt: parsed.data.firstMessage,
+            }
+          : undefined,
       },
     });
 

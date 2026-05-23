@@ -24,6 +24,12 @@ type OpenAIWebhookEvent = {
   [key: string]: unknown;
 };
 
+function getInitialPrompt(raw: Prisma.JsonValue | null | undefined) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const prompt = (raw as Record<string, unknown>).initialPrompt;
+  return typeof prompt === "string" && prompt.trim() ? prompt.trim() : null;
+}
+
 async function parseOpenAIWebhook(request: Request, rawBody: string) {
   const env = getServerEnv();
 
@@ -143,6 +149,7 @@ export async function POST(request: Request) {
       callId,
       callAttemptId: callAttempt.id,
       memberName: callAttempt.member.name,
+      initialPrompt: getInitialPrompt(callAttempt.conversationRaw),
     });
   }
 

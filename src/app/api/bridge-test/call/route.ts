@@ -14,6 +14,7 @@ const requestSchema = z.object({
   toNumber: z.string().min(8),
   memberName: z.string().min(1).optional(),
   caregiverName: z.string().min(1).optional(),
+  firstMessage: z.string().trim().min(1).max(500).optional(),
 });
 
 type TwilioCallResponse = {
@@ -78,7 +79,9 @@ export async function POST(request: Request) {
             voiceId: defaultVoiceId,
             modelId: "eleven_flash_v2_5",
           },
-          initialPrompt: `Hi ${member.name}, this is DailyCall through the ElevenLabs streaming bridge. I am here if anything is on your mind, or if you would just like a quick chat. How are you doing today?`,
+          initialPrompt:
+            parsed.data.firstMessage ??
+            `Hi ${member.name}, this is DailyCall through the ElevenLabs streaming bridge. I am here if anything is on your mind, or if you would just like a quick chat. How are you doing today?`,
           hybridTranscript: [],
         } as Prisma.InputJsonValue,
         syncedAt: new Date(),
