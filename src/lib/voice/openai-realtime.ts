@@ -122,7 +122,7 @@ export function buildOpenAIRealtimeSipTwiml(input: {
   return [
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
     "<Response>",
-    `<Dial answerOnBridge="true" timeout="20"${dialAction ? ` action="${xmlEscape(dialAction)}" method="POST"` : ""}>`,
+    `<Dial timeout="20"${dialAction ? ` action="${xmlEscape(dialAction)}" method="POST"` : ""}>`,
     `<Sip>${xmlEscape(sipUri.toString())}</Sip>`,
     "</Dial>",
     "</Response>",
