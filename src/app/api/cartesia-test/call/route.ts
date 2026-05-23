@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     },
   });
 
-  const voiceUrl = new URL(`${baseUrl}/api/cartesia-test/live`);
+  const voiceUrl = new URL(`${baseUrl}/api/cartesia-test/stream-twiml`);
   voiceUrl.searchParams.set("callAttemptId", callAttempt.id);
 
   const body = new URLSearchParams({
