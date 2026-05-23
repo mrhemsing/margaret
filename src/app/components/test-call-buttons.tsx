@@ -18,12 +18,21 @@ type TestCallButtonsProps = {
   endpoint: string;
   caregiverName: string;
   disabled?: boolean;
+  disabledMessage?: string;
   onLog?: (message: string) => void;
   buildPayload?: (target: TestCallTarget) => Record<string, unknown>;
   buttonClassName?: string;
 };
 
-export function TestCallButtons({ endpoint, caregiverName, disabled = false, onLog, buildPayload, buttonClassName }: TestCallButtonsProps) {
+export function TestCallButtons({
+  endpoint,
+  caregiverName,
+  disabled = false,
+  disabledMessage,
+  onLog,
+  buildPayload,
+  buttonClassName,
+}: TestCallButtonsProps) {
   const [callStates, setCallStates] = useState<Record<string, CallState>>({});
 
   async function startTestCall(target: TestCallTarget) {
@@ -87,6 +96,7 @@ export function TestCallButtons({ endpoint, caregiverName, disabled = false, onL
             >
               {isCalling ? `Calling ${target.label}...` : `Test Call (${target.label})`}
             </button>
+            {disabled && disabledMessage ? <p className="mt-2 text-xs text-slate-500">{disabledMessage}</p> : null}
             {state.message ? (
               <p className={`mt-2 text-xs ${state.status === "error" ? "text-red-700" : state.status === "success" ? "text-sage" : "text-slate-500"}`}>
                 {state.message}

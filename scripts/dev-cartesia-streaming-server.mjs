@@ -273,6 +273,24 @@ function createCartesiaSocket() {
   });
 }
 
+function createDeepgramSocket() {
+  const apiKey = process.env.DEEPGRAM_API_KEY;
+  if (!apiKey) throw new Error("DEEPGRAM_API_KEY is not configured.");
+
+  const url = new URL("wss://api.deepgram.com/v2/listen");
+  url.searchParams.set("model", process.env.DEEPGRAM_FLUX_MODEL || "flux-general-en");
+  url.searchParams.set("encoding", "mulaw");
+  url.searchParams.set("sample_rate", "8000");
+  url.searchParams.set("channels", "1");
+  url.searchParams.set("interim_results", "true");
+
+  return new WebSocket(url.toString(), {
+    headers: {
+      Authorization: `Token ${apiKey}`,
+    },
+  });
+}
+
 function createElevenLabsSocket(config) {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY is not configured.");
@@ -424,6 +442,33 @@ async function persistOpenAIRealtimeState(state, completed = false) {
         hybridTranscript: state.turns,
         lastTurnTiming: state.lastTurnTiming ?? null,
         events: state.events.slice(-80),
+      },
+      syncedAt: new Date(),
+    },
+  });
+}
+
+async function persistDeepgramCartesiaState(state, completed = false) {
+  if (!state.callAttemptId) return;
+
+  await prisma.callAttempt.update({
+    where: { id: state.callAttemptId },
+    data: {
+      status: completed ? "ANSWERED_OK" : "IN_PROGRESS",
+      completedAt: completed ? new Date() : undefined,
+      transcript: formatTranscript(state.turns),
+      summary: `Deepgram + Cartesia bridge captured ${state.turns.length} transcript turn${state.turns.length === 1 ? "" : "s"}.`,
+      conversationRaw: {
+        provider: "deepgram_flux_openai_text_cartesia_stream_twilio",
+        cartesiaConfig: state.cartesiaConfig,
+        deepgramConfig: {
+          modelId: process.env.DEEPGRAM_FLUX_MODEL || "flux-general-en",
+          encoding: "mulaw",
+          sampleRate: 8000,
+        },
+        initialPrompt: state.initialPrompt,
+        hybridTranscript: state.turns,
+        lastTurnTiming: state.lastTurnTiming ?? null,
       },
       syncedAt: new Date(),
     },
@@ -604,6 +649,180 @@ function attachElevenLabsSocket(state, twilioSocket) {
 
   elevenLabsSocket.on("error", (error) => console.error("ElevenLabs TTS socket error", error));
   return elevenLabsSocket;
+}
+
+function extractDeepgramTranscript(message) {
+  if (!message || typeof message !== "object") return null;
+
+  const transcript = message.channel?.alternatives?.[0]?.transcript;
+  if (typeof transcript === "string" && transcript.trim() && (message.is_final || message.speech_final)) {
+    return transcript.trim();
+  }
+
+  const turnTranscript = message.channel?.alternatives?.[0]?.transcript || message.transcript;
+  if (message.type === "TurnInfo" && typeof turnTranscript === "string" && turnTranscript.trim()) {
+    return turnTranscript.trim();
+  }
+
+  return null;
+}
+
+function wireDeepgramCartesiaBridge(twilioSocket) {
+  const state = {
+    bridgeProvider: "deepgram-cartesia",
+    twilioSocket,
+    callAttemptId: null,
+    memberName: "there",
+    streamSid: null,
+    turns: [],
+    cartesiaConfig: null,
+    initialPrompt: null,
+    instructions: "",
+    cartesiaSocket: createCartesiaSocket(),
+    cartesiaContextId: null,
+    pendingCartesiaText: "",
+    activeAssistantText: "",
+    activeResponseController: null,
+    lastTurnTiming: null,
+    pendingAudioPayloads: [],
+    pendingCartesiaMessages: [],
+    seenDeepgramFinals: new Set(),
+    userSpeaking: false,
+    speechFrames: 0,
+    silenceFrames: 0,
+  };
+  const deepgramSocket = createDeepgramSocket();
+
+  deepgramSocket.on("message", (data) => {
+    const message = safeJson(data.toString());
+    if (!message) return;
+
+    const transcript = extractDeepgramTranscript(message);
+    if (!transcript || state.seenDeepgramFinals.has(transcript)) return;
+    state.seenDeepgramFinals.add(transcript);
+    void streamOpenAIReplyToTts(state, transcript).catch((error) => console.error("Deepgram stream reply failed", error));
+  });
+
+  deepgramSocket.on("open", () => {
+    const pending = state.pendingAudioPayloads.splice(0);
+    for (const payload of pending) {
+      deepgramSocket.send(Buffer.from(payload, "base64"));
+    }
+  });
+
+  state.cartesiaSocket.on("message", (data) => {
+    const message = safeJson(data.toString());
+    if (!message) return;
+
+    if (message.type === "chunk" && typeof message.data === "string") {
+      sendTwilioAudio(twilioSocket, state.streamSid, message.data);
+      return;
+    }
+
+    if (message.type === "error") {
+      console.error("Cartesia websocket error event", message);
+    }
+  });
+  state.cartesiaSocket.on("open", () => {
+    const pending = state.pendingCartesiaMessages.splice(0);
+    for (const message of pending) {
+      sendCartesiaText(state.cartesiaSocket, state, message.text, message.isFinal);
+    }
+  });
+
+  twilioSocket.on("message", (data) => {
+    const message = safeJson(data.toString());
+    if (!message) return;
+
+    if (message.event === "start") {
+      state.streamSid = message.start?.streamSid ?? message.streamSid ?? null;
+      state.callAttemptId = message.start?.customParameters?.callAttemptId ?? null;
+      void loadCallSession(state.callAttemptId)
+        .then((session) => {
+          state.memberName = session.callAttempt.member.name;
+          state.turns = session.turns;
+          state.cartesiaConfig = session.cartesiaConfig;
+          state.initialPrompt = session.initialPrompt;
+          state.instructions = buildInstructions({
+            memberName: session.callAttempt.member.name,
+            caregiverName: session.callAttempt.member.customer.fullName || "your family",
+            companionContext: `You are calling ${session.callAttempt.member.name}. Sound like a familiar, warm daily companion, not a clinical checklist.`,
+            recentTopics: "none yet",
+            topicsToRevisit: "none yet",
+            avoidRepeating: "Do not use a generic scripted wellness survey opening.",
+            bridgeProvider: "Deepgram + Cartesia",
+          });
+          console.log("Deepgram + Cartesia stream bridge started", {
+            callAttemptId: state.callAttemptId,
+            streamSid: state.streamSid,
+            deepgramModel: process.env.DEEPGRAM_FLUX_MODEL || "flux-general-en",
+            cartesiaModel: state.cartesiaConfig?.modelId,
+            voiceId: state.cartesiaConfig?.voiceId,
+          });
+
+          const opener =
+            state.initialPrompt ||
+            `Hi ${state.memberName}, it is your scheduled check-in call from DailyCall. Is there anything I can help you with, or anything you would like to chat about?`;
+          state.turns.push({ speaker: "DailyCall", text: opener });
+          state.cartesiaContextId = randomUUID();
+          sendCartesiaText(state.cartesiaSocket, state, opener, true);
+          void persistDeepgramCartesiaState(state).catch((error) => console.error("persist Deepgram opener failed", error));
+        })
+        .catch((error) => {
+          console.error("failed to load Deepgram + Cartesia stream session", error);
+          twilioSocket.close();
+        });
+      return;
+    }
+
+    if (message.event === "media" && typeof message.media?.payload === "string") {
+      const rms = muLawRms(message.media.payload);
+      const isSpeechFrame = rms > 650;
+
+      if (isSpeechFrame) {
+        state.speechFrames += 1;
+        state.silenceFrames = 0;
+
+        if (!state.userSpeaking && state.speechFrames >= 3) {
+          state.userSpeaking = true;
+          sendTwilioClear(twilioSocket, state.streamSid);
+          cancelActiveOutput(state);
+        }
+      } else {
+        state.silenceFrames += 1;
+        if (!state.userSpeaking) {
+          state.speechFrames = 0;
+        }
+      }
+
+      if (state.silenceFrames >= 24) {
+        state.userSpeaking = false;
+      }
+
+      if (deepgramSocket.readyState !== WebSocket.OPEN) {
+        state.pendingAudioPayloads.push(message.media.payload);
+        return;
+      }
+
+      deepgramSocket.send(Buffer.from(message.media.payload, "base64"));
+      return;
+    }
+
+    if (message.event === "stop") {
+      void persistDeepgramCartesiaState(state, true).catch((error) => console.error("persist Deepgram stop failed", error));
+      twilioSocket.close();
+    }
+  });
+
+  twilioSocket.on("close", () => {
+    cancelActiveOutput(state);
+    if (deepgramSocket.readyState === WebSocket.OPEN) deepgramSocket.close();
+    if (state.cartesiaSocket.readyState === WebSocket.OPEN) state.cartesiaSocket.close();
+  });
+
+  twilioSocket.on("error", (error) => console.error("Twilio Deepgram stream socket error", error));
+  deepgramSocket.on("error", (error) => console.error("Deepgram socket error", error));
+  state.cartesiaSocket.on("error", (error) => console.error("Deepgram bridge Cartesia TTS socket error", error));
 }
 
 function wireOpenAIRealtimeBridge(twilioSocket) {
@@ -1041,7 +1260,8 @@ const server = http.createServer((request, response) => {
   if (
     request.url === "/api/cartesia-test/stream-health" ||
     request.url === "/api/bridge-test/stream-health" ||
-    request.url === "/api/openai-realtime-bridge/stream-health"
+    request.url === "/api/openai-realtime-bridge/stream-health" ||
+    request.url === "/api/deepgram-cartesia-bridge/stream-health"
   ) {
     response.writeHead(200, { "content-type": "application/json" });
     response.end(JSON.stringify({ ok: true, service: "dailycall-streaming-bridge-server" }));
@@ -1058,7 +1278,8 @@ server.on("upgrade", (request, socket, head) => {
   if (
     url.pathname !== "/api/cartesia-test/stream" &&
     url.pathname !== "/api/bridge-test/stream" &&
-    url.pathname !== "/api/openai-realtime-bridge/stream"
+    url.pathname !== "/api/openai-realtime-bridge/stream" &&
+    url.pathname !== "/api/deepgram-cartesia-bridge/stream"
   ) {
     socket.destroy();
     return;
@@ -1067,6 +1288,11 @@ server.on("upgrade", (request, socket, head) => {
   wss.handleUpgrade(request, socket, head, (ws) => {
     if (url.pathname === "/api/openai-realtime-bridge/stream") {
       wireOpenAIRealtimeBridge(ws);
+      return;
+    }
+
+    if (url.pathname === "/api/deepgram-cartesia-bridge/stream") {
+      wireDeepgramCartesiaBridge(ws);
       return;
     }
 
@@ -1079,4 +1305,5 @@ server.listen(port, hostname, () => {
   console.log(`Cartesia bridge WebSocket path: ws://${hostname}:${port}/api/cartesia-test/stream`);
   console.log(`ElevenLabs bridge WebSocket path: ws://${hostname}:${port}/api/bridge-test/stream`);
   console.log(`OpenAI Realtime bridge WebSocket path: ws://${hostname}:${port}/api/openai-realtime-bridge/stream`);
+  console.log(`Deepgram + Cartesia bridge WebSocket path: ws://${hostname}:${port}/api/deepgram-cartesia-bridge/stream`);
 });

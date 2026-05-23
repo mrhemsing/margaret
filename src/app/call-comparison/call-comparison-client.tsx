@@ -20,17 +20,6 @@ const comparisonRows = [
     }),
   },
   {
-    title: "ElevenLabs streaming bridge",
-    badge: "Custom Bridge",
-    subtitle: "Custom bridge matching the Cartesia architecture.",
-    stack: "Twilio Media Stream, OpenAI transcription/text, ElevenLabs Flash v2.5",
-    endpoint: "/api/bridge-test/call",
-    caregiverName: "DailyCall ElevenLabs bridge comparison reviewer",
-    buildPayload: (target: TestCallTarget) => ({
-      firstMessage: buildIntro(target.label),
-    }),
-  },
-  {
     title: "OpenAI Realtime SIP",
     badge: "Direct SIP",
     subtitle: "Single-provider realtime voice path.",
@@ -53,6 +42,19 @@ const comparisonRows = [
     }),
   },
   {
+    title: "Gemini Live native audio",
+    badge: "Custom Bridge",
+    subtitle: "Recommended Gemini native-audio lane for model-agnostic comparison.",
+    stack: "Twilio Media Stream, Gemini 2.5 Flash Native Audio",
+    endpoint: "/api/gemini-live-bridge/call",
+    caregiverName: "DailyCall Gemini Live comparison reviewer",
+    disabled: true,
+    disabledMessage: "Needs Gemini bridge implementation and GEMINI_API_KEY.",
+    buildPayload: (target: TestCallTarget) => ({
+      firstMessage: buildIntro(target.label),
+    }),
+  },
+  {
     title: "Cartesia low-latency bridge",
     badge: "Custom Bridge",
     subtitle: "Best Cartesia voice path for low-latency bridge testing.",
@@ -63,6 +65,41 @@ const comparisonRows = [
       transcript: buildIntro(target.label),
       modelId: "sonic-3.5",
       voiceId: "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+    }),
+  },
+  {
+    title: "Deepgram + Cartesia bridge",
+    badge: "Custom Bridge",
+    subtitle: "Production telephony pipeline candidate with dedicated voice-agent STT.",
+    stack: "Twilio Media Stream, Deepgram Flux, OpenAI text, Cartesia Sonic 3.5",
+    endpoint: "/api/deepgram-cartesia-bridge/call",
+    caregiverName: "DailyCall Deepgram Cartesia comparison reviewer",
+    buildPayload: (target: TestCallTarget) => ({
+      transcript: buildIntro(target.label),
+      modelId: "sonic-3.5",
+      voiceId: "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+    }),
+  },
+  {
+    title: "ElevenLabs streaming bridge",
+    badge: "Custom Bridge",
+    subtitle: "Custom bridge matching the Cartesia architecture.",
+    stack: "Twilio Media Stream, OpenAI transcription/text, ElevenLabs Flash v2.5",
+    endpoint: "/api/bridge-test/call",
+    caregiverName: "DailyCall ElevenLabs bridge comparison reviewer",
+    buildPayload: (target: TestCallTarget) => ({
+      firstMessage: buildIntro(target.label),
+    }),
+  },
+  {
+    title: "Cartesia Line agent",
+    badge: "Native Agent",
+    subtitle: "Cartesia's native agent path for comparison against the custom Sonic bridge.",
+    stack: "Twilio, Cartesia Line agent",
+    endpoint: "/api/cartesia-agent-test/call",
+    caregiverName: "DailyCall Cartesia native agent comparison reviewer",
+    buildPayload: (target: TestCallTarget) => ({
+      firstMessage: buildIntro(target.label),
     }),
   },
 ] as const;
@@ -99,7 +136,13 @@ export function CallComparisonClient() {
               </p>
             </div>
 
-            <TestCallButtons endpoint={row.endpoint} caregiverName={row.caregiverName} buildPayload={row.buildPayload} />
+            <TestCallButtons
+              endpoint={row.endpoint}
+              caregiverName={row.caregiverName}
+              disabled={"disabled" in row ? row.disabled : false}
+              disabledMessage={"disabledMessage" in row ? row.disabledMessage : undefined}
+              buildPayload={row.buildPayload}
+            />
           </article>
         ))}
       </div>
