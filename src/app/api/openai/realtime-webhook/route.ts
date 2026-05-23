@@ -9,6 +9,7 @@ import { getCachedCallCurrentContext } from "@/lib/voice/current-info";
 import {
   acceptOpenAIRealtimeCall,
   extractOpenAISipHeader,
+  startOpenAIRealtimeCallMonitor,
 } from "@/lib/voice/openai-realtime";
 import { getOpenAIRealtimeVoice } from "@/lib/voice/voice-options";
 
@@ -138,8 +139,11 @@ export async function POST(request: Request) {
       },
     });
 
-    // Keep the SIP bridge stable first. The production Next bundle currently
-    // crashes in the ws package when opening the optional monitor socket.
+    startOpenAIRealtimeCallMonitor({
+      callId,
+      callAttemptId: callAttempt.id,
+      memberName: callAttempt.member.name,
+    });
   }
 
   return NextResponse.json({ ok: true, accepted: callId, callAttemptId: callAttempt?.id ?? null });
