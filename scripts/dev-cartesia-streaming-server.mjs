@@ -260,6 +260,16 @@ function createOpenAIRealtimeSocket() {
   });
 }
 
+function createGeminiLiveSocket() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured.");
+
+  const url = new URL("wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent");
+  url.searchParams.set("key", apiKey);
+
+  return new WebSocket(url.toString());
+}
+
 function createCartesiaSocket() {
   const apiKey = process.env.CARTESIA_API_KEY;
   if (!apiKey) throw new Error("CARTESIA_API_KEY is not configured.");
@@ -347,6 +357,48 @@ function muLawRms(base64Payload) {
   }
 
   return Math.sqrt(sumSquares / buffer.length);
+}
+
+function encodeMuLawSample(sample) {
+  const clipped = Math.max(-32635, Math.min(32635, sample));
+  const sign = clipped < 0 ? 0x80 : 0;
+  let magnitude = Math.abs(clipped) + 0x84;
+  let exponent = 7;
+
+  for (let mask = 0x4000; (magnitude & mask) === 0 && exponent > 0; mask >>= 1) {
+    exponent -= 1;
+  }
+
+  const mantissa = (magnitude >> (exponent + 3)) & 0x0f;
+  return ~(sign | (exponent << 4) | mantissa) & 0xff;
+}
+
+function twilioMuLawBase64ToGeminiPcm16Base64(base64Payload) {
+  const muLaw = Buffer.from(base64Payload, "base64");
+  const pcm16 = Buffer.alloc(muLaw.length * 4);
+
+  for (let index = 0; index < muLaw.length; index += 1) {
+    const sample = decodeMuLawSample(muLaw[index]);
+    const offset = index * 4;
+    pcm16.writeInt16LE(sample, offset);
+    pcm16.writeInt16LE(sample, offset + 2);
+  }
+
+  return pcm16.toString("base64");
+}
+
+function geminiPcm24kBase64ToTwilioMuLawBase64(base64Payload) {
+  const pcm = Buffer.from(base64Payload, "base64");
+  const inputSamples = Math.floor(pcm.length / 2);
+  const outputSamples = Math.floor(inputSamples / 3);
+  const muLaw = Buffer.alloc(outputSamples);
+
+  for (let index = 0; index < outputSamples; index += 1) {
+    const sample = pcm.readInt16LE(index * 6);
+    muLaw[index] = encodeMuLawSample(sample);
+  }
+
+  return muLaw.toString("base64");
 }
 
 function sendCartesiaText(cartesiaSocket, state, text, isFinal = false) {
@@ -469,6 +521,32 @@ async function persistDeepgramCartesiaState(state, completed = false) {
         initialPrompt: state.initialPrompt,
         hybridTranscript: state.turns,
         lastTurnTiming: state.lastTurnTiming ?? null,
+      },
+      syncedAt: new Date(),
+    },
+  });
+}
+
+async function persistGeminiLiveState(state, completed = false) {
+  if (!state.callAttemptId) return;
+
+  await prisma.callAttempt.update({
+    where: { id: state.callAttemptId },
+    data: {
+      status: completed ? "ANSWERED_OK" : "IN_PROGRESS",
+      completedAt: completed ? new Date() : undefined,
+      transcript: formatTranscript(state.turns),
+      summary: `Gemini Live bridge captured ${state.turns.length} transcript turn${state.turns.length === 1 ? "" : "s"}.`,
+      conversationRaw: {
+        provider: "gemini_live_native_audio_stream_twilio",
+        geminiConfig: {
+          modelId: process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-12-2025",
+          inputFormat: "pcm16_16000",
+          outputFormat: "pcm16_24000",
+        },
+        initialPrompt: state.initialPrompt,
+        hybridTranscript: state.turns,
+        events: state.events.slice(-80),
       },
       syncedAt: new Date(),
     },
@@ -1071,6 +1149,207 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
   state.openAISocket.on("error", (error) => console.error("OpenAI Realtime stream socket error", error));
 }
 
+function wireGeminiLiveBridge(twilioSocket) {
+  const state = {
+    twilioSocket,
+    geminiSocket: createGeminiLiveSocket(),
+    callAttemptId: null,
+    memberName: "there",
+    streamSid: null,
+    turns: [],
+    initialPrompt: null,
+    instructions: "",
+    events: [],
+    pendingAudioPayloads: [],
+    setupComplete: false,
+    sessionLoaded: false,
+    openerStarted: false,
+    activeOutputTranscript: "",
+    userSpeaking: false,
+    speechFrames: 0,
+    silenceFrames: 0,
+  };
+
+  function sendGeminiSetup() {
+    if (state.geminiSocket.readyState !== WebSocket.OPEN) return;
+    state.geminiSocket.send(
+      JSON.stringify({
+        setup: {
+          model: `models/${process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-12-2025"}`,
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: {
+                  voiceName: process.env.GEMINI_LIVE_VOICE || "Kore",
+                },
+              },
+            },
+          },
+          systemInstruction: {
+            parts: [{ text: state.instructions || "You are DailyCall. Keep responses warm, brief, and natural." }],
+          },
+        },
+      }),
+    );
+  }
+
+  function startOpener() {
+    if (!state.setupComplete || !state.sessionLoaded || state.openerStarted || state.geminiSocket.readyState !== WebSocket.OPEN) return;
+    state.openerStarted = true;
+    const opener =
+      state.initialPrompt ||
+      `Hi ${state.memberName}, it is your scheduled check-in call from DailyCall. Is there anything I can help you with, or anything you would like to chat about?`;
+    state.turns.push({ speaker: "DailyCall", text: opener });
+    state.geminiSocket.send(
+      JSON.stringify({
+        clientContent: {
+          turns: [
+            {
+              role: "user",
+              parts: [{ text: `Say exactly this opener, then wait for the person to respond: ${opener}` }],
+            },
+          ],
+          turnComplete: true,
+        },
+      }),
+    );
+    void persistGeminiLiveState(state).catch((error) => console.error("persist Gemini opener failed", error));
+  }
+
+  state.geminiSocket.on("open", () => {
+    sendGeminiSetup();
+  });
+
+  state.geminiSocket.on("message", (data) => {
+    const message = safeJson(data.toString());
+    if (!message) return;
+    state.events.push(message);
+
+    if (message.setupComplete) {
+      state.setupComplete = true;
+      const pending = state.pendingAudioPayloads.splice(0);
+      for (const payload of pending) {
+        state.geminiSocket.send(JSON.stringify({ realtimeInput: { audio: { data: payload, mimeType: "audio/pcm;rate=16000" } } }));
+      }
+      startOpener();
+      return;
+    }
+
+    const inputText = message.serverContent?.inputTranscription?.text;
+    if (typeof inputText === "string" && inputText.trim()) {
+      state.turns.push({ speaker: state.memberName, text: inputText.trim() });
+      void persistGeminiLiveState(state).catch((error) => console.error("persist Gemini input transcript failed", error));
+    }
+
+    const outputText = message.serverContent?.outputTranscription?.text;
+    if (typeof outputText === "string" && outputText.trim()) {
+      state.activeOutputTranscript += outputText;
+    }
+
+    const parts = message.serverContent?.modelTurn?.parts;
+    if (Array.isArray(parts)) {
+      for (const part of parts) {
+        const inlineData = part?.inlineData ?? part?.inline_data;
+        if (typeof inlineData?.data === "string") {
+          sendTwilioAudio(twilioSocket, state.streamSid, geminiPcm24kBase64ToTwilioMuLawBase64(inlineData.data));
+        }
+      }
+    }
+
+    if (message.serverContent?.turnComplete || message.serverContent?.generationComplete) {
+      const transcript = state.activeOutputTranscript.replace(/\s+/g, " ").trim();
+      if (transcript) {
+        state.turns.push({ speaker: "DailyCall", text: transcript });
+      }
+      state.activeOutputTranscript = "";
+      void persistGeminiLiveState(state).catch((error) => console.error("persist Gemini turn failed", error));
+    }
+  });
+
+  twilioSocket.on("message", (data) => {
+    const message = safeJson(data.toString());
+    if (!message) return;
+
+    if (message.event === "start") {
+      state.streamSid = message.start?.streamSid ?? message.streamSid ?? null;
+      state.callAttemptId = message.start?.customParameters?.callAttemptId ?? null;
+      void loadOpenAIRealtimeCallSession(state.callAttemptId)
+        .then((session) => {
+          state.memberName = session.callAttempt.member.name;
+          state.turns = session.turns;
+          state.initialPrompt = session.initialPrompt;
+          state.instructions = buildInstructions({
+            memberName: session.callAttempt.member.name,
+            caregiverName: session.callAttempt.member.customer.fullName || "your family",
+            companionContext: `You are calling ${session.callAttempt.member.name}. Sound like a familiar, warm daily companion, not a clinical checklist.`,
+            recentTopics: "none yet",
+            topicsToRevisit: "none yet",
+            avoidRepeating: "Do not use a generic scripted wellness survey opening.",
+            bridgeProvider: "Gemini Live",
+          });
+          state.sessionLoaded = true;
+          console.log("Gemini Live stream bridge started", {
+            callAttemptId: state.callAttemptId,
+            streamSid: state.streamSid,
+            model: process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-12-2025",
+          });
+          startOpener();
+        })
+        .catch((error) => {
+          console.error("failed to load Gemini Live stream session", error);
+          twilioSocket.close();
+        });
+      return;
+    }
+
+    if (message.event === "media" && typeof message.media?.payload === "string") {
+      const rms = muLawRms(message.media.payload);
+      const isSpeechFrame = rms > 650;
+
+      if (isSpeechFrame) {
+        state.speechFrames += 1;
+        state.silenceFrames = 0;
+
+        if (!state.userSpeaking && state.speechFrames >= 3) {
+          state.userSpeaking = true;
+          sendTwilioClear(twilioSocket, state.streamSid);
+        }
+      } else {
+        state.silenceFrames += 1;
+        if (!state.userSpeaking) {
+          state.speechFrames = 0;
+        }
+      }
+
+      if (state.silenceFrames >= 24) {
+        state.userSpeaking = false;
+      }
+
+      const pcm16Base64 = twilioMuLawBase64ToGeminiPcm16Base64(message.media.payload);
+      if (!state.setupComplete || state.geminiSocket.readyState !== WebSocket.OPEN) {
+        state.pendingAudioPayloads.push(pcm16Base64);
+        return;
+      }
+
+      state.geminiSocket.send(JSON.stringify({ realtimeInput: { audio: { data: pcm16Base64, mimeType: "audio/pcm;rate=16000" } } }));
+      return;
+    }
+
+    if (message.event === "stop") {
+      void persistGeminiLiveState(state, true).catch((error) => console.error("persist Gemini stop failed", error));
+      twilioSocket.close();
+    }
+  });
+
+  twilioSocket.on("close", () => {
+    if (state.geminiSocket.readyState === WebSocket.OPEN) state.geminiSocket.close();
+  });
+
+  twilioSocket.on("error", (error) => console.error("Twilio Gemini stream socket error", error));
+  state.geminiSocket.on("error", (error) => console.error("Gemini Live socket error", error));
+}
+
 function wireBridge(twilioSocket, bridgeProvider = "cartesia") {
   const state = {
     bridgeProvider,
@@ -1261,7 +1540,8 @@ const server = http.createServer((request, response) => {
     request.url === "/api/cartesia-test/stream-health" ||
     request.url === "/api/bridge-test/stream-health" ||
     request.url === "/api/openai-realtime-bridge/stream-health" ||
-    request.url === "/api/deepgram-cartesia-bridge/stream-health"
+    request.url === "/api/deepgram-cartesia-bridge/stream-health" ||
+    request.url === "/api/gemini-live-bridge/stream-health"
   ) {
     response.writeHead(200, { "content-type": "application/json" });
     response.end(JSON.stringify({ ok: true, service: "dailycall-streaming-bridge-server" }));
@@ -1279,7 +1559,8 @@ server.on("upgrade", (request, socket, head) => {
     url.pathname !== "/api/cartesia-test/stream" &&
     url.pathname !== "/api/bridge-test/stream" &&
     url.pathname !== "/api/openai-realtime-bridge/stream" &&
-    url.pathname !== "/api/deepgram-cartesia-bridge/stream"
+    url.pathname !== "/api/deepgram-cartesia-bridge/stream" &&
+    url.pathname !== "/api/gemini-live-bridge/stream"
   ) {
     socket.destroy();
     return;
@@ -1296,6 +1577,11 @@ server.on("upgrade", (request, socket, head) => {
       return;
     }
 
+    if (url.pathname === "/api/gemini-live-bridge/stream") {
+      wireGeminiLiveBridge(ws);
+      return;
+    }
+
     wireBridge(ws, url.pathname === "/api/bridge-test/stream" ? "elevenlabs" : "cartesia");
   });
 });
@@ -1306,4 +1592,5 @@ server.listen(port, hostname, () => {
   console.log(`ElevenLabs bridge WebSocket path: ws://${hostname}:${port}/api/bridge-test/stream`);
   console.log(`OpenAI Realtime bridge WebSocket path: ws://${hostname}:${port}/api/openai-realtime-bridge/stream`);
   console.log(`Deepgram + Cartesia bridge WebSocket path: ws://${hostname}:${port}/api/deepgram-cartesia-bridge/stream`);
+  console.log(`Gemini Live bridge WebSocket path: ws://${hostname}:${port}/api/gemini-live-bridge/stream`);
 });

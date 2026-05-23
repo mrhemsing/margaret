@@ -48,8 +48,6 @@ const comparisonRows = [
     stack: "Twilio Media Stream, Gemini 2.5 Flash Native Audio",
     endpoint: "/api/gemini-live-bridge/call",
     caregiverName: "DailyCall Gemini Live comparison reviewer",
-    disabled: true,
-    disabledMessage: "Needs Gemini bridge implementation and GEMINI_API_KEY.",
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
     }),
@@ -139,8 +137,6 @@ export function CallComparisonClient() {
             <TestCallButtons
               endpoint={row.endpoint}
               caregiverName={row.caregiverName}
-              disabled={"disabled" in row ? row.disabled : false}
-              disabledMessage={"disabledMessage" in row ? row.disabledMessage : undefined}
               buildPayload={row.buildPayload}
             />
           </article>
