@@ -404,7 +404,7 @@ function geminiPcm24kBase64ToTwilioMuLawBase64(base64Payload) {
 function sendCartesiaText(cartesiaSocket, state, text, isFinal = false) {
   if (!text && !isFinal) return;
 
-  if (cartesiaSocket.readyState !== WebSocket.OPEN) {
+  if (!cartesiaSocket || cartesiaSocket.readyState !== WebSocket.OPEN) {
     state.pendingCartesiaMessages.push({ text, isFinal });
     return;
   }
@@ -431,6 +431,56 @@ function sendCartesiaText(cartesiaSocket, state, text, isFinal = false) {
       continue: !isFinal,
     }),
   );
+}
+
+function attachCartesiaSocket(state, twilioSocket, label = "Cartesia") {
+  const cartesiaSocket = createCartesiaSocket();
+  state.cartesiaSocket = cartesiaSocket;
+
+  const pingInterval = setInterval(() => {
+    if (cartesiaSocket.readyState === WebSocket.OPEN) {
+      cartesiaSocket.ping();
+    }
+  }, 60000);
+
+  cartesiaSocket.on("message", (data) => {
+    const message = safeJson(data.toString());
+    if (!message) return;
+
+    if (message.type === "chunk" && typeof message.data === "string") {
+      sendTwilioAudio(twilioSocket, state.streamSid, message.data);
+      return;
+    }
+
+    if (message.type === "error") {
+      console.error(`${label} websocket error event`, message);
+    }
+  });
+
+  cartesiaSocket.on("open", () => {
+    const pending = state.pendingCartesiaMessages.splice(0);
+    for (const message of pending) {
+      sendCartesiaText(cartesiaSocket, state, message.text, message.isFinal);
+    }
+  });
+
+  cartesiaSocket.on("close", (code, reason) => {
+    clearInterval(pingInterval);
+    const reasonText = reason?.toString() || "";
+    console.error(`${label} TTS socket closed`, { code, reason: reasonText });
+
+    if (state.shuttingDown || twilioSocket.readyState !== WebSocket.OPEN) return;
+
+    setTimeout(() => {
+      if (!state.shuttingDown && twilioSocket.readyState === WebSocket.OPEN) {
+        attachCartesiaSocket(state, twilioSocket, label);
+      }
+    }, 250);
+  });
+
+  cartesiaSocket.on("error", (error) => console.error(`${label} TTS socket error`, error));
+
+  return cartesiaSocket;
 }
 
 function sendElevenLabsText(elevenLabsSocket, state, text, isFinal = false) {
@@ -756,7 +806,7 @@ function wireDeepgramCartesiaBridge(twilioSocket) {
     cartesiaConfig: null,
     initialPrompt: null,
     instructions: "",
-    cartesiaSocket: createCartesiaSocket(),
+    cartesiaSocket: null,
     cartesiaContextId: null,
     pendingCartesiaText: "",
     activeAssistantText: "",
@@ -768,8 +818,10 @@ function wireDeepgramCartesiaBridge(twilioSocket) {
     userSpeaking: false,
     speechFrames: 0,
     silenceFrames: 0,
+    shuttingDown: false,
   };
   const deepgramSocket = createDeepgramSocket();
+  attachCartesiaSocket(state, twilioSocket, "Deepgram bridge Cartesia");
 
   deepgramSocket.on("message", (data) => {
     const message = safeJson(data.toString());
@@ -785,26 +837,6 @@ function wireDeepgramCartesiaBridge(twilioSocket) {
     const pending = state.pendingAudioPayloads.splice(0);
     for (const payload of pending) {
       deepgramSocket.send(Buffer.from(payload, "base64"));
-    }
-  });
-
-  state.cartesiaSocket.on("message", (data) => {
-    const message = safeJson(data.toString());
-    if (!message) return;
-
-    if (message.type === "chunk" && typeof message.data === "string") {
-      sendTwilioAudio(twilioSocket, state.streamSid, message.data);
-      return;
-    }
-
-    if (message.type === "error") {
-      console.error("Cartesia websocket error event", message);
-    }
-  });
-  state.cartesiaSocket.on("open", () => {
-    const pending = state.pendingCartesiaMessages.splice(0);
-    for (const message of pending) {
-      sendCartesiaText(state.cartesiaSocket, state, message.text, message.isFinal);
     }
   });
 
@@ -892,15 +924,16 @@ function wireDeepgramCartesiaBridge(twilioSocket) {
     }
   });
 
-  twilioSocket.on("close", () => {
+  twilioSocket.on("close", (code, reason) => {
+    console.error("Twilio Deepgram stream socket closed", { code, reason: reason?.toString() || "" });
+    state.shuttingDown = true;
     cancelActiveOutput(state);
     if (deepgramSocket.readyState === WebSocket.OPEN) deepgramSocket.close();
-    if (state.cartesiaSocket.readyState === WebSocket.OPEN) state.cartesiaSocket.close();
+    if (state.cartesiaSocket?.readyState === WebSocket.OPEN) state.cartesiaSocket.close();
   });
 
   twilioSocket.on("error", (error) => console.error("Twilio Deepgram stream socket error", error));
   deepgramSocket.on("error", (error) => console.error("Deepgram socket error", error));
-  state.cartesiaSocket.on("error", (error) => console.error("Deepgram bridge Cartesia TTS socket error", error));
 }
 
 function wireOpenAIRealtimeBridge(twilioSocket) {
@@ -1376,11 +1409,11 @@ function wireBridge(twilioSocket, bridgeProvider = "cartesia") {
     speechFrames: 0,
     silenceFrames: 0,
     lastCommitAt: 0,
+    shuttingDown: false,
   };
   const openAISocket = createOpenAITranscriptionSocket();
-  const cartesiaSocket = bridgeProvider === "cartesia" ? createCartesiaSocket() : null;
-  if (cartesiaSocket) {
-    state.cartesiaSocket = cartesiaSocket;
+  if (bridgeProvider === "cartesia") {
+    attachCartesiaSocket(state, twilioSocket, "Cartesia");
   }
 
   openAISocket.on("message", (data) => {
@@ -1409,28 +1442,6 @@ function wireBridge(twilioSocket, bridgeProvider = "cartesia") {
       );
     }
   });
-
-  if (cartesiaSocket) {
-    cartesiaSocket.on("message", (data) => {
-      const message = safeJson(data.toString());
-      if (!message) return;
-
-      if (message.type === "chunk" && typeof message.data === "string") {
-        sendTwilioAudio(twilioSocket, state.streamSid, message.data);
-        return;
-      }
-
-      if (message.type === "error") {
-        console.error("Cartesia websocket error event", message);
-      }
-    });
-    cartesiaSocket.on("open", () => {
-      const pending = state.pendingCartesiaMessages.splice(0);
-      for (const message of pending) {
-        sendCartesiaText(cartesiaSocket, state, message.text, message.isFinal);
-      }
-    });
-  }
 
   twilioSocket.on("message", (data) => {
     const message = safeJson(data.toString());
@@ -1521,16 +1532,17 @@ function wireBridge(twilioSocket, bridgeProvider = "cartesia") {
     }
   });
 
-  twilioSocket.on("close", () => {
+  twilioSocket.on("close", (code, reason) => {
+    console.error("Twilio stream socket closed", { code, reason: reason?.toString() || "", bridgeProvider });
+    state.shuttingDown = true;
     cancelActiveOutput(state);
     if (openAISocket.readyState === WebSocket.OPEN) openAISocket.close();
-    if (cartesiaSocket?.readyState === WebSocket.OPEN) cartesiaSocket.close();
+    if (state.cartesiaSocket?.readyState === WebSocket.OPEN) state.cartesiaSocket.close();
     if (state.elevenLabsSocket?.readyState === WebSocket.OPEN) state.elevenLabsSocket.close();
   });
 
   twilioSocket.on("error", (error) => console.error("Twilio stream socket error", error));
   openAISocket.on("error", (error) => console.error("OpenAI transcription socket error", error));
-  cartesiaSocket?.on("error", (error) => console.error("Cartesia TTS socket error", error));
 }
 
 await app.prepare();
