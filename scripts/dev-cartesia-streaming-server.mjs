@@ -291,8 +291,6 @@ function createDeepgramSocket() {
   url.searchParams.set("model", process.env.DEEPGRAM_FLUX_MODEL || "flux-general-en");
   url.searchParams.set("encoding", "mulaw");
   url.searchParams.set("sample_rate", "8000");
-  url.searchParams.set("channels", "1");
-  url.searchParams.set("interim_results", "true");
 
   return new WebSocket(url.toString(), {
     headers: {
@@ -782,6 +780,10 @@ function attachElevenLabsSocket(state, twilioSocket) {
 function extractDeepgramTranscript(message) {
   if (!message || typeof message !== "object") return null;
 
+  if (message.type === "TurnInfo" && typeof message.event === "string" && message.event !== "EndOfTurn") {
+    return null;
+  }
+
   const transcript = message.channel?.alternatives?.[0]?.transcript;
   if (typeof transcript === "string" && transcript.trim() && (message.is_final || message.speech_final)) {
     return transcript.trim();
@@ -934,6 +936,9 @@ function wireDeepgramCartesiaBridge(twilioSocket) {
 
   twilioSocket.on("error", (error) => console.error("Twilio Deepgram stream socket error", error));
   deepgramSocket.on("error", (error) => console.error("Deepgram socket error", error));
+  deepgramSocket.on("close", (code, reason) => {
+    console.error("Deepgram socket closed", { code, reason: reason?.toString() || "" });
+  });
 }
 
 function wireOpenAIRealtimeBridge(twilioSocket) {
