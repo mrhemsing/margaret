@@ -8,7 +8,7 @@ const comparisonIntroTemplate =
 
 const comparisonRows = [
   {
-    title: "ElevenLabs Conversational AI",
+    title: "ElevenLabs Conversational",
     badge: "Native Agent",
     subtitle: "Current native ElevenLabs outbound-call baseline.",
     stack: "Twilio, ElevenLabs Agent, ElevenLabs ASR/turn-taking, ElevenLabs TTS",
