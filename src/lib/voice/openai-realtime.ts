@@ -1,6 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
-import WebSocket from "ws";
 
 import { prisma } from "@/lib/db";
 import { getServerEnv } from "@/lib/env";
@@ -329,60 +328,65 @@ export function startOpenAIRealtimeCallMonitor(input: {
   const config = getOpenAIRealtimeConfig();
   const events: Record<string, unknown>[] = [];
   const turns: OpenAIRealtimeTranscriptTurn[] = [];
-  const ws = new WebSocket(`wss://api.openai.com/v1/realtime?call_id=${encodeURIComponent(input.callId)}`, {
-    headers: {
-      Authorization: `Bearer ${config.apiKey}`,
-    },
-  });
-
-  ws.on("open", () => {
-    ws.send(
-      JSON.stringify({
-        type: "response.create",
-        response: {
-          instructions: input.initialPrompt
-            ? `Say exactly this opening line and nothing else, then wait for the person to respond: ${input.initialPrompt}`
-            : "Start the DailyCall check-in with a brief, soft, caring greeting and ask how they are doing today. Keep it to one short sentence.",
+  process.env.WS_NO_BUFFER_UTIL = "1";
+  void import("ws")
+    .then(({ default: WebSocket }) => {
+      const ws = new WebSocket(`wss://api.openai.com/v1/realtime?call_id=${encodeURIComponent(input.callId)}`, {
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
         },
-      }),
-    );
-  });
+      });
 
-  ws.on("message", (data) => {
-    try {
-      const event = JSON.parse(data.toString()) as Record<string, unknown>;
-      events.push(event);
+      ws.on("open", () => {
+        ws.send(
+          JSON.stringify({
+            type: "response.create",
+            response: {
+              instructions: input.initialPrompt
+                ? `Say exactly this opening line and nothing else, then wait for the person to respond: ${input.initialPrompt}`
+                : "Start the DailyCall check-in with a brief, soft, caring greeting and ask how they are doing today. Keep it to one short sentence.",
+            },
+          }),
+        );
+      });
 
-      const turn = extractEventTranscript(event, input.memberName);
-      if (turn?.text) {
-        turns.push(turn);
+      ws.on("message", (data) => {
+        try {
+          const event = JSON.parse(data.toString()) as Record<string, unknown>;
+          events.push(event);
+
+          const turn = extractEventTranscript(event, input.memberName);
+          if (turn?.text) {
+            turns.push(turn);
+            void updateCallFromRealtimeEvents({
+              db: prisma,
+              callAttemptId: input.callAttemptId,
+              memberName: input.memberName,
+              turns,
+              events,
+            }).catch((error) => console.error("Failed to persist OpenAI Realtime transcript event", error));
+          }
+        } catch (error) {
+          console.error("Failed to parse OpenAI Realtime event", error);
+        }
+      });
+
+      ws.on("close", () => {
         void updateCallFromRealtimeEvents({
           db: prisma,
           callAttemptId: input.callAttemptId,
           memberName: input.memberName,
           turns,
           events,
-        }).catch((error) => console.error("Failed to persist OpenAI Realtime transcript event", error));
-      }
-    } catch (error) {
-      console.error("Failed to parse OpenAI Realtime event", error);
-    }
-  });
+          completed: true,
+        }).catch((error) => console.error("Failed to finalize OpenAI Realtime call", error));
+      });
 
-  ws.on("close", () => {
-    void updateCallFromRealtimeEvents({
-      db: prisma,
-      callAttemptId: input.callAttemptId,
-      memberName: input.memberName,
-      turns,
-      events,
-      completed: true,
-    }).catch((error) => console.error("Failed to finalize OpenAI Realtime call", error));
-  });
-
-  ws.on("error", (error) => {
-    console.error("OpenAI Realtime monitor error", error);
-  });
-
-  return ws;
+      ws.on("error", (error) => {
+        console.error("OpenAI Realtime monitor error", error);
+      });
+    })
+    .catch((error) => {
+      console.error("Failed to start OpenAI Realtime monitor", error);
+    });
 }
