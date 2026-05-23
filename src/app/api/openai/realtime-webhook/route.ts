@@ -30,6 +30,11 @@ function getInitialPrompt(raw: Prisma.JsonValue | null | undefined) {
   return typeof prompt === "string" && prompt.trim() ? prompt.trim() : null;
 }
 
+function getRawObject(raw: Prisma.JsonValue | null | undefined) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return raw as Record<string, unknown>;
+}
+
 async function parseOpenAIWebhook(request: Request, rawBody: string) {
   const env = getServerEnv();
 
@@ -130,6 +135,9 @@ export async function POST(request: Request) {
   });
 
   if (callAttempt) {
+    const existingRaw = getRawObject(callAttempt.conversationRaw);
+    const initialPrompt = getInitialPrompt(callAttempt.conversationRaw);
+
     await prisma.callAttempt.update({
       where: { id: callAttempt.id },
       data: {
@@ -138,6 +146,7 @@ export async function POST(request: Request) {
         providerConversationId: callId,
         summary: "OpenAI Realtime call connected.",
         conversationRaw: {
+          ...existingRaw,
           provider: "openai_realtime",
           incomingWebhook: event,
         } as Prisma.InputJsonValue,
@@ -149,7 +158,7 @@ export async function POST(request: Request) {
       callId,
       callAttemptId: callAttempt.id,
       memberName: callAttempt.member.name,
-      initialPrompt: getInitialPrompt(callAttempt.conversationRaw),
+      initialPrompt,
     });
   }
 

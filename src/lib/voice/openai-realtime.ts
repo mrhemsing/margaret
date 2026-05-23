@@ -341,7 +341,7 @@ export function startOpenAIRealtimeCallMonitor(input: {
         type: "response.create",
         response: {
           instructions: input.initialPrompt
-            ? `Start the call by saying exactly this opener, then wait for the person to respond: ${input.initialPrompt}`
+            ? `Say exactly this opening line and nothing else, then wait for the person to respond: ${input.initialPrompt}`
             : "Start the DailyCall check-in with a brief, soft, caring greeting and ask how they are doing today. Keep it to one short sentence.",
         },
       }),
