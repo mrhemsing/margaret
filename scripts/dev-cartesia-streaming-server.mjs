@@ -723,7 +723,7 @@ function cancelActiveOutput(state) {
   state.pendingCartesiaText = "";
   state.activeAssistantText = "";
 
-  if (state.cartesiaSocket?.readyState === WebSocket.OPEN && state.cartesiaContextId) {
+  if (state.bridgeProvider !== "deepgram-cartesia" && state.cartesiaSocket?.readyState === WebSocket.OPEN && state.cartesiaContextId) {
     state.cartesiaSocket.send(JSON.stringify({ context_id: state.cartesiaContextId, cancel: true }));
   }
 
@@ -890,29 +890,6 @@ function wireDeepgramCartesiaBridge(twilioSocket) {
     }
 
     if (message.event === "media" && typeof message.media?.payload === "string") {
-      const rms = muLawRms(message.media.payload);
-      const isSpeechFrame = rms > 650;
-
-      if (isSpeechFrame) {
-        state.speechFrames += 1;
-        state.silenceFrames = 0;
-
-        if (!state.userSpeaking && state.speechFrames >= 3) {
-          state.userSpeaking = true;
-          sendTwilioClear(twilioSocket, state.streamSid);
-          cancelActiveOutput(state);
-        }
-      } else {
-        state.silenceFrames += 1;
-        if (!state.userSpeaking) {
-          state.speechFrames = 0;
-        }
-      }
-
-      if (state.silenceFrames >= 24) {
-        state.userSpeaking = false;
-      }
-
       if (deepgramSocket.readyState !== WebSocket.OPEN) {
         state.pendingAudioPayloads.push(message.media.payload);
         return;
