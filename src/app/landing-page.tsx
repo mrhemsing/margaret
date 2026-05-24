@@ -151,8 +151,8 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           <div className="relative flex max-w-2xl flex-col justify-between p-6 sm:block sm:p-8 md:p-12">
             <div>
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-ink">
-                A friendly daily phone call{" "}
-                <span className="sm:block">for aging parents</span>
+                A friendly daily phone call for{" "}
+                <span className="sm:block">aging parents</span>
               </h1>
             </div>
             <div className="pt-10 sm:pt-0">
