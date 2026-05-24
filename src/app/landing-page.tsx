@@ -150,8 +150,9 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           <div className="absolute inset-0 bg-[linear-gradient(to_top,white_0%,rgba(255,255,255,0.97)_35%,rgba(255,255,255,0.84)_46%,transparent_63%)] sm:bg-[linear-gradient(to_right,white_0%,rgba(255,255,255,0.88)_36%,transparent_62%)]" />
           <div className="relative flex max-w-2xl flex-col justify-between p-6 sm:block sm:p-8 md:p-12">
             <div>
-              <h1 className="text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl md:text-4xl xl:text-5xl">
-                A friendly daily phone call for aging parents
+              <h1 className="text-3xl font-bold leading-tight tracking-tight text-ink">
+                A friendly daily phone call{" "}
+                <span className="sm:block">for aging parents</span>
               </h1>
             </div>
             <div className="pt-10 sm:pt-0">
@@ -403,7 +404,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
         <p className="mt-4 text-sm leading-6 text-slate-500">
           Source:{" "}
           <a
-            href="https://www.nationalacademies.org/publications/25663/social-isolation-and-loneliness-in-older-adults"
+            href="https://doi.org/10.17226/25663"
             className="font-semibold text-brandButtonBlue underline decoration-brandBlue/40 underline-offset-4 hover:text-ink"
             target="_blank"
             rel="noreferrer"
