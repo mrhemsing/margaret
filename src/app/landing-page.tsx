@@ -150,7 +150,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           <div className="absolute inset-0 bg-[linear-gradient(to_top,white_0%,rgba(255,255,255,0.97)_35%,rgba(255,255,255,0.84)_46%,transparent_63%)] sm:bg-[linear-gradient(to_right,white_0%,rgba(255,255,255,0.88)_36%,transparent_62%)]" />
           <div className="relative flex max-w-2xl flex-col justify-between p-6 sm:block sm:p-8 md:p-12">
             <div>
-              <h1 className="text-3xl font-bold leading-tight tracking-tight text-ink">
+              <h1 className="text-3xl font-bold leading-tight tracking-tight text-ink md:text-4xl">
                 A friendly daily phone call for{" "}
                 <span className="sm:block">aging parents</span>
               </h1>
