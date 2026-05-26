@@ -126,5 +126,5 @@ export function verifyCartesiaTestCallToken(token: string | null) {
 }
 
 export function getPublicBaseUrl() {
-  return (process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "https://soma3.b-average.com").replace(/\/$/, "");
+  return (process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "http://dailycall.care").replace(/\/$/, "");
 }

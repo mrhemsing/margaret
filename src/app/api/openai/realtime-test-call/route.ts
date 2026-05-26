@@ -22,7 +22,7 @@ type TwilioCallResponse = {
 };
 
 function getPublicBaseUrl() {
-  return (process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://soma3.b-average.com").replace(/\/$/, "");
+  return (process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://dailycall.care").replace(/\/$/, "");
 }
 
 async function startOpenAIRealtimeConferenceCall(input: {

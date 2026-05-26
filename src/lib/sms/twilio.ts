@@ -58,7 +58,7 @@ export function buildCallReportSms(input: {
   isDemo?: boolean;
 }) {
   const env = getServerEnv();
-  const publicAppUrl = env.PUBLIC_APP_URL ?? env.APP_URL ?? "https://soma3.b-average.com";
+  const publicAppUrl = env.PUBLIC_APP_URL ?? env.APP_URL ?? "http://dailycall.care";
   const dashboardUrl = input.isDemo ? `${publicAppUrl}/dashboard/demos` : `${publicAppUrl}/dashboard`;
   const summary = input.summary?.trim() || "The call has been processed. Open the dashboard for details.";
 
@@ -95,7 +95,7 @@ export function buildVoicemailAlertSms(input: {
   isDemo?: boolean;
 }) {
   const env = getServerEnv();
-  const publicAppUrl = env.PUBLIC_APP_URL ?? env.APP_URL ?? "https://soma3.b-average.com";
+  const publicAppUrl = env.PUBLIC_APP_URL ?? env.APP_URL ?? "http://dailycall.care";
   const dashboardUrl = input.isDemo ? `${publicAppUrl}/dashboard/demos` : `${publicAppUrl}/dashboard`;
   const summary = input.summary?.trim() || "Voicemail or an answering machine was detected. DailyCall hung up without leaving a message.";
 

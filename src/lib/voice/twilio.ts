@@ -16,7 +16,8 @@ type TwilioCallResponse = {
 };
 
 function getPublicBaseUrl() {
-  return (process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://soma3.b-average.com").replace(/\/$/, "");
+  const baseUrl = (process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://dailycall.care").replace(/\/$/, "");
+  return baseUrl === "https://dailycall.care" ? "https://www.dailycall.care" : baseUrl;
 }
 
 async function refreshCurrentContextBeforeCall() {
