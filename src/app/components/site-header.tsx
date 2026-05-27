@@ -203,39 +203,46 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
               </div>
             ) : null}
 
-            <AutoCloseDetails className="group relative z-50 md:hidden">
-              <summary
-                className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:text-brandButtonBlue [&::-webkit-details-marker]:hidden"
-                aria-label="Open navigation menu"
-              >
-                <MenuIcon />
-              </summary>
-              <div className="absolute right-0 z-50 mt-2 w-52 rounded-2xl bg-white p-2 text-sm font-bold shadow-xl ring-1 ring-black/10">
-                {mobileMarketingLinks.map((link) => (
-                  <Link
-                    key={`${link.href}-${link.label}-mobile`}
-                    href={link.href}
-                    className={`block rounded-xl px-3 py-2 transition hover:bg-slate-50 hover:text-brandButtonBlue ${link.active ? "text-brandButtonBlue" : "text-ink"}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                {showVisitorActions ? (
-                  <div className="mt-1 grid gap-2 border-t border-slate-200 pt-2">
-                    {showTrialButton ? (
-                      <Link href="/signup" className="rounded-xl bg-ink px-3 py-2 text-left text-cream">
-                        Start free trial
-                      </Link>
-                    ) : null}
-                    {showLoginLink ? (
-                      <Link href="/login" className="rounded-xl px-3 py-2 text-ink transition hover:bg-slate-50 hover:text-brandButtonBlue">
-                        Log in
-                      </Link>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            </AutoCloseDetails>
+            <div className="flex items-center gap-3 md:hidden">
+              {showVisitorActions && showLoginLink ? (
+                <Link href="/login" className="text-sm font-bold text-slate-600 hover:text-ink">
+                  Log in
+                </Link>
+              ) : null}
+              <AutoCloseDetails className="group relative z-50">
+                <summary
+                  className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:text-brandButtonBlue [&::-webkit-details-marker]:hidden"
+                  aria-label="Open navigation menu"
+                >
+                  <MenuIcon />
+                </summary>
+                <div className="absolute right-0 z-50 mt-2 w-52 rounded-2xl bg-white p-2 text-sm font-bold shadow-xl ring-1 ring-black/10">
+                  {mobileMarketingLinks.map((link) => (
+                    <Link
+                      key={`${link.href}-${link.label}-mobile`}
+                      href={link.href}
+                      className={`block rounded-xl px-3 py-2 transition hover:bg-slate-50 hover:text-brandButtonBlue ${link.active ? "text-brandButtonBlue" : "text-ink"}`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                  {showVisitorActions ? (
+                    <div className="mt-1 grid gap-2 border-t border-slate-200 pt-2">
+                      {showTrialButton ? (
+                        <Link href="/signup" className="rounded-xl bg-ink px-3 py-2 text-left text-cream">
+                          Start free trial
+                        </Link>
+                      ) : null}
+                      {showLoginLink ? (
+                        <Link href="/login" className="rounded-xl px-3 py-2 text-ink transition hover:bg-slate-50 hover:text-brandButtonBlue">
+                          Log in
+                        </Link>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              </AutoCloseDetails>
+            </div>
           </>
         ) : showAppNav ? (
           <>
