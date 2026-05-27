@@ -325,8 +325,8 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
   const data = await getAdminData();
 
   const memberRows = data.ok
-    ? data.customers.flatMap((customer) => customer.members.map((member) => ({ ...member, customerName: customer.fullName }))).slice(0, 8)
-    : sampleMembers.map((member) => ({ ...member, customerName: "Sample", createdAt: new Date(), callAttempts: [] }));
+    ? data.customers.flatMap((customer) => customer.members.map((member) => ({ ...member, customerName: customer.fullName, customerEmail: customer.email })))
+    : sampleMembers.map((member) => ({ ...member, customerName: "Sample", customerEmail: "sample-family@dailycall.local", createdAt: new Date(), callAttempts: [] }));
   const totalEstimatedCost = memberRows.reduce((total, member) => total + memberCostSummary(member).estimatedCost, 0);
   const averageCostPerUser = data.activeMembers > 0 ? totalEstimatedCost / data.activeMembers : 0;
 
@@ -391,6 +391,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       <div>
                         <p className="font-semibold text-ink">{member.name}</p>
+                        <p className="mt-1 text-sm font-medium text-slate-600">Signup email: {member.customerEmail ?? "No email"}</p>
                         <p className="mt-1 text-sm text-slate-500">Daily call at {member.preferredCallTime} · {member.timezone}</p>
                         <span className="mt-2 inline-flex rounded-full bg-sage/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sage">active</span>
                       </div>
