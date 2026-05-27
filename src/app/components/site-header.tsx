@@ -174,7 +174,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
       ) : null}
 
       <nav className="sticky top-0 z-50 ml-[calc(50%-50vw)] mt-2 w-screen bg-white/75 shadow-sm backdrop-blur md:mt-0">
-        <div className="mx-auto flex min-h-[3.75rem] w-full max-w-6xl items-center justify-between px-4 py-2 md:px-10">
+        <div className="mx-auto flex min-h-[3.75rem] w-full max-w-6xl items-center justify-between px-4 py-2 md:px-10 md:py-3">
         <Link href="/" className="block h-[3.05rem] w-[12.2rem] shrink-0 sm:h-[3.2rem] sm:w-52" aria-label="DailyCall home">
           <Image src="/dailycall-logo.svg" alt="DailyCall" width={632} height={150} priority className="h-full w-full object-contain object-left" />
         </Link>
