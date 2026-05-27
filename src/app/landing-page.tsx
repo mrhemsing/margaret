@@ -162,7 +162,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                 <span className="hidden sm:inline" aria-hidden="true">•</span>
                 <span className="whitespace-nowrap">CANCEL ANYTIME</span>
               </p>
-              <div className="mt-10 grid gap-2 text-base md:text-sm font-semibold text-ink sm:mt-6 sm:max-w-xl sm:grid-cols-2">
+              <div className="mt-14 grid gap-2 text-base md:text-sm font-semibold text-ink sm:mt-6 sm:max-w-xl sm:grid-cols-2">
                 {heroProof.map((item) => (
                   <div
                     key={item.label}
