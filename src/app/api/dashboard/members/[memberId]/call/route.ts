@@ -59,11 +59,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ mem
 
   const recentInProgressCall = await prisma.callAttempt.findFirst({
     where: {
-      memberId: member.id,
       status: "IN_PROGRESS",
-      OR: [
-        { providerConversationId: { not: null }, createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) } },
-        { providerConversationId: null, createdAt: { gte: new Date(Date.now() - 4 * 60 * 1000) } },
+      AND: [
+        {
+          OR: [
+            { memberId: member.id },
+            { member: { phoneNumber: member.phoneNumber } },
+          ],
+        },
+        {
+          OR: [
+            { providerConversationId: { not: null }, createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) } },
+            { providerConversationId: null, createdAt: { gte: new Date(Date.now() - 4 * 60 * 1000) } },
+          ],
+        },
       ],
     },
     orderBy: { createdAt: "desc" },
@@ -73,21 +82,33 @@ export async function POST(request: Request, { params }: { params: Promise<{ mem
     return NextResponse.json({ ok: false, error: "A call is already in progress for this loved one." }, { status: 409 });
   }
 
-  try {
-    const result = await startAmdProtectedCheckInCall({
-      toNumber: member.phoneNumber,
-      memberName: member.name,
-      caregiverName: customer.fullName || "your family",
-    });
+  let callAttemptId: string | null = null;
 
-    await prisma.callAttempt.create({
+  try {
+    const callAttempt = await prisma.callAttempt.create({
       data: {
         memberId: member.id,
         scheduledFor: new Date(),
         startedAt: new Date(),
         status: "IN_PROGRESS",
+        summary: `Manual dashboard call is being placed for ${member.name}.`,
+      },
+    });
+    callAttemptId = callAttempt.id;
+
+    const result = await startAmdProtectedCheckInCall({
+      toNumber: member.phoneNumber,
+      callAttemptId: callAttempt.id,
+      memberName: member.name,
+      caregiverName: customer.fullName || "your family",
+    });
+
+    await prisma.callAttempt.update({
+      where: { id: callAttempt.id },
+      data: {
         providerCallSid: result.sid ?? null,
         summary: `Manual dashboard call started for ${member.name}.`,
+        syncedAt: new Date(),
       },
     });
 
@@ -104,6 +125,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ mem
 
     return NextResponse.json({ ok: true, member: updatedMember, callSid: result.sid ?? null });
   } catch (error) {
+    if (callAttemptId) {
+      await prisma.callAttempt.update({
+        where: { id: callAttemptId },
+        data: {
+          status: "FAILED",
+          completedAt: new Date(),
+          summary: error instanceof Error ? error.message : USER_SAFE_CALL_CONNECTION_ERROR,
+          syncedAt: new Date(),
+        },
+      });
+    }
     console.error("Dashboard manual call failed", error);
     return NextResponse.json(
       { ok: false, error: USER_SAFE_CALL_CONNECTION_ERROR },

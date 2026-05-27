@@ -4,6 +4,8 @@ import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 
 const PROCESSING_WINDOW_MS = 30 * 60 * 1000;
+const ACTIVE_CALL_WITH_SID_WINDOW_MS = 2 * 60 * 60 * 1000;
+const ACTIVE_CALL_WITHOUT_SID_WINDOW_MS = 10 * 60 * 1000;
 const DEMO_CRON_CUSTOMER_EMAIL = "demo-family@dailycall.local";
 const EXCLUDED_CRON_CUSTOMER_EMAILS = [DEMO_CRON_CUSTOMER_EMAIL, "example-family@dailycall.local"];
 const EXCLUDED_CRON_PREFERRED_CALL_TIMES = ["Landing page demo", "On demand test", "OpenAI realtime phone test"];
@@ -63,13 +65,92 @@ async function processScheduledCalls() {
     orderBy: { scheduledFor: "asc" },
     take: 10,
   });
+  const orderedDueCalls = dueCalls.sort((left, right) => {
+    const scheduledDelta = left.scheduledFor.getTime() - right.scheduledFor.getTime();
+    if (scheduledDelta !== 0) return scheduledDelta;
+
+    return right.member.updatedAt.getTime() - left.member.updatedAt.getTime();
+  });
 
   const results = [];
+  const processedPhoneNumbers = new Set<string>();
 
-  for (const call of dueCalls) {
+  for (const call of orderedDueCalls) {
+    const claimTime = new Date();
+    if (processedPhoneNumbers.has(call.member.phoneNumber)) {
+      await prisma.callAttempt.update({
+        where: { id: call.id },
+        data: {
+          status: "FAILED",
+          completedAt: claimTime,
+          summary: "Skipped because another DailyCall to this phone number was already processed in this run.",
+          syncedAt: claimTime,
+        },
+      });
+      results.push({ id: call.id, ok: true, skipped: true, reason: "phone_call_already_processed" });
+      continue;
+    }
+
+    const activeCallWithSidWindowStart = new Date(claimTime.getTime() - ACTIVE_CALL_WITH_SID_WINDOW_MS);
+    const activeCallWithoutSidWindowStart = new Date(claimTime.getTime() - ACTIVE_CALL_WITHOUT_SID_WINDOW_MS);
+    const activeCall = await prisma.callAttempt.findFirst({
+      where: {
+        id: { not: call.id },
+        status: "IN_PROGRESS",
+        OR: [
+          { memberId: call.memberId },
+          { member: { phoneNumber: call.member.phoneNumber } },
+        ],
+        AND: [
+          {
+            OR: [
+              { providerCallSid: { not: null }, startedAt: { gte: activeCallWithSidWindowStart } },
+              { providerCallSid: null, startedAt: { gte: activeCallWithoutSidWindowStart } },
+            ],
+          },
+        ],
+      },
+      select: { id: true, providerCallSid: true },
+    });
+
+    if (activeCall) {
+      await prisma.callAttempt.update({
+        where: { id: call.id },
+        data: {
+          status: "FAILED",
+          completedAt: claimTime,
+          summary: "Skipped because another DailyCall to this phone number was already in progress.",
+          syncedAt: claimTime,
+        },
+      });
+      results.push({ id: call.id, ok: true, skipped: true, reason: "phone_call_already_in_progress" });
+      continue;
+    }
+
+    const claimed = await prisma.callAttempt.updateMany({
+      where: {
+        id: call.id,
+        status: "SCHEDULED",
+      },
+      data: {
+        status: "IN_PROGRESS",
+        startedAt: claimTime,
+        summary: call.retryAttempt > 0 ? `Retry ${call.retryAttempt} is being placed after voicemail detection.` : "Scheduled daily call is being placed.",
+        syncedAt: claimTime,
+      },
+    });
+
+    if (claimed.count === 0) {
+      results.push({ id: call.id, ok: true, skipped: true, reason: "call_already_claimed" });
+      continue;
+    }
+
+    processedPhoneNumbers.add(call.member.phoneNumber);
+
     try {
       const result = await startAmdProtectedCheckInCall({
         toNumber: call.member.phoneNumber,
+        callAttemptId: call.id,
         memberName: call.member.name,
         caregiverName: "DailyCall team",
       });
@@ -77,8 +158,6 @@ async function processScheduledCalls() {
       const updated = await prisma.callAttempt.update({
         where: { id: call.id },
         data: {
-          status: "IN_PROGRESS",
-          startedAt: new Date(),
           providerCallSid: result.sid ?? null,
           summary: call.retryAttempt > 0 ? `Retry ${call.retryAttempt} started after voicemail detection.` : "Scheduled daily call started.",
           syncedAt: new Date(),

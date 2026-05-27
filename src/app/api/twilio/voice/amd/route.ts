@@ -113,15 +113,21 @@ export async function POST(request: Request) {
   const answeredBy = String(formData.get("AnsweredBy") ?? "");
   const fromNumber = String(formData.get("From") ?? "");
   const toNumber = String(formData.get("To") ?? "");
+  const callAttemptId = url.searchParams.get("callAttemptId");
   const memberName = url.searchParams.get("memberName") ?? "there";
   const caregiverName = url.searchParams.get("caregiverName") ?? "your caregiver";
+  const callAttemptWhere = callAttemptId
+    ? { id: callAttemptId }
+    : callSid
+      ? { providerCallSid: callSid }
+      : null;
 
   if (callSid && isMachine(answeredBy)) {
     const summary = "Voicemail or answering machine detected. DailyCall hung up without leaving a voicemail message.";
-    const callAttempt = await prisma.callAttempt.findFirst({
-      where: { providerCallSid: callSid },
+    const callAttempt = callAttemptWhere ? await prisma.callAttempt.findFirst({
+      where: callAttemptWhere,
       include: { member: { include: { customer: true } } },
-    });
+    }) : null;
     const isDemoCall = callAttempt?.member.customer.email === "demo-family@dailycall.local" || callAttempt?.member.preferredCallTime === "Landing page demo";
     let alertSentAt = callAttempt?.alertSentAt ?? null;
 
@@ -169,9 +175,10 @@ export async function POST(request: Request) {
     }
 
     await prisma.callAttempt.updateMany({
-      where: { providerCallSid: callSid },
+      where: callAttemptWhere ?? { providerCallSid: callSid },
       data: {
         status: "NO_RESPONSE",
+        providerCallSid: callSid,
         completedAt: new Date(),
         summary: retryScheduledFor ? `${summary} Retry scheduled for ${retryScheduledFor.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: callAttempt?.member.timezone ?? "America/Los_Angeles" })}.` : summary,
         conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
@@ -185,9 +192,10 @@ export async function POST(request: Request) {
 
   if (callSid) {
     await prisma.callAttempt.updateMany({
-      where: { providerCallSid: callSid },
+      where: callAttemptWhere ?? { providerCallSid: callSid },
       data: {
         status: "IN_PROGRESS",
+        providerCallSid: callSid,
         startedAt: new Date(),
         summary: "They picked up. DailyCall is chatting with them now.",
         conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
@@ -197,9 +205,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const callAttempt = callSid
+    const callAttempt = callAttemptWhere
       ? await prisma.callAttempt.findFirst({
-          where: { providerCallSid: callSid },
+          where: callAttemptWhere,
           include: { member: { include: { memory: true } } },
         })
       : null;
@@ -269,9 +277,10 @@ export async function POST(request: Request) {
 
       if (callSid) {
         await prisma.callAttempt.updateMany({
-          where: { providerCallSid: callSid },
+          where: callAttemptWhere ?? { providerCallSid: callSid },
           data: {
             summary: "They picked up. DailyCall is chatting with them now.",
+            providerCallSid: callSid,
             conversationRaw: {
               provider: "openai_realtime",
               twilioAmd: Object.fromEntries(formData.entries()),
@@ -297,8 +306,9 @@ export async function POST(request: Request) {
 
     if (callSid && conversationId) {
       await prisma.callAttempt.updateMany({
-        where: { providerCallSid: callSid },
+        where: callAttemptWhere ?? { providerCallSid: callSid },
         data: {
+          providerCallSid: callSid,
           providerConversationId: conversationId,
           syncedAt: new Date(),
         },
@@ -309,9 +319,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (callSid) {
       await prisma.callAttempt.updateMany({
-        where: { providerCallSid: callSid },
+        where: callAttemptWhere ?? { providerCallSid: callSid },
         data: {
           status: "FAILED",
+          providerCallSid: callSid,
           completedAt: new Date(),
           summary: error instanceof Error ? error.message : "The call was answered, but DailyCall could not start the conversation.",
           syncedAt: new Date(),

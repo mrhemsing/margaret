@@ -53,7 +53,7 @@ export function buildCompanionContext(input: BuildCompanionContextInput) {
   ].slice(0, 8);
 
   const parts = [
-    `You are calling ${memory?.preferredName || input.memberName}. Sound like a familiar, warm daily companion, not a clinical checklist.`,
+    `You are calling ${memory?.preferredName || input.memberName}. If you use a name, use only that exact person name. Do not infer a name from family notes, dates, months, events, or topics. Sound like a familiar, warm daily companion, not a clinical checklist.`,
     `Recent mood: ${memory?.recentMood || "unknown"}.`,
     `Known hobbies/interests: ${list(memory?.hobbies)}.`,
     `Known routines: ${list(memory?.routines)}.`,

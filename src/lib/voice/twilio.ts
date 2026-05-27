@@ -1,5 +1,6 @@
 type StartAmdProtectedCallInput = {
   toNumber: string;
+  callAttemptId?: string;
   memberName?: string;
   caregiverName?: string;
   voiceProvider?: "openai_realtime_twilio" | "openai_text_elevenlabs_twilio" | "elevenlabs_twilio";
@@ -49,6 +50,9 @@ export async function startAmdProtectedCheckInCall(input: StartAmdProtectedCallI
 
   const baseUrl = getPublicBaseUrl();
   const voiceUrl = new URL(`${baseUrl}/api/twilio/voice/amd`);
+  if (input.callAttemptId) {
+    voiceUrl.searchParams.set("callAttemptId", input.callAttemptId);
+  }
   voiceUrl.searchParams.set("memberName", input.memberName ?? "there");
   voiceUrl.searchParams.set("caregiverName", input.caregiverName ?? "your caregiver");
   if (input.voiceProvider) {

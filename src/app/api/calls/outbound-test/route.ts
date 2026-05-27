@@ -20,6 +20,8 @@ export async function POST(request: Request) {
     );
   }
 
+  let callAttemptId: string | null = null;
+
   try {
     const normalizedPhone = parsed.data.toNumber.replaceAll(" ", "");
     const realFamilyMember = await prisma.member.findFirst({
@@ -58,20 +60,29 @@ export async function POST(request: Request) {
           },
         });
 
-    const result = await startAmdProtectedCheckInCall({ ...parsed.data, memberName: member.name });
-
-    if (!result) {
-      throw new Error("Voice provider did not return a call result.");
-    }
-
     const callAttempt = await prisma.callAttempt.create({
       data: {
         memberId: member.id,
         scheduledFor: new Date(),
         startedAt: new Date(),
         status: "IN_PROGRESS",
+        summary: `Test call is being placed for ${member.name}.`,
+      },
+    });
+    callAttemptId = callAttempt.id;
+
+    const result = await startAmdProtectedCheckInCall({ ...parsed.data, callAttemptId: callAttempt.id, memberName: member.name });
+
+    if (!result) {
+      throw new Error("Voice provider did not return a call result.");
+    }
+
+    const updatedCallAttempt = await prisma.callAttempt.update({
+      where: { id: callAttempt.id },
+      data: {
         providerCallSid: result.sid ?? null,
         summary: `Test call started for ${member.name}. Transcript will appear after the voice provider finishes processing the conversation.`,
+        syncedAt: new Date(),
       },
     });
 
@@ -79,10 +90,22 @@ export async function POST(request: Request) {
       ok: true,
       provider: getVoiceProvider(),
       member,
-      callAttempt,
+      callAttempt: updatedCallAttempt,
       result,
     });
   } catch (error) {
+    if (callAttemptId) {
+      await prisma.callAttempt.update({
+        where: { id: callAttemptId },
+        data: {
+          status: "FAILED",
+          completedAt: new Date(),
+          summary: error instanceof Error ? error.message : "Unknown outbound call error",
+          syncedAt: new Date(),
+        },
+      });
+    }
+
     return NextResponse.json(
       {
         ok: false,
