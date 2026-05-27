@@ -383,23 +383,23 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
 
                 return (
                   <div key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div>
+                    <div className="grid gap-4 md:grid-cols-2 md:items-start">
+                      <div className="min-w-0">
                         <p className="font-semibold text-ink">{member.name}</p>
                         <p className="mt-1 text-sm font-medium text-slate-600">{member.customerEmail ?? "No email"}</p>
                         <p className="mt-1 text-sm text-slate-500">Daily call at {member.preferredCallTime} · {member.timezone}</p>
                         <span className="mt-2 inline-flex rounded-full bg-sage/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sage">active</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-right text-xs sm:min-w-72">
-                        <div className="rounded-xl bg-slate-50 p-2">
+                      <div className="grid gap-2 text-xs">
+                        <div className="rounded-xl bg-slate-50 p-3">
                           <p className="text-slate-500">Total min</p>
                           <p className="mt-1 font-bold text-ink">{formatMinutes(costSummary.totalMinutes)}</p>
                         </div>
-                        <div className="rounded-xl bg-slate-50 p-2">
+                        <div className="rounded-xl bg-slate-50 p-3">
                           <p className="text-slate-500">Min/day</p>
                           <p className="mt-1 font-bold text-ink">{costSummary.averageMinutesPerDay.toFixed(1)}</p>
                         </div>
-                        <div className="rounded-xl bg-slate-50 p-2">
+                        <div className="rounded-xl bg-slate-50 p-3">
                           <p className="text-slate-500">Est. cost</p>
                           <p className="mt-1 font-bold text-ink">{formatMoney(costSummary.estimatedCost)}</p>
                         </div>
