@@ -230,7 +230,7 @@ function TrialBillingSection({ data }: { data: AdminData }) {
   const pastDue = data.subscriptions.filter((subscription) => subscription.status === SubscriptionStatus.PAST_DUE);
 
   return (
-    <section className="grid gap-6">
+    <section className="grid self-start gap-6">
       <div className="rounded-[2rem] bg-ink p-6 text-cream shadow-sm md:p-8">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cream/60">trial dashboard</p>
@@ -373,7 +373,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
         {stats.map((stat) => <MetricCard key={stat.label} label={stat.label} value={stat.value} />)}
       </section>
 
-      <section className="grid gap-10 xl:grid-cols-[0.9fr_1.1fr]">
+      <section className="grid gap-10 xl:grid-cols-[0.9fr_1.1fr] xl:items-start">
         <div className="grid gap-6">
           <CallTestPanel />
 
