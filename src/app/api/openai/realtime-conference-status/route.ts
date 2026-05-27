@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       where: { id: callAttemptId },
       data: {
         providerCallSid: callSid || callAttempt.providerCallSid,
-        summary: "Human answered. DailyCall is connecting OpenAI Realtime into the silent conference.",
+        summary: "Call answered. DailyCall is starting the conversation.",
         conversationRaw: {
           ...existingRaw,
           provider: "openai_realtime",

@@ -361,6 +361,13 @@ function isStaleInProgressCall(call: DashboardMember["callAttempts"][number]) {
 
 function stripTechnicalDetails(value: string) {
   return value
+    .replace(/Human answer detected\.?\s*/gi, "Call answered. ")
+    .replace(/Human answered\.?\s*/gi, "Call answered. ")
+    .replace(/DailyCall is connecting the call to the voice agent\.?/gi, "DailyCall is starting the conversation.")
+    .replace(/DailyCall is connecting OpenAI Realtime into the silent conference\.?/gi, "DailyCall is starting the conversation.")
+    .replace(/DailyCall is connecting OpenAI text replies to ElevenLabs voice playback\.?/gi, "DailyCall is starting the conversation.")
+    .replace(/DailyCall is dialing OpenAI Realtime directly over SIP\.?/gi, "DailyCall is starting the conversation.")
+    .replace(/OpenAI Realtime SIP did not connect before Twilio completed the call\.?/gi, "DailyCall could not start the conversation before the call ended.")
     .replace(/SIP Call-ID:\s*\S+/gi, "")
     .replace(/SIP response:\s*\d+\.?/gi, "")
     .replace(/OpenAI Realtime SIP dial completed\.?/gi, "")

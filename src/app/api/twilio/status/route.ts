@@ -33,7 +33,7 @@ export async function POST(request: Request) {
         status: nextStatus,
         completedAt: ["ANSWERED_OK", "NO_RESPONSE", "FAILED"].includes(nextStatus) ? new Date() : undefined,
         summary: openAISipBridgeDidNotConnect
-          ? "Human answer detected, but OpenAI Realtime SIP did not connect before Twilio completed the call."
+          ? "The call was answered, but DailyCall could not start the conversation before the call ended."
           : undefined,
         conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
         syncedAt: new Date(),

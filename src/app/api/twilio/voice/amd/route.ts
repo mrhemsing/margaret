@@ -189,7 +189,7 @@ export async function POST(request: Request) {
       data: {
         status: "IN_PROGRESS",
         startedAt: new Date(),
-        summary: "Human answer detected. DailyCall is connecting the call to the voice agent.",
+        summary: "Call answered. DailyCall is starting the conversation.",
         conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
         syncedAt: new Date(),
       },
@@ -247,7 +247,7 @@ export async function POST(request: Request) {
         await prisma.callAttempt.updateMany({
           where: { providerCallSid: callSid },
           data: {
-            summary: "Human answer detected. DailyCall is connecting OpenAI text replies to ElevenLabs voice playback.",
+            summary: "Call answered. DailyCall is starting the conversation.",
             conversationRaw: {
               provider: "openai_text_elevenlabs_twilio",
               twilioAmd: Object.fromEntries(formData.entries()),
@@ -271,7 +271,7 @@ export async function POST(request: Request) {
         await prisma.callAttempt.updateMany({
           where: { providerCallSid: callSid },
           data: {
-            summary: "Human answer detected. DailyCall is dialing OpenAI Realtime directly over SIP.",
+            summary: "Call answered. DailyCall is starting the conversation.",
             conversationRaw: {
               provider: "openai_realtime",
               twilioAmd: Object.fromEntries(formData.entries()),
@@ -313,7 +313,7 @@ export async function POST(request: Request) {
         data: {
           status: "FAILED",
           completedAt: new Date(),
-          summary: error instanceof Error ? error.message : "Human answer detected, but DailyCall could not connect the call to the voice agent.",
+          summary: error instanceof Error ? error.message : "The call was answered, but DailyCall could not start the conversation.",
           syncedAt: new Date(),
         },
       });
