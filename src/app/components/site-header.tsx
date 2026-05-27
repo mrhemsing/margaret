@@ -86,7 +86,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
   const showMarketingNav = showAccountControls ? !isAuthenticated && !showPendingDashboardNav : links.length > 0;
   const showAppNav = showAccountControls && (isAuthenticated || showPendingDashboardNav);
   const showVisitorActions = showAccountControls && !isAuthenticated && !showPendingDashboardNav;
-  const showDemoBar = showVisitorActions;
+  const showDemoBar = authChecked && showVisitorActions;
 
   useEffect(() => {
     let cancelled = false;
