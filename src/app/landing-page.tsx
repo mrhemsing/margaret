@@ -149,13 +149,13 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           <div className="relative flex max-w-2xl flex-col justify-between p-6 sm:block sm:p-8 md:p-12">
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-ink md:text-4xl">
-                A friendly daily phone call{" "}
-                <span className="sm:block">for aging parents</span>
+                Someone to talk to{" "}
+                <span className="sm:block">when you can&apos;t be there</span>
               </h1>
             </div>
             <div className="pt-10 sm:pt-0">
-              <p className="mt-4 w-[65%] max-w-[65%] -translate-y-10 text-lg leading-8 text-slate-600 md:mt-5 md:w-auto md:max-w-[72%] md:translate-y-0">
-                Warm AI companion calls by regular phone - with simple updates for family after each call.
+              <p className="mt-4 w-[72%] max-w-[72%] -translate-y-8 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8 md:mt-5 md:w-auto md:max-w-[72%] md:translate-y-0">
+                A warm 10-minute call every day. We text you a summary so you know how Mom&apos;s doing.
               </p>
               <p className="mt-4 hidden text-sm font-extrabold uppercase tracking-normal text-ink sm:flex sm:flex-wrap sm:gap-x-2 sm:gap-y-1 sm:text-base">
                 <span className="block whitespace-nowrap sm:inline">NO CREDIT CARD REQUIRED</span>
@@ -173,13 +173,18 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                   </div>
                 ))}
               </div>
+              <p className="mt-6 flex flex-wrap gap-x-2 gap-y-1 text-sm font-extrabold uppercase tracking-normal text-ink sm:hidden">
+                <span className="whitespace-nowrap">NO CREDIT CARD REQUIRED</span>
+                <span aria-hidden="true">•</span>
+                <span className="whitespace-nowrap">CANCEL ANYTIME</span>
+              </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/signup" className="rounded-full bg-brandButtonBlue px-6 py-3 text-center font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover">
-                  Start Your Free 14-Day Trial
-                </Link>
-                <a href="#demo" className="rounded-full bg-white/85 px-6 py-3 text-center font-semibold text-ink shadow-sm ring-1 ring-black/10 hover:bg-white">
+                <a href="#demo" className="rounded-full bg-brandButtonBlue px-6 py-3 text-center font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover">
                   Try a free demo call
                 </a>
+                <Link href="/signup" className="rounded-full bg-white/85 px-6 py-3 text-center font-semibold text-ink shadow-sm ring-1 ring-black/10 hover:bg-white">
+                  Start Your Free 14-Day Trial
+                </Link>
               </div>
             </div>
           </div>
