@@ -150,7 +150,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-ink md:text-4xl">
                 Someone to talk to{" "}
-                <span className="sm:block">when you can&apos;t be there</span>
+                <span className="sm:block">when you can&apos;t be there.</span>
               </h1>
             </div>
             <div className="pt-10 sm:pt-0">
