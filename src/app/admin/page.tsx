@@ -200,6 +200,11 @@ const formatDate = (date: Date | string | null | undefined) => {
 
 const formatMoney = (value: number) => `$${value.toFixed(2)}`;
 
+const formatStatusLabel = (status: string) => {
+  if (status === "TRIALING") return "TRIAL";
+  return status.replaceAll("_", " ");
+};
+
 const formatMinutes = (value: number) => {
   if (value === 0) return "0 min";
   if (value < 1) return `${value.toFixed(1)} min`;
@@ -281,7 +286,7 @@ function TrialBillingSection({ data }: { data: AdminData }) {
                       <p className="mt-3 text-xs font-semibold text-ink">{subscription.plan.replaceAll("_", " ").toLowerCase()}</p>
                       <p className="mt-1 text-xs text-slate-500">Stripe: {subscription.stripeSubscriptionId ? "connected" : "pending"}</p>
                     </div>
-                    <span className={statusClassName(subscription.status)}>{subscription.status.replaceAll("_", " ")}</span>
+                    <span className={statusClassName(subscription.status)}>{formatStatusLabel(subscription.status)}</span>
                     <p className="text-slate-600">{formatDate(subscription.currentPeriodEndsAt)}</p>
                   </div>
                 );
