@@ -155,7 +155,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
             </div>
             <div className="pt-10 sm:pt-0">
               <p className="mt-2 w-[60%] max-w-[60%] -translate-y-8 text-base leading-7 text-slate-600 sm:mt-12 sm:w-[72%] sm:max-w-[72%] sm:text-lg sm:leading-8 md:mt-5 md:w-auto md:max-w-[72%] md:translate-y-0">
-                A warm daily AI call. We text you a summary so you know how they&apos;re doing.
+                Friendly daily AI calls with text updates for family.
               </p>
               <p className="mt-4 hidden text-sm font-extrabold uppercase tracking-normal text-ink sm:flex sm:flex-wrap sm:gap-x-2 sm:gap-y-1 sm:text-base">
                 <span className="block whitespace-nowrap sm:inline">NO CREDIT CARD REQUIRED</span>
