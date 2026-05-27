@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getServerEnv } from "@/lib/env";
+import { summarizeConversationForFamily } from "@/lib/voice/conversation-insights";
 
 type BuildRealtimeInstructionsInput = {
   memberName: string;
@@ -335,7 +336,7 @@ async function updateCallFromRealtimeEvents(input: {
       completedAt: input.completed ? new Date() : undefined,
       transcript: transcript || undefined,
       summary: transcript
-        ? `OpenAI Realtime call captured ${input.turns.length} transcript turn${input.turns.length === 1 ? "" : "s"}.`
+        ? summarizeConversationForFamily({ memberName: input.memberName, transcript })
         : undefined,
       conversationRaw: {
         ...existingRaw,

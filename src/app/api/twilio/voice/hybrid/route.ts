@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
+import { summarizeConversationForFamily } from "@/lib/voice/conversation-insights";
 import { getCachedCallCurrentContext } from "@/lib/voice/current-info";
 import {
   formatHybridTranscript,
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
       status: idleCount >= 2 && !speechResult && turns.length > 2 ? "ANSWERED_OK" : "IN_PROGRESS",
       completedAt: idleCount >= 2 && !speechResult && turns.length > 2 ? new Date() : undefined,
       transcript,
-      summary: `Hybrid OpenAI + ElevenLabs call captured ${turns.length} transcript turn${turns.length === 1 ? "" : "s"}.`,
+      summary: summarizeConversationForFamily({ memberName: callAttempt.member.name, transcript }),
       conversationRaw: {
         provider: "openai_text_elevenlabs_twilio",
         twilioCallSid: callSid,

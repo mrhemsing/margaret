@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
 import { sendExampleReportSmsToTeam } from "@/lib/sms/twilio";
-import { deriveConversationInsights } from "@/lib/voice/conversation-insights";
+import { deriveConversationInsights, summarizeConversationForFamily } from "@/lib/voice/conversation-insights";
 import { formatConversationTranscript, getConversationDetails, getConversationTiming, mapConversationStatus } from "@/lib/voice/elevenlabs";
 
 async function syncTranscripts() {
@@ -27,9 +27,16 @@ async function syncTranscripts() {
         });
         const isDemoCall = member?.customer.email === "demo-family@dailycall.local" || member?.preferredCallTime === "Landing page demo";
         const transcript = call.transcript ?? "";
+        const finalSummary = transcript
+          ? summarizeConversationForFamily({
+              memberName: member?.name ?? "the call recipient",
+              summary: call.summary,
+              transcript,
+            })
+          : call.summary;
         const insights = deriveConversationInsights({
           memberName: member?.name ?? "the call recipient",
-          summary: call.summary,
+          summary: finalSummary,
           transcript,
           priorRecentTopics: member?.memory?.recentTopics ?? [],
         });
@@ -44,7 +51,7 @@ async function syncTranscripts() {
             smsResults = await sendExampleReportSmsToTeam({
               memberName: member?.name ?? "the call recipient",
               status: finalStatus,
-              summary: call.summary,
+              summary: finalSummary,
               isDemo: isDemoCall,
             });
           } catch (error) {
@@ -90,6 +97,7 @@ async function syncTranscripts() {
           data: {
             status: finalStatus,
             completedAt,
+            summary: finalSummary,
             mood: transcript ? insights.mood : call.mood,
             topics: transcript ? insights.topics : call.topics,
             notableMoments: transcript ? insights.notableMoments : call.notableMoments,

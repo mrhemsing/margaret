@@ -341,6 +341,10 @@ function isBackendErrorText(value: string) {
   return /twilio|elevenlabs|openai|realtime|sip|call-id|response:\s*\d+|bridge|bridging|backend|provider|api|webhook|credential|configured|configuration|sid|amd|convai|voicemail-safe|second number|server|fetch failed/i.test(value);
 }
 
+function isConnectionProgressText(value: string) {
+  return /\b(starting the conversation|trying to connect|scheduled daily call|call started|being placed|manual dashboard call started|test call started)\b/i.test(value);
+}
+
 function isCompletedStatus(value: string) {
   return ["ANSWERED_OK", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(value);
 }
@@ -409,11 +413,16 @@ function getFamilyCallOutcome(call: DashboardMember["callAttempts"][number]) {
   }
 
   if (call.status === "IN_PROGRESS" && !isStaleInProgressCall(call)) {
+    const summary =
+      call.summary && !isBackendErrorText(call.summary) && !isConnectionProgressText(call.summary)
+        ? warmFamilySummary(call.summary)
+        : "";
+
     return {
       dotClassName: "bg-brandBlue",
       badgeClassName: "bg-brandBlue/10 text-brandButtonBlue ring-brandBlue/20",
       label: "Calling now",
-      text: "DailyCall is trying to connect right now.",
+      text: summary ? `In progress · ${summary}` : "DailyCall is on the call now. The recap will update when the conversation finishes.",
     };
   }
 

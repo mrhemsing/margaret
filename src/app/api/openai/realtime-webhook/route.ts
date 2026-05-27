@@ -89,7 +89,6 @@ export async function POST(request: Request) {
           where: {
             status: "IN_PROGRESS",
             providerConversationId: null,
-            summary: { contains: "OpenAI Realtime" },
           },
           orderBy: { startedAt: "desc" },
           include: { member: { include: { memory: true } } },
@@ -144,7 +143,7 @@ export async function POST(request: Request) {
         status: "IN_PROGRESS",
         startedAt: callAttempt.startedAt ?? new Date(),
         providerConversationId: callId,
-        summary: "OpenAI Realtime call connected.",
+        summary: "Call answered. DailyCall is starting the conversation.",
         conversationRaw: {
           ...existingRaw,
           provider: "openai_realtime",

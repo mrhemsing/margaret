@@ -51,6 +51,50 @@ function sentenceSplit(text: string) {
     .filter(Boolean);
 }
 
+function isTechnicalSummary(text: string) {
+  return /\b(openai|realtime|sip|twilio|elevenlabs|voice agent|transcript turn|connected|starting the conversation|captured \d+)\b/i.test(text);
+}
+
+function stripSpeakerPrefix(line: string) {
+  return line.replace(/^[^:]{1,40}:\s*/, "").trim();
+}
+
+function getMemberTranscriptText(transcript: string, memberName: string) {
+  const memberNamePattern = new RegExp(`^${memberName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:`, "i");
+  const memberLines = transcript
+    .split(/\r?\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !/^DailyCall:/i.test(line))
+    .filter((line) => memberNamePattern.test(line) || !/^[^:]{1,40}:\s*/.test(line))
+    .map(stripSpeakerPrefix)
+    .filter((line) => line.length > 2);
+
+  return memberLines.join(" ");
+}
+
+export function summarizeConversationForFamily(input: ConversationInsightsInput) {
+  const fallbackSummary = input.summary?.trim();
+  const transcript = input.transcript?.trim();
+
+  if (!transcript) {
+    if (fallbackSummary && !isTechnicalSummary(fallbackSummary)) return fallbackSummary;
+    return `${input.memberName} completed a short check-in conversation.`;
+  }
+
+  const memberText = getMemberTranscriptText(transcript, input.memberName);
+  const sourceText = memberText || transcript;
+  const sentences = sentenceSplit(sourceText).filter((sentence) => sentence.length > 8);
+  const selected = unique(sentences, 3).join(" ");
+
+  if (!selected) {
+    return `${input.memberName} completed a short check-in conversation.`;
+  }
+
+  const clipped = selected.length > 360 ? `${selected.slice(0, 357).trim()}...` : selected;
+  return `${input.memberName} shared: ${clipped}`;
+}
+
 function inferMood(text: string) {
   if (/\b(pain|hurt|sick|dizzy|fall|fell|hospital|severe)\b/i.test(text)) return "Health concern";
   if (/\b(sad|lonely|depressed|upset|worried|anxious|scared|angry|distress)\b/i.test(text)) return "Low or concerned";
