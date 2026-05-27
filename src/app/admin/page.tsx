@@ -393,7 +393,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                         <p className="mt-1 text-sm text-slate-500">Daily call at {member.preferredCallTime} · {member.timezone}</p>
                         <span className="mt-2 inline-flex rounded-full bg-sage/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sage">active</span>
                       </div>
-                      <div className="grid gap-2 text-xs">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="rounded-xl bg-slate-50 p-3">
                           <p className="text-slate-500">Total min</p>
                           <p className="mt-1 font-bold text-ink">{formatMinutes(costSummary.totalMinutes)}</p>
@@ -402,7 +402,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                           <p className="text-slate-500">Min/day</p>
                           <p className="mt-1 font-bold text-ink">{costSummary.averageMinutesPerDay.toFixed(1)}</p>
                         </div>
-                        <div className="rounded-xl bg-slate-50 p-3">
+                        <div className="col-span-2 rounded-xl bg-slate-50 p-3">
                           <p className="text-slate-500">Est. cost</p>
                           <p className="mt-1 font-bold text-ink">{formatMoney(costSummary.estimatedCost)}</p>
                         </div>
