@@ -65,7 +65,7 @@ export const testimonials = [
   {
     quote: "I live a flight away from my dad. DailyCall gives him a friendly routine and gives me a little more confidence that I am not missing something important.",
     name: "Michael",
-    location: "Seattle, WA",
+    location: "Early access family",
   },
   {
     quote: "It is nice having someone call just to talk. The conversations feel easy, and I do not have to learn any new app or remember a password.",
@@ -75,7 +75,7 @@ export const testimonials = [
   {
     quote: "My daughter says I sound brighter on days when the call comes. I like that it is just a regular phone call, not another thing to learn.",
     name: "Emily",
-    location: "Portland, OR",
+    location: "Early access family",
   },
 ];
 
@@ -419,8 +419,8 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
       <section data-mobile-reveal className="rounded-[2rem] bg-white/70 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
         <div className="max-w-2xl">
           <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Early access feedback</p>
-          <h2 className="mt-3 text-3xl font-bold text-ink">Warm, comforting, and emotionally safe.</h2>
-          <p className="mt-4 leading-7 text-slate-600">Early families describe simple wins: more peace of mind, less loneliness, and an easier daily routine for everyone involved.</p>
+          <h2 className="mt-3 text-3xl font-bold text-ink">We&apos;re new. Here&apos;s what early families are saying.</h2>
+          <p className="mt-4 leading-7 text-slate-600">These notes come from early access families and members. Names are shortened for privacy while DailyCall is still young.</p>
         </div>
         <TestimonialsCarousel testimonials={testimonials} />
       </section>
@@ -588,7 +588,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
             <li>• Encrypted Calls &amp; Data</li>
             <li>• We Never Sell Your Data</li>
             <li>• Secure Payments by Stripe</li>
-            <li>• Trusted by North American Families</li>
+            <li>• Built with Early Access Families</li>
           </ul>
         </div>
       </section>
