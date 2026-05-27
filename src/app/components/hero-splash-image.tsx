@@ -7,7 +7,7 @@ export function HeroSplashImage() {
   return (
     <>
       <Image
-        src="/home-splash-mobile-senior-call-v2.png"
+        src="/home-splash-mobile-senior-call-no-frame.png"
         alt="Smiling senior on a phone call for a DailyCall check-in"
         width={1024}
         height={1536}
