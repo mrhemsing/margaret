@@ -173,11 +173,6 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                   </div>
                 ))}
               </div>
-              <p className="mt-6 flex justify-center whitespace-nowrap text-[0.72rem] font-extrabold uppercase tracking-normal text-ink sm:hidden">
-                <span>NO CREDIT CARD REQUIRED</span>
-                <span className="px-1" aria-hidden="true">•</span>
-                <span>CANCEL ANYTIME</span>
-              </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a href="#demo" className="rounded-full bg-brandButtonBlue px-6 py-3 text-center font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover">
                   Try a free demo call
@@ -186,6 +181,11 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                   Start Your Free 14-Day Trial
                 </Link>
               </div>
+              <p className="mt-3 flex justify-center whitespace-nowrap text-[0.72rem] font-extrabold uppercase tracking-normal text-ink sm:hidden">
+                <span>NO CREDIT CARD REQUIRED</span>
+                <span className="px-1" aria-hidden="true">•</span>
+                <span>CANCEL ANYTIME</span>
+              </p>
             </div>
           </div>
         </div>
