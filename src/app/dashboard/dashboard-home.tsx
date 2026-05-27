@@ -51,6 +51,8 @@ type DashboardMember = DashboardCustomer["members"][number];
 
 type EditPanel = "profile" | "questions" | "voice" | null;
 
+const LIVE_CALL_WINDOW_MS = 30 * 60 * 1000;
+
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string, onTimeout?: () => void) {
   return new Promise<T>((resolve, reject) => {
     const timeout = window.setTimeout(() => {
@@ -291,6 +293,15 @@ function isNoConnectCall(call: DashboardMember["callAttempts"][number]) {
   return call.status === "FAILED" || call.status === "NO_RESPONSE" || /could not be connected|couldn't connect|carrier issue|failed/i.test(summary);
 }
 
+function isStaleInProgressCall(call: DashboardMember["callAttempts"][number]) {
+  if (call.status !== "IN_PROGRESS") return false;
+
+  const referenceTime = new Date(call.startedAt ?? call.scheduledFor).getTime();
+  if (!Number.isFinite(referenceTime)) return false;
+
+  return Date.now() - referenceTime > LIVE_CALL_WINDOW_MS;
+}
+
 function stripTechnicalDetails(value: string) {
   return value
     .replace(/SIP Call-ID:\s*\S+/gi, "")
@@ -321,12 +332,21 @@ function getFamilyCallOutcome(call: DashboardMember["callAttempts"][number]) {
     };
   }
 
-  if (call.status === "IN_PROGRESS") {
+  if (call.status === "IN_PROGRESS" && !isStaleInProgressCall(call)) {
     return {
       dotClassName: "bg-brandBlue",
       badgeClassName: "bg-brandBlue/10 text-brandButtonBlue ring-brandBlue/20",
       label: "Calling now",
       text: "DailyCall is trying to connect right now.",
+    };
+  }
+
+  if (isStaleInProgressCall(call)) {
+    return {
+      dotClassName: "bg-amber-400",
+      badgeClassName: "bg-amber-50 text-amber-800 ring-amber-100",
+      label: "Could not confirm",
+      text: "This past call did not finish updating. We couldn't confirm whether it connected.",
     };
   }
 
