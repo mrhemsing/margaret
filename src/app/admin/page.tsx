@@ -371,7 +371,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
         {stats.map((stat) => <MetricCard key={stat.label} label={stat.label} value={stat.value} />)}
       </section>
 
-      <section className="grid gap-10 xl:grid-cols-[0.9fr_1.1fr] xl:items-start">
+      <section className="grid gap-10 xl:grid-cols-2 xl:items-start">
         <div className="grid gap-6">
           <CallTestPanel />
 
