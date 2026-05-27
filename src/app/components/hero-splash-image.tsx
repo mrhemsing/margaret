@@ -7,10 +7,10 @@ export function HeroSplashImage() {
   return (
     <>
       <Image
-        src="/home-splash-mobile-senior-call-straight-phone.png"
+        src="/home-splash-mobile-senior-call-v2.png"
         alt="Smiling senior on a phone call for a DailyCall check-in"
         width={1024}
-        height={828}
+        height={1536}
         priority
         fetchPriority="high"
         sizes="(max-width: 639px) 100vw, 0vw"
