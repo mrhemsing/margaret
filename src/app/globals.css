@@ -51,7 +51,7 @@ a {
   height: clamp(29rem, 128vw, 36rem);
   -o-object-position: 72% center;
   object-position: 33% center;
-  top: -2.75rem;
+  top: -3.75rem;
   width: 100%;
 }
 
