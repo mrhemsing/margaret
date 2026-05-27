@@ -10,7 +10,7 @@ const heroProof = [
   { label: "No app needed" },
   { label: "Works with regular phones" },
   { label: "Setup in under 2 minutes" },
-  { label: "Family text updates" },
+  { label: "Family text updates", mobileHidden: true },
 ];
 
 const steps = [
@@ -166,7 +166,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                 {heroProof.map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center gap-3 rounded-full bg-white/80 px-4 py-2 shadow-sm ring-1 ring-black/5"
+                    className={`items-center gap-3 rounded-full bg-white/80 px-4 py-2 shadow-sm ring-1 ring-black/5 ${item.mobileHidden ? "hidden sm:flex" : "flex"}`}
                   >
                     <span className="h-2 w-2 shrink-0 rounded-full bg-brandPink" aria-hidden="true" />
                     <span>{item.label}</span>
