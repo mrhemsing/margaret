@@ -123,45 +123,43 @@ async function getAdminData() {
       ],
     };
 
-    const [customers, subscriptions, activeMembers, demoMembers, callsDueToday, textsMade, recentCalls] = await Promise.all([
-      prisma.customer.findMany({
-        where: registeredCustomerWhere,
-        include: {
-          members: {
-            include: {
-              callAttempts: {
-                select: { startedAt: true, completedAt: true },
-              },
+    const customers = await prisma.customer.findMany({
+      where: registeredCustomerWhere,
+      include: {
+        members: {
+          include: {
+            callAttempts: {
+              select: { startedAt: true, completedAt: true },
             },
-            orderBy: { createdAt: "desc" },
           },
-          subscriptions: { orderBy: { createdAt: "desc" }, take: 1 },
-          alertContacts: true,
+          orderBy: { createdAt: "desc" },
         },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-      }),
-      prisma.subscription.findMany({
-        where: { customer: registeredCustomerWhere },
-        include: { customer: { include: { members: true } } },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-      }),
-      prisma.member.count({ where: { active: true, customer: registeredCustomerWhere } }),
-      prisma.member.findMany({
-        where: demoMemberWhere,
-        include: { customer: true },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-      }),
-      prisma.callAttempt.count({ where: { scheduledFor: { gte: startOfDay, lte: endOfDay } } }),
-      prisma.callAttempt.count({ where: { reportSentAt: { not: null } } }),
-      prisma.callAttempt.findMany({
-        include: { member: { include: { customer: true } } },
-        orderBy: { scheduledFor: "desc" },
-        take: 16,
-      }),
-    ]);
+        subscriptions: { orderBy: { createdAt: "desc" }, take: 1 },
+        alertContacts: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+    const subscriptions = await prisma.subscription.findMany({
+      where: { customer: registeredCustomerWhere },
+      include: { customer: { include: { members: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+    const activeMembers = await prisma.member.count({ where: { active: true, customer: registeredCustomerWhere } });
+    const demoMembers = await prisma.member.findMany({
+      where: demoMemberWhere,
+      include: { customer: true },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+    const callsDueToday = await prisma.callAttempt.count({ where: { scheduledFor: { gte: startOfDay, lte: endOfDay } } });
+    const textsMade = await prisma.callAttempt.count({ where: { reportSentAt: { not: null } } });
+    const recentCalls = await prisma.callAttempt.findMany({
+      include: { member: { include: { customer: true } } },
+      orderBy: { scheduledFor: "desc" },
+      take: 16,
+    });
 
     return { ok: true as const, customers, subscriptions, activeMembers, demoMembers, callsDueToday, textsMade, recentCalls, error: null };
   } catch (error) {
