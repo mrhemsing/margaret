@@ -53,6 +53,47 @@ type EditPanel = "profile" | "questions" | "voice" | null;
 
 const LIVE_CALL_WINDOW_MS = 30 * 60 * 1000;
 
+function normalizeIdentityText(value: string | null | undefined) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function normalizePhoneIdentity(value: string | null | undefined) {
+  return (value ?? "").replace(/\D/g, "");
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isCustomerIdentityMember(member: DashboardMember, customer: DashboardCustomer) {
+  const memberName = normalizeIdentityText(member.name);
+  const customerName = normalizeIdentityText(customer.fullName);
+  const memberPhone = normalizePhoneIdentity(member.phoneNumber);
+  const customerPhone = normalizePhoneIdentity(customer.phoneNumber);
+
+  return Boolean((memberName && customerName && memberName === customerName) || (memberPhone && customerPhone && memberPhone === customerPhone));
+}
+
+function getPrimaryLovedOne(customer: DashboardCustomer) {
+  return (
+    customer.members.find((member) => member.active && !isCustomerIdentityMember(member, customer)) ??
+    customer.members.find((member) => !isCustomerIdentityMember(member, customer)) ??
+    customer.members.find((member) => member.active) ??
+    customer.members[0] ??
+    null
+  );
+}
+
+function orderMembersForDashboard(customer: DashboardCustomer) {
+  const primaryLovedOne = getPrimaryLovedOne(customer);
+  if (!primaryLovedOne) return customer.members;
+
+  return [
+    primaryLovedOne,
+    ...customer.members.filter((member) => member.id !== primaryLovedOne.id),
+  ];
+}
+
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string, onTimeout?: () => void) {
   return new Promise<T>((resolve, reject) => {
     const timeout = window.setTimeout(() => {
@@ -105,6 +146,22 @@ function formatNextCallLine(value: string | null) {
   const timeLabel = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(callDate);
 
   return `Next call: ${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}, ${timeLabel}`;
+}
+
+function formatCallStoryTime(value: string | null) {
+  if (!value) return "After the latest check-in";
+
+  const date = new Date(value);
+  const now = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+  const time = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(date);
+
+  if (date.toDateString() === now.toDateString()) return `After today's ${time} call`;
+  if (date.toDateString() === yesterday.toDateString()) return `After yesterday's ${time} call`;
+
+  const day = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+  return `After the ${day} ${time} call`;
 }
 
 function formatPreferredCallTime(value: string | null | undefined) {
@@ -225,11 +282,11 @@ function normalizeQuestions(value: string[]) {
 }
 
 function formatCallDuration(call: DashboardMember["callAttempts"][number]) {
-  if (!call.startedAt || !call.completedAt) return "Conversation time processing";
+  if (!call.startedAt || !call.completedAt) return "Chat length processing";
 
   const minutes = Math.max(1, Math.round((new Date(call.completedAt).getTime() - new Date(call.startedAt).getTime()) / 60000));
-  if (minutes <= 3) return "Brief conversation";
-  return `${minutes} ${minutes === 1 ? "minute" : "minutes"} conversation`;
+  if (minutes <= 3) return "Short chat today";
+  return `~${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
 }
 
 function sortCallsNewestFirst(calls: DashboardMember["callAttempts"]) {
@@ -312,14 +369,26 @@ function stripTechnicalDetails(value: string) {
     .trim();
 }
 
-function warmFamilySummary(value: string) {
+function warmFamilySummary(value: string, memberName?: string | null, customerName?: string | null) {
   const cleaned = stripTechnicalDetails(value);
   if (!cleaned) return "";
 
-  return cleaned
+  let summary = cleaned
     .replace(/\b(stated|said)\b/i, "shared")
     .replace(/\bthe user\b/gi, "your loved one")
     .replace(/\bpatient\b/gi, "your loved one");
+
+  const lovedOneName = memberName?.trim();
+  const accountName = customerName?.trim();
+  if (lovedOneName && accountName && lovedOneName.toLowerCase() !== accountName.toLowerCase()) {
+    summary = summary.replace(new RegExp(`\\b${escapeRegExp(accountName)}\\b`, "g"), lovedOneName);
+    const accountFirstName = accountName.split(/\s+/)[0];
+    if (accountFirstName && accountFirstName.toLowerCase() !== lovedOneName.toLowerCase()) {
+      summary = summary.replace(new RegExp(`\\b${escapeRegExp(accountFirstName)}\\b`, "g"), lovedOneName);
+    }
+  }
+
+  return summary;
 }
 
 function getFamilyCallOutcome(call: DashboardMember["callAttempts"][number]) {
@@ -386,8 +455,27 @@ function getFriendlyCallSummary(call: DashboardMember["callAttempts"][number]) {
   return getFamilyCallOutcome(call).text;
 }
 
+function getDashboardHeroSummary(call: DashboardMember["callAttempts"][number] | null, memberName: string | null, customerName: string | null) {
+  if (!call) {
+    return memberName
+      ? `DailyCall is ready for ${memberName}'s first completed check-in. The summary will appear here after the call.`
+      : "DailyCall is ready for the first completed check-in. The summary will appear here after the call.";
+  }
+
+  const summary = call.summary && !isBackendErrorText(call.summary) ? warmFamilySummary(call.summary, memberName, customerName) : "";
+  if (summary) return summary;
+
+  const name = memberName ?? "your loved one";
+  if (isCompletedStatus(call.status)) {
+    return `${name} completed the check-in. DailyCall did not capture a detailed narrative yet, but the call connected and the latest status is available below.`;
+  }
+
+  return getFamilyCallOutcome(call).text;
+}
+
 function getMemberStats(member: DashboardMember) {
   const pastCalls = getPastCalls(member);
+  const completedCalls = pastCalls.filter((call) => isCompletedStatus(call.status));
   const now = new Date();
   const month = now.getMonth();
   const year = now.getFullYear();
@@ -412,6 +500,7 @@ function getMemberStats(member: DashboardMember) {
     streak,
     callsThisMonth,
     missedToday,
+    completedCount: completedCalls.length,
   };
 }
 
@@ -444,11 +533,76 @@ function moodToneClassName(mood: string | null) {
   return "bg-amber-300";
 }
 
+function callSignalClassName(call: DashboardMember["callAttempts"][number]) {
+  if (isNoConnectCall(call)) return "bg-slate-300";
+  return moodToneClassName(call.mood);
+}
+
+function moodLevel(mood: string | null) {
+  if (!mood) return null;
+  if (/positive|good|calm|happy|upbeat|bright/i.test(mood)) return 2;
+  if (/low|sad|lonely|anxious|concern/i.test(mood)) return 0;
+  return 1;
+}
+
+function moodTextClassName(mood: string | null) {
+  if (!mood) return "text-slate-600";
+  if (/positive|good|calm|happy|upbeat|bright/i.test(mood)) return "text-emerald-700";
+  if (/low|sad|lonely|anxious|concern/i.test(mood)) return "text-red-700";
+  return "text-amber-700";
+}
+
+function formatMoodLabel(mood: string | null) {
+  if (!mood) return "Mood pending";
+  if (/positive|good|calm|happy|upbeat|bright/i.test(mood)) return "Positive";
+  if (/low|sad|lonely|anxious|concern/i.test(mood)) return "Needs attention";
+  return formatPlan(mood);
+}
+
+function getMoodTrendText(calls: DashboardMember["callAttempts"]) {
+  if (calls.length < 2) return "Trend starts after more calls";
+
+  const latestCall = calls[calls.length - 1];
+  if (latestCall && isNoConnectCall(latestCall)) return "Latest call did not connect";
+
+  const moodLevels: number[] = [];
+  calls.forEach((call) => {
+    const level = moodLevel(call.mood);
+    if (level !== null) moodLevels.push(level);
+  });
+  if (moodLevels.length < 2) return "Trend starts after more mood notes";
+
+  const latest = moodLevels[moodLevels.length - 1];
+  const previous = moodLevels[moodLevels.length - 2];
+  if (latest > previous) {
+    return "Mood looks brighter";
+  }
+
+  if (latest < previous) {
+    return latest === 0 ? "Worth a closer look" : "Slight dip this week";
+  }
+
+  return "Mood holding steady";
+}
+
 function getMoodSparklineCalls(member: DashboardMember) {
   return getPastCalls(member)
-    .filter((call) => isCompletedStatus(call.status))
+    .filter((call) => isCompletedStatus(call.status) || isNoConnectCall(call))
     .slice(0, 7)
     .reverse();
+}
+
+function getCheckInPattern(member: DashboardMember) {
+  const calls = getPastCalls(member)
+    .filter((call) => isCompletedStatus(call.status) || isNoConnectCall(call))
+    .slice(0, 7)
+    .reverse();
+
+  return calls.map((call) => ({
+    id: call.id,
+    label: isCompletedStatus(call.status) ? "Completed" : "Missed",
+    className: isCompletedStatus(call.status) ? "bg-emerald-500" : "bg-red-400",
+  }));
 }
 
 function getInitials(name: string) {
@@ -677,33 +831,31 @@ function MemberSummaryCard({ member, onUpdated }: { member: DashboardMember; onU
   }
 
   return (
-    <article className="min-w-0 overflow-hidden rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-black/5 md:p-5">
-      <p className="px-1 text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Family Dashboard</p>
-      <div className="mt-5 flex flex-col gap-4 rounded-2xl bg-white md:flex-row md:items-center md:justify-between">
+    <article className="min-w-0 overflow-hidden rounded-[1.5rem] bg-white/85 p-4 shadow-sm ring-1 ring-black/5 md:p-5">
+      <div className="flex flex-col gap-4 rounded-2xl bg-white md:flex-row md:items-center md:justify-between">
         <div className="flex min-w-0 gap-4">
           <MemberPhoto member={member} className="h-14 w-14 shrink-0 rounded-full" />
           <div className="min-w-0">
             <span className={"inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-bold " + (member.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600")}>
               <span className={"h-2 w-2 rounded-full " + (member.active ? "dashboard-status-dot bg-emerald-500" : "bg-slate-400")} />
-              {member.active ? "Active" : "Paused"}
+              {member.active ? "Daily calls active" : "Calls paused"}
             </span>
             <h1 className="mt-2 break-words text-2xl font-bold text-ink">{member.name}</h1>
             <p className="mt-2 break-words text-sm leading-6 text-slate-600">{member.phoneNumber}</p>
-            <p className="mt-1 text-sm font-semibold text-slate-600">{nextCall ? formatNextCallLine(nextCall.scheduledFor) : "Next call not scheduled yet"}</p>
           </div>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 md:justify-items-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end md:ml-auto md:shrink-0">
           <button
             type="button"
             onClick={() => void startManualCall()}
             disabled={calling || !member.active}
-            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-brandButtonBlue px-5 py-3 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             {calling ? `Calling ${member.name}...` : "Call Now"}
           </button>
           <Link
             href="/dashboard/settings"
-            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 md:w-auto"
+            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 sm:w-auto"
           >
             Settings
           </Link>
@@ -715,39 +867,64 @@ function MemberSummaryCard({ member, onUpdated }: { member: DashboardMember; onU
   );
 }
 
-function DashboardOverview({ members }: { members: DashboardMember[] }) {
-  const activeMembers = members.filter((member) => member.active);
-  const nextCalls = members
-    .map((member) => ({ member, call: getNextCall(member) }))
-    .filter((item): item is { member: DashboardMember; call: NonNullable<ReturnType<typeof getNextCall>> } => item.call !== null)
-    .sort((first, second) => new Date(first.call.scheduledFor).getTime() - new Date(second.call.scheduledFor).getTime());
-  const completedCalls = members
-    .map((member) => ({ member, call: getLastCompletedCall(member) }))
-    .filter((item): item is { member: DashboardMember; call: NonNullable<ReturnType<typeof getLastCompletedCall>> } => item.call !== null)
-    .sort((first, second) => new Date(second.call.scheduledFor).getTime() - new Date(first.call.scheduledFor).getTime());
-
-  const nextCall = nextCalls[0] ?? null;
-  const lastCall = completedCalls[0] ?? null;
-  const statusLine = lastCall ? "Check-in completed" : activeMembers.length > 0 ? "Monitoring active" : "Monitoring paused";
-  const moodLine = lastCall?.call.mood ? lastCall.call.mood : lastCall ? "Mood summary pending" : "Waiting for first completed call";
-  const durationLine = lastCall ? formatCallDuration(lastCall.call) : "Conversation details will appear here";
-  const nextLine = formatNextCallLine(nextCall?.call.scheduledFor ?? null);
-  const updatedLine = formatUpdatedAgo(members);
+function DashboardOverview({ customer }: { customer: DashboardCustomer }) {
+  const members = orderMembersForDashboard(customer);
+  const heroMember = getPrimaryLovedOne(customer);
+  const lastCall = heroMember ? getLastCompletedCall(heroMember) : null;
+  const nextCall = heroMember ? getNextCall(heroMember) : null;
+  const heroSummary = getDashboardHeroSummary(lastCall, heroMember?.name ?? null, customer.fullName);
+  const moodCalls = heroMember ? getMoodSparklineCalls(heroMember) : [];
+  const moodLine = lastCall ? formatMoodLabel(lastCall.mood) : "Waiting for first completed call";
+  const durationLine = lastCall ? formatCallDuration(lastCall) : "Conversation details will appear here";
+  const updatedLine = lastCall ? formatCallStoryTime(lastCall.scheduledFor) : formatUpdatedAgo(members);
 
   return (
     <section className="grid min-w-0 gap-4">
-      <article className="min-w-0 overflow-hidden rounded-[1.5rem] bg-[#e8f5f7] p-4 text-[#143746] shadow-sm ring-1 ring-[#c3dde3] md:p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="min-w-0">
-            <p className="font-mono text-sm uppercase tracking-[0.18em] text-[#4f7b86] md:text-base">Today</p>
-            <div className="mt-4 grid gap-2 text-base leading-6 md:text-xl md:leading-8">
-              <p className="flex items-start gap-1.5 md:gap-2"><span className="w-6 shrink-0 md:w-7">✅</span><span className="min-w-0">{statusLine}</span></p>
-              <p className="flex items-start gap-1.5 md:gap-2"><span className="w-6 shrink-0 md:w-7">😊</span><span className="min-w-0">{moodLine}</span></p>
-              <p className="flex items-start gap-1.5 md:gap-2"><span className="w-6 shrink-0 md:w-7">⏱️</span><span className="min-w-0">{durationLine}</span></p>
-              <p className="flex items-start gap-1.5 md:gap-2"><span className="w-6 shrink-0 md:w-7">📅</span><span className="min-w-0">{nextLine}</span></p>
+      <article className="min-w-0 overflow-hidden rounded-[1.5rem] bg-[#eef7fc] p-5 text-[#143746] shadow-sm ring-1 ring-[#c8e4f4] md:p-7">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-5">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brandPink">Family Dashboard</p>
+              <div className="mt-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-brandButtonBlue">A note from DailyCall</p>
+                <p className="mt-1 text-xs text-slate-500">{updatedLine}</p>
+              </div>
+              <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink md:text-4xl">
+                {heroMember ? `How ${heroMember.name} sounded today` : "How today's call sounded"}
+              </h1>
+              <p className="mt-4 max-w-3xl text-lg leading-8 text-[#273f49] md:text-xl md:leading-9">{heroSummary}</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <span className={"inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-bold ring-1 ring-white/80 " + moodTextClassName(lastCall?.mood ?? null)}>
+                  <span className={"h-3 w-3 rounded-full " + moodToneClassName(lastCall?.mood ?? null)} />
+                  {moodLine}
+                </span>
+                <span className="inline-flex items-center px-1 py-2 text-sm font-semibold text-[#5b7180]">{durationLine}</span>
+              </div>
             </div>
           </div>
-          <p className="mt-1 max-w-full self-start rounded-full bg-white/45 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#4f7b86] ring-1 ring-[#d2e5ea] md:mt-0">{updatedLine}</p>
+          <div className="min-w-0 rounded-2xl bg-white/65 p-4 ring-1 ring-white/80 lg:w-72">
+            <p className="text-xs font-bold uppercase tracking-wide text-brandButtonBlue">This week&apos;s mood</p>
+            {moodCalls.length > 0 ? (
+              <>
+                <div className="mt-4 flex items-center gap-2" aria-label="7-day mood trend">
+                  {moodCalls.map((call) => (
+                    <span
+                      key={call.id}
+                      className={"h-4 w-4 rounded-full ring-2 ring-white " + callSignalClassName(call)}
+                      title={isNoConnectCall(call) ? "Call did not connect" : call.mood ?? "Mood pending"}
+                    />
+                  ))}
+                </div>
+                <p className="mt-3 text-sm font-semibold text-[#315b6d]">{getMoodTrendText(moodCalls)}</p>
+              </>
+            ) : (
+              <p className="mt-3 text-sm leading-6 text-[#315b6d]">Mood trend appears after the first completed check-in.</p>
+            )}
+            <div className="mt-4 border-t border-[#c8e4f4] pt-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-brandButtonBlue">Next check-in</p>
+              <p className="mt-1 text-sm font-semibold text-[#315b6d]">{formatNextCallLine(nextCall?.scheduledFor ?? null)}</p>
+            </div>
+          </div>
         </div>
       </article>
     </section>
@@ -942,12 +1119,6 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
             <p className="mt-2 break-words text-sm leading-6 text-slate-600">{member.phoneNumber}</p>
           </div>
         </div>
-        <Link
-          href="/dashboard"
-          className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 md:w-auto"
-        >
-          View call history
-        </Link>
       </div>
 
       <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-3">
@@ -1201,13 +1372,8 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
   const [calling, setCalling] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const nextCall = getNextCall(member);
   const pastCalls = getPastCalls(member);
-  const lastCompletedCall = getLastCompletedCall(member);
-  const stats = getMemberStats(member);
   const noConnectAlert = getConsecutiveNoConnectAlert(member);
-  const moodSparklineCalls = getMoodSparklineCalls(member);
-  const latestOutcome = lastCompletedCall ? getFamilyCallOutcome(lastCompletedCall) : null;
 
   async function startManualCall() {
     setCalling(true);
@@ -1252,7 +1418,6 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
             </span>
             <h2 className="mt-2 break-words text-2xl font-bold text-ink">{member.name}</h2>
             <p className="mt-2 break-words text-sm leading-6 text-slate-600">{member.phoneNumber}</p>
-            <p className="mt-1 text-sm font-semibold text-slate-600">{nextCall ? formatNextCallLine(nextCall.scheduledFor) : "Next call not scheduled yet"}</p>
           </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 md:justify-items-end">
@@ -1272,20 +1437,6 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
           </Link>
         </div>
       </div> : null}
-
-      <div className={(showSummary ? "mt-4 " : "") + "grid min-w-0 gap-3 md:grid-cols-3"}>
-        {[
-          ["Answer streak", `${stats.streak} ${stats.streak === 1 ? "call" : "calls"}`, "Consecutive successful check-ins"],
-          ["Calls this month", stats.callsThisMonth.toString(), "Completed check-ins"],
-          ["Missed today", stats.missedToday.toString(), stats.missedToday > 0 ? "Needs attention" : "No missed calls today"],
-        ].map(([label, value, detail]) => (
-          <div key={label} className={"min-w-0 rounded-2xl p-4 ring-1 " + (label === "Missed today" && stats.missedToday > 0 ? "bg-red-50 ring-red-100" : "bg-white ring-black/5")}>
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
-            <p className={"mt-1 text-2xl font-bold " + (label === "Missed today" && stats.missedToday > 0 ? "text-red-700" : "text-ink")}>{value}</p>
-            <p className="mt-1 text-sm leading-5 text-slate-600">{detail}</p>
-          </div>
-        ))}
-      </div>
 
       {noConnectAlert ? (
         <section className="mt-4 rounded-2xl bg-red-50 p-4 ring-1 ring-red-100">
@@ -1311,53 +1462,15 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
         </section>
       ) : null}
 
-      <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-2">
-        <div className="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-black/5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Today&apos;s check-in</p>
-            {moodSparklineCalls.length > 0 ? (
-              <div className="flex h-9 items-end gap-1" aria-label="7-day mood trend">
-                {moodSparklineCalls.map((call, index) => (
-                  <span
-                    key={call.id}
-                    className={"w-2 rounded-full " + moodToneClassName(call.mood)}
-                    style={{ height: `${14 + Math.min(index, 6) * 3}px` }}
-                    title={call.mood ?? "Mood pending"}
-                  />
-                ))}
-              </div>
-            ) : null}
-          </div>
-          <p className="mt-2 flex items-center gap-2 text-base font-bold text-ink">
-            {lastCompletedCall ? (
-              <>
-                <span aria-hidden="true">✅</span>
-                <span className="min-w-0 break-words">{latestOutcome?.label ?? formatCheckInStatus(lastCompletedCall.status)}</span>
-              </>
-            ) : (
-              "No completed call yet"
-            )}
-          </p>
-          <p className="mt-1 text-sm leading-6 text-slate-600">{lastCompletedCall ? getFriendlyCallSummary(lastCompletedCall) : "A completed call will appear here."}</p>
-          {lastCompletedCall ? <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{formatCheckInDateTime(lastCompletedCall.scheduledFor)}</p> : null}
-        </div>
-        <div className="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-black/5">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Next scheduled call</p>
-          <p className="mt-2 text-base font-bold text-ink">{nextCall ? formatDateTime(nextCall.scheduledFor) : "Not scheduled yet"}</p>
-          <p className="mt-1 text-sm leading-6 text-slate-600">Schedule and voice settings live under Settings.</p>
-        </div>
-      </div>
-
       {message ? <p className="mt-4 rounded-2xl bg-sage/10 p-3 text-sm font-semibold text-sage">{message}</p> : null}
       {error ? <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
 
-      <section id={`call-history-${member.id}`} className="mt-5 rounded-2xl bg-white p-4 ring-1 ring-black/5">
+      <section id={`call-history-${member.id}`} className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-bold text-ink">Call history</p>
+            <p className="text-xl font-bold text-ink">Call history</p>
             <p className="mt-1 text-sm text-slate-600">Simple summaries from recent DailyCall check-ins.</p>
           </div>
-          {nextCall ? <p className="text-sm font-semibold text-brandButtonBlue">Next call: {formatDateTime(nextCall.scheduledFor)}</p> : null}
         </div>
         {pastCalls.length > 0 ? (
           <div className="mt-4 grid gap-3">
@@ -1485,15 +1598,18 @@ export function DashboardHome({ view = "dashboard" }: { view?: "dashboard" | "se
     });
   }
 
+  const dashboardMembers = orderMembersForDashboard(state.customer);
+  const primaryLovedOne = dashboardMembers[0] ?? null;
+
   return (
     <div className="grid min-w-0 gap-6">
       {view === "dashboard" ? (
         <>
-          {state.customer.members[0] ? <MemberSummaryCard member={state.customer.members[0]} onUpdated={updateMember} /> : null}
-          <DashboardOverview members={state.customer.members} />
+          <DashboardOverview customer={state.customer} />
+          {primaryLovedOne ? <MemberSummaryCard member={primaryLovedOne} onUpdated={updateMember} /> : null}
 
           <section className="grid min-w-0 gap-4">
-            {state.customer.members.map((member, index) => (
+            {dashboardMembers.map((member, index) => (
               <MemberCard key={member.id} member={member} onUpdated={updateMember} showSummary={index !== 0} />
             ))}
           </section>
