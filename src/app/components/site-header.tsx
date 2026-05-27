@@ -22,7 +22,11 @@ type SiteHeaderProps = {
   links?: SiteHeaderLink[];
 };
 
-const defaultMarketingLinks: SiteHeaderLink[] = [];
+const defaultMarketingLinks: SiteHeaderLink[] = [
+  { href: "/#how-it-works", label: "About" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/faq", label: "FAQ" },
+];
 
 function PhoneIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (

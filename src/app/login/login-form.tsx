@@ -63,7 +63,12 @@ export function LoginForm() {
             <input name="email" type="email" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="jane@example.com" />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
-            Password
+            <span className="flex items-center justify-between gap-3">
+              Password
+              <Link href="/reset-password" className="text-xs font-bold text-brandButtonBlue hover:text-brandButtonBlueHover">
+                Forgot your password?
+              </Link>
+            </span>
             <input name="password" type="password" required className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="Your password" />
           </label>
           <button type="submit" disabled={state.status === "loading"} className="rounded-full bg-brandButtonBlue px-6 py-3 text-sm font-bold text-cream shadow-sm transition hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:opacity-60">

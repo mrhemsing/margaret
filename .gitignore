@@ -15,6 +15,10 @@ logs/
 
 # Temporary artifacts
 tmp_*
+tmp-*.png
+
+# Local provider exports/backups
+backups/*.json
 
 # Dependencies / builds
 node_modules/

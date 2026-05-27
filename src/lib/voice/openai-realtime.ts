@@ -25,8 +25,14 @@ type OpenAIRealtimeTranscriptTurn = {
 };
 
 const OPENAI_REALTIME_CALLS_URL = "https://api.openai.com/v1/realtime/calls";
-const DEFAULT_OPENAI_REALTIME_MODEL = "gpt-realtime";
+const DEFAULT_OPENAI_REALTIME_MODEL = "gpt-realtime-2";
 const DEFAULT_OPENAI_REALTIME_VAD_EAGERNESS = "low";
+const OPENAI_REALTIME_SIP_TURN_MODE = "manual_server_vad_transcript_no_barge";
+const OPENAI_REALTIME_SIP_VAD = {
+  threshold: 0.75,
+  prefixPaddingMs: 300,
+  silenceDurationMs: 650,
+};
 
 function xmlEscape(value: string) {
   return value
@@ -87,7 +93,7 @@ You are DailyCall, a warm senior companion voice agent calling ${input.memberNam
 Sound soft, caring, understanding, and human. Use a warm companion tone suited for an older adult: gentle, familiar, unhurried in delivery, but quick to respond. You are not a clinician, salesperson, support bot, or survey script. Keep responses short, usually one sentence and no more than two.
 
 # Turn-Taking and Pacing
-Use the snappiest natural turn-taking possible. Respond as soon as the person is done speaking; do not wait for extra silence. Avoid filler, verbal hesitations, repeated acknowledgements, and long lead-ins. Ask one gentle question at a time. If the person sounds confused, slow down your wording but keep the response prompt.
+Use natural phone turn-taking. Respond after the person is done speaking; do not interrupt them. Avoid filler, verbal hesitations, repeated acknowledgements, and long lead-ins. Ask one gentle question at a time. If the person sounds confused, slow down your wording but keep the response prompt.
 
 # DailyCall Memory
 ${input.companionContext}
@@ -247,9 +253,11 @@ export async function acceptOpenAIRealtimeCall(input: AcceptOpenAIRealtimeCallIn
           },
           noise_reduction: null,
           turn_detection: {
-            type: "semantic_vad",
-            eagerness: config.vadEagerness,
-            create_response: true,
+            type: "server_vad",
+            threshold: OPENAI_REALTIME_SIP_VAD.threshold,
+            prefix_padding_ms: OPENAI_REALTIME_SIP_VAD.prefixPaddingMs,
+            silence_duration_ms: OPENAI_REALTIME_SIP_VAD.silenceDurationMs,
+            create_response: false,
             interrupt_response: false,
           },
         },
@@ -332,6 +340,7 @@ async function updateCallFromRealtimeEvents(input: {
       conversationRaw: {
         ...existingRaw,
         provider: "openai_realtime",
+        openAISipMode: OPENAI_REALTIME_SIP_TURN_MODE,
         events: input.events.slice(-80),
         realtimeMetrics: input.metrics,
       } as Prisma.InputJsonValue,
@@ -355,6 +364,10 @@ export function startOpenAIRealtimeCallMonitor(input: {
     firstAudioDeltaAt: null,
     responseDoneAt: null,
     speechStartedCount: 0,
+    speechStoppedCount: 0,
+    manualResponseCount: 0,
+    transcriptResponseCount: 0,
+    ignoredSpeechDuringResponseCount: 0,
     errorCount: 0,
   };
   process.env.WS_NO_BUFFER_UTIL = "1";
@@ -366,27 +379,89 @@ export function startOpenAIRealtimeCallMonitor(input: {
         },
       });
       let openerSent = false;
+      let responseInProgress = false;
+      let openerComplete = false;
+      let activeResponseKind: "opener" | "reply" | null = null;
+      let pendingUserResponse = false;
+      let lastUserTranscript = "";
 
-      function sendOpener() {
-        if (openerSent || ws.readyState !== WebSocket.OPEN) return;
-        openerSent = true;
-        metrics.openerSentAt = new Date().toISOString();
+      function setTurnDetection(enabled: boolean) {
+        if (ws.readyState !== WebSocket.OPEN) return;
         ws.send(
           JSON.stringify({
-            type: "response.create",
-            response: {
-              instructions: input.initialPrompt
-                ? `Say exactly this opening line and nothing else, then wait for the person to respond: ${input.initialPrompt}`
-                : "Start the DailyCall check-in with a brief, soft, caring greeting and ask how they are doing today. Keep it to one short sentence.",
-              max_output_tokens: 120,
+            type: "session.update",
+            session: {
+              type: "realtime",
+              audio: {
+                input: {
+                  turn_detection: enabled
+                    ? {
+                        type: "server_vad",
+                        threshold: OPENAI_REALTIME_SIP_VAD.threshold,
+                        prefix_padding_ms: OPENAI_REALTIME_SIP_VAD.prefixPaddingMs,
+                        silence_duration_ms: OPENAI_REALTIME_SIP_VAD.silenceDurationMs,
+                        create_response: false,
+                        interrupt_response: false,
+                      }
+                    : null,
+                },
+              },
             },
           }),
         );
       }
 
+      function createResponse(kind: "opener" | "reply", instructions?: string, maxOutputTokens = 110) {
+        if (responseInProgress || ws.readyState !== WebSocket.OPEN) return false;
+        responseInProgress = true;
+        activeResponseKind = kind;
+        metrics.manualResponseCount = Number(metrics.manualResponseCount ?? 0) + 1;
+        setTurnDetection(false);
+        ws.send(
+          JSON.stringify({
+            type: "response.create",
+            response: {
+              ...(instructions ? { instructions } : {}),
+              max_output_tokens: maxOutputTokens,
+            },
+          }),
+        );
+        return true;
+      }
+
+      function sendOpener() {
+        if (openerSent || ws.readyState !== WebSocket.OPEN) return;
+        openerSent = true;
+        metrics.openerSentAt = new Date().toISOString();
+        createResponse(
+          "opener",
+          input.initialPrompt
+            ? `Say exactly this opening line and nothing else, then wait for the person to respond: ${input.initialPrompt}`
+            : "Say exactly: Hi, it is DailyCall. How are you doing today?",
+          80,
+        );
+      }
+
+      function maybeRespondToUser() {
+        if (!openerComplete || !pendingUserResponse || responseInProgress || ws.readyState !== WebSocket.OPEN) return;
+        pendingUserResponse = false;
+        metrics.transcriptResponseCount = Number(metrics.transcriptResponseCount ?? 0) + 1;
+        createResponse(
+          "reply",
+          [
+            "Reply warmly and briefly to the person's last message.",
+            "Use one short sentence.",
+            "Ask one simple follow-up only if it is needed to keep the conversation moving.",
+            `Do not overuse the person's name. Last user transcript: ${lastUserTranscript}`,
+          ].join(" "),
+          110,
+        );
+      }
+
       ws.on("open", () => {
         metrics.monitorOpenedAt = new Date().toISOString();
-        setTimeout(sendOpener, 750);
+        setTurnDetection(true);
+        setTimeout(sendOpener, 500);
       });
 
       ws.on("message", (data) => {
@@ -401,9 +476,22 @@ export function startOpenAIRealtimeCallMonitor(input: {
           }
           if (event.type === "response.done") {
             metrics.responseDoneAt = new Date().toISOString();
+            responseInProgress = false;
+            if (activeResponseKind === "opener") {
+              openerComplete = true;
+            }
+            activeResponseKind = null;
+            setTurnDetection(true);
+            maybeRespondToUser();
           }
           if (event.type === "input_audio_buffer.speech_started") {
             metrics.speechStartedCount = Number(metrics.speechStartedCount ?? 0) + 1;
+            if (responseInProgress) {
+              metrics.ignoredSpeechDuringResponseCount = Number(metrics.ignoredSpeechDuringResponseCount ?? 0) + 1;
+            }
+          }
+          if (event.type === "input_audio_buffer.speech_stopped") {
+            metrics.speechStoppedCount = Number(metrics.speechStoppedCount ?? 0) + 1;
           }
           if (event.type === "error") {
             metrics.errorCount = Number(metrics.errorCount ?? 0) + 1;
@@ -412,6 +500,11 @@ export function startOpenAIRealtimeCallMonitor(input: {
           const turn = extractEventTranscript(event, input.memberName);
           if (turn?.text) {
             turns.push(turn);
+            if (turn.speaker !== "DailyCall") {
+              lastUserTranscript = turn.text;
+              pendingUserResponse = true;
+              maybeRespondToUser();
+            }
             void updateCallFromRealtimeEvents({
               db: prisma,
               callAttemptId: input.callAttemptId,

@@ -1,17 +1,34 @@
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { LandingPage } from "./landing-page";
+import { LandingPage, faqs, testimonials } from "./landing-page";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "DailyCall | AI Companion Calls for Seniors and Aging Parents",
+  title: "Daily Wellness Calls for Seniors",
   description:
     "DailyCall gives aging parents warm daily AI companion calls by regular phone, helping families reduce loneliness, keep routines, and stay informed without another app.",
+  alternates: {
+    canonical: "/",
+  },
 };
 
 export default async function HomePage() {
   const initialAuthenticated = await isAdminAuthenticated();
-  const jsonLd = {
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "DailyCall",
+    legalName: "Hpro Web Development Inc.",
+    url: "https://dailycall.care/",
+    logo: "https://dailycall.care/dailycall-logo.jpg",
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: "support@dailycall.care",
+      availableLanguage: "English",
+    },
+  };
+  const serviceJsonLd = {
     "@context": "https://schema.org",
     "@type": "Service",
     name: "DailyCall",
@@ -36,11 +53,34 @@ export default async function HomePage() {
       priceCurrency: "USD",
       description: "14-day free trial for family companion calls.",
     },
+    review: testimonials.map((testimonial) => ({
+      "@type": "Review",
+      reviewBody: testimonial.quote,
+      author: {
+        "@type": "Person",
+        name: testimonial.name,
+      },
+    })),
+  };
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map(([question, answer]) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: answer,
+      },
+    })),
   };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJsonLd, serviceJsonLd, faqJsonLd]) }}
+      />
       <LandingPage initialAuthenticated={initialAuthenticated} />
     </>
   );

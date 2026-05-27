@@ -2,6 +2,10 @@ import { LegalPageShell } from "@/app/components/legal-page-shell";
 
 export const metadata = {
   title: "Terms & Conditions",
+  description: "DailyCall terms for AI-assisted companion calls, SMS notifications, account use, service limits, and safety responsibilities.",
+  alternates: {
+    canonical: "/terms-and-conditions",
+  },
 };
 
 export default function TermsAndConditionsPage() {

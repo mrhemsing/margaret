@@ -19,8 +19,9 @@ const handle = app.getRequestHandler();
 const prisma = new PrismaClient();
 
 const DAILYCALL_PROMPT = fs.readFileSync(path.join(projectDir, "agent-prompt-dailycaller.txt"), "utf8");
-const DEFAULT_OPENAI_REALTIME_MODEL = "gpt-realtime";
+const DEFAULT_OPENAI_REALTIME_MODEL = "gpt-realtime-2";
 const DEFAULT_OPENAI_REALTIME_VAD_EAGERNESS = "low";
+const twilioOutboundAudioCounts = new Map();
 
 function safeJson(value) {
   try {
@@ -98,6 +99,7 @@ function buildInstructions(input) {
     `This call is running through a streaming ${input.bridgeProvider} bridge.`,
     "Return only the exact words DailyCall should say next. No labels, markdown, bullets, SSML, or stage directions.",
     "Keep each turn brief and responsive: usually one sentence, two only when necessary.",
+    `Use the person's name sparingly. It is fine in the greeting, but do not repeat "${input.memberName}" in every reply. After the opener, use their name only when it feels especially natural or important.`,
   ].join("\n\n");
 }
 
@@ -327,6 +329,15 @@ function sendTwilioClear(twilioSocket, streamSid) {
 
 function sendTwilioAudio(twilioSocket, streamSid, payload) {
   if (!streamSid || twilioSocket.readyState !== WebSocket.OPEN) return;
+  const count = (twilioOutboundAudioCounts.get(streamSid) || 0) + 1;
+  twilioOutboundAudioCounts.set(streamSid, count);
+  if (count === 1 || count % 50 === 0) {
+    console.log("Twilio outbound audio sent", {
+      streamSid,
+      chunks: count,
+      payloadBytes: Buffer.byteLength(payload, "base64"),
+    });
+  }
   twilioSocket.send(
     JSON.stringify({
       event: "media",
@@ -599,6 +610,7 @@ async function persistGeminiLiveState(state, completed = false) {
         },
         initialPrompt: state.initialPrompt,
         hybridTranscript: state.turns,
+        realtimeMetrics: state.metrics ?? null,
         events: state.events.slice(-80),
       },
       syncedAt: new Date(),
@@ -924,6 +936,7 @@ function wireDeepgramCartesiaBridge(twilioSocket) {
 }
 
 function wireOpenAIRealtimeBridge(twilioSocket) {
+  console.log("OpenAI Realtime Twilio websocket connected");
   const state = {
     twilioSocket,
     openAISocket: createOpenAIRealtimeSocket(),
@@ -1151,15 +1164,28 @@ function wireOpenAIRealtimeBridge(twilioSocket) {
     }
   });
 
-  twilioSocket.on("close", () => {
+  twilioSocket.on("close", (code, reason) => {
+    console.error("Twilio OpenAI Realtime stream socket closed", {
+      code,
+      reason: reason?.toString() || "",
+      callAttemptId: state.callAttemptId,
+      streamSid: state.streamSid,
+      turns: state.turns.length,
+      metrics: state.metrics,
+    });
+    if (state.streamSid) twilioOutboundAudioCounts.delete(state.streamSid);
     if (state.openAISocket.readyState === WebSocket.OPEN) state.openAISocket.close();
   });
 
   twilioSocket.on("error", (error) => console.error("Twilio OpenAI Realtime stream socket error", error));
   state.openAISocket.on("error", (error) => console.error("OpenAI Realtime stream socket error", error));
+  state.openAISocket.on("close", (code, reason) => {
+    console.error("OpenAI Realtime stream socket closed", { code, reason: reason?.toString() || "" });
+  });
 }
 
 function wireGeminiLiveBridge(twilioSocket) {
+  console.log("Gemini Live Twilio websocket connected");
   const state = {
     twilioSocket,
     geminiSocket: createGeminiLiveSocket(),
@@ -1178,6 +1204,15 @@ function wireGeminiLiveBridge(twilioSocket) {
     userSpeaking: false,
     speechFrames: 0,
     silenceFrames: 0,
+    metrics: {
+      twilioStartedAt: null,
+      upstreamOpenedAt: null,
+      setupCompleteAt: null,
+      sessionLoadedAt: null,
+      openerSentAt: null,
+      firstAudioSentAt: null,
+      firstInputAudioAt: null,
+    },
   };
 
   function sendGeminiSetup() {
@@ -1211,6 +1246,7 @@ function wireGeminiLiveBridge(twilioSocket) {
       state.initialPrompt ||
       `Hi ${state.memberName}, it is your scheduled check-in call from DailyCall. Is there anything I can help you with, or anything you would like to chat about?`;
     state.turns.push({ speaker: "DailyCall", text: opener });
+    state.metrics.openerSentAt = new Date().toISOString();
     state.geminiSocket.send(
       JSON.stringify({
         clientContent: {
@@ -1228,6 +1264,8 @@ function wireGeminiLiveBridge(twilioSocket) {
   }
 
   state.geminiSocket.on("open", () => {
+    console.log("Gemini Live upstream websocket opened");
+    state.metrics.upstreamOpenedAt = new Date().toISOString();
     sendGeminiSetup();
   });
 
@@ -1238,6 +1276,7 @@ function wireGeminiLiveBridge(twilioSocket) {
 
     if (message.setupComplete) {
       state.setupComplete = true;
+      state.metrics.setupCompleteAt = state.metrics.setupCompleteAt || new Date().toISOString();
       const pending = state.pendingAudioPayloads.splice(0);
       for (const payload of pending) {
         state.geminiSocket.send(JSON.stringify({ realtimeInput: { audio: { data: payload, mimeType: "audio/pcm;rate=16000" } } }));
@@ -1262,6 +1301,7 @@ function wireGeminiLiveBridge(twilioSocket) {
       for (const part of parts) {
         const inlineData = part?.inlineData ?? part?.inline_data;
         if (typeof inlineData?.data === "string") {
+          state.metrics.firstAudioSentAt = state.metrics.firstAudioSentAt || new Date().toISOString();
           sendTwilioAudio(twilioSocket, state.streamSid, geminiPcm24kBase64ToTwilioMuLawBase64(inlineData.data));
         }
       }
@@ -1282,6 +1322,7 @@ function wireGeminiLiveBridge(twilioSocket) {
     if (!message) return;
 
     if (message.event === "start") {
+      state.metrics.twilioStartedAt = new Date().toISOString();
       state.streamSid = message.start?.streamSid ?? message.streamSid ?? null;
       state.callAttemptId = message.start?.customParameters?.callAttemptId ?? null;
       void loadOpenAIRealtimeCallSession(state.callAttemptId)
@@ -1299,6 +1340,7 @@ function wireGeminiLiveBridge(twilioSocket) {
             bridgeProvider: "Gemini Live",
           });
           state.sessionLoaded = true;
+          state.metrics.sessionLoadedAt = new Date().toISOString();
           console.log("Gemini Live stream bridge started", {
             callAttemptId: state.callAttemptId,
             streamSid: state.streamSid,
@@ -1314,6 +1356,7 @@ function wireGeminiLiveBridge(twilioSocket) {
     }
 
     if (message.event === "media" && typeof message.media?.payload === "string") {
+      state.metrics.firstInputAudioAt = state.metrics.firstInputAudioAt || new Date().toISOString();
       const rms = muLawRms(message.media.payload);
       const isSpeechFrame = rms > 650;
 
@@ -1352,15 +1395,29 @@ function wireGeminiLiveBridge(twilioSocket) {
     }
   });
 
-  twilioSocket.on("close", () => {
+  twilioSocket.on("close", (code, reason) => {
+    console.error("Twilio Gemini stream socket closed", {
+      code,
+      reason: reason?.toString() || "",
+      callAttemptId: state.callAttemptId,
+      streamSid: state.streamSid,
+      turns: state.turns.length,
+      setupComplete: state.setupComplete,
+      pendingAudioPayloads: state.pendingAudioPayloads.length,
+    });
+    if (state.streamSid) twilioOutboundAudioCounts.delete(state.streamSid);
     if (state.geminiSocket.readyState === WebSocket.OPEN) state.geminiSocket.close();
   });
 
   twilioSocket.on("error", (error) => console.error("Twilio Gemini stream socket error", error));
   state.geminiSocket.on("error", (error) => console.error("Gemini Live socket error", error));
+  state.geminiSocket.on("close", (code, reason) => {
+    console.error("Gemini Live socket closed", { code, reason: reason?.toString() || "" });
+  });
 }
 
 function wireBridge(twilioSocket, bridgeProvider = "cartesia") {
+  console.log(`${bridgeProvider === "elevenlabs" ? "ElevenLabs" : "Cartesia"} Twilio websocket connected`);
   const state = {
     bridgeProvider,
     twilioSocket,
@@ -1510,8 +1567,17 @@ function wireBridge(twilioSocket, bridgeProvider = "cartesia") {
   });
 
   twilioSocket.on("close", (code, reason) => {
-    console.error("Twilio stream socket closed", { code, reason: reason?.toString() || "", bridgeProvider });
+    console.error("Twilio stream socket closed", {
+      code,
+      reason: reason?.toString() || "",
+      bridgeProvider,
+      callAttemptId: state.callAttemptId,
+      streamSid: state.streamSid,
+      turns: state.turns.length,
+      pendingAudioPayloads: state.pendingAudioPayloads.length,
+    });
     state.shuttingDown = true;
+    if (state.streamSid) twilioOutboundAudioCounts.delete(state.streamSid);
     cancelActiveOutput(state);
     if (openAISocket.readyState === WebSocket.OPEN) openAISocket.close();
     if (state.cartesiaSocket?.readyState === WebSocket.OPEN) state.cartesiaSocket.close();
@@ -1543,6 +1609,12 @@ const wss = new WebSocketServer({ noServer: true });
 
 server.on("upgrade", (request, socket, head) => {
   const url = new URL(request.url ?? "", `http://${request.headers.host ?? "localhost"}`);
+  console.log("bridge websocket upgrade requested", {
+    path: url.pathname,
+    host: request.headers.host,
+    upgrade: request.headers.upgrade,
+    userAgent: request.headers["user-agent"],
+  });
 
   if (
     url.pathname !== "/api/cartesia-test/stream" &&
@@ -1551,6 +1623,7 @@ server.on("upgrade", (request, socket, head) => {
     url.pathname !== "/api/deepgram-cartesia-bridge/stream" &&
     url.pathname !== "/api/gemini-live-bridge/stream"
   ) {
+    console.error("bridge websocket upgrade rejected", { path: url.pathname });
     socket.destroy();
     return;
   }

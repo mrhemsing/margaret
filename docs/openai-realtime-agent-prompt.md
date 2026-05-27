@@ -57,7 +57,7 @@ Keep the first greeting short. The goal is warmth and a quick open question, not
 ## Current production settings
 
 ```env
-OPENAI_REALTIME_MODEL=gpt-realtime
+OPENAI_REALTIME_MODEL=gpt-realtime-2
 OPENAI_REALTIME_VOICE=marin
 OPENAI_REALTIME_REASONING_EFFORT=low
 OPENAI_REALTIME_VAD_EAGERNESS=low

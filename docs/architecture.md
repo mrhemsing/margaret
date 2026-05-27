@@ -96,7 +96,7 @@ Suggested interfaces:
 ## Current OpenAI Realtime defaults
 
 - Provider: `openai_realtime_twilio`
-- Model: `gpt-realtime`
+- Model: `gpt-realtime-2`
 - Voice: `marin` for the default soft companion voice; `cedar` for the gentle caller alternate.
 - Reasoning: `low` for ordinary check-ins; raise only for complex tool-heavy or summary/extraction work.
 - Turn detection: `semantic_vad` with `eagerness: low` and interruption disabled while tuning phone stability.

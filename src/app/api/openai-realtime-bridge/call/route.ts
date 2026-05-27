@@ -86,7 +86,7 @@ export async function POST(request: Request) {
           provider: "openai_realtime_stream_bridge",
           initialPrompt:
             parsed.data.firstMessage ??
-            `Hi ${member.name}, this is DailyCall through the OpenAI Realtime bridge. I am here if anything is on your mind, or if you would just like a quick chat. How are you doing today?`,
+            `Hi ${member.name}, it is DailyCall. How are you doing today?`,
           hybridTranscript: [],
         } as Prisma.InputJsonValue,
         syncedAt: new Date(),

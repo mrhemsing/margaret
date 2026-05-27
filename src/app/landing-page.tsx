@@ -7,12 +7,10 @@ import { DemoCallForm } from "./demo-call-form";
 import { TestimonialsCarousel } from "./testimonials-carousel";
 
 const heroProof = [
-  { label: "No app required", mobileOnly: true },
+  { label: "No app needed" },
   { label: "Works with regular phones" },
-  { label: "No credit card required", mobileOnly: true },
   { label: "Setup in under 2 minutes" },
-  { label: "Cancel anytime", mobileOnly: true },
-  { label: "Family updates after calls" },
+  { label: "Family text updates" },
 ];
 
 const steps = [
@@ -39,7 +37,7 @@ const parentIntroPoints = [
   "Frame it as a friendly daily phone companion, not monitoring",
   "Choose a familiar call time, like after breakfast or before dinner",
   "Start with a short call so it feels easy and low-pressure",
-  "Keep family calls going so DailyCall supports the relationship",
+  "Keep family calls going so DailyCall supports the relationship - not replaces it.",
 ];
 
 const memoryExamples = [
@@ -63,7 +61,7 @@ const rituals = [
   { label: "Memory-lane stories", image: "/rituals/memory-elderly-man.jpg", position: "50% 28%" },
 ];
 
-const testimonials = [
+export const testimonials = [
   {
     quote: "I live a flight away from my dad. DailyCall gives him a friendly routine and gives me a little more confidence that I am not missing something important.",
     name: "Michael",
@@ -81,7 +79,7 @@ const testimonials = [
   },
 ];
 
-const plans = [
+export const plans = [
   {
     name: "Wellness",
     price: "$19.95",
@@ -112,7 +110,7 @@ const plans = [
   },
 ];
 
-const faqs = [
+export const faqs = [
   ["Does my parent need an app or smartphone?", "No. DailyCall works by regular phone call, so your loved one does not need an app, account, password, or smartphone."],
   ["Will my loved one know they're speaking with AI?", "Yes. DailyCall should be introduced honestly as an AI phone companion that helps families stay connected and informed."],
   ["Can DailyCall call landlines?", "Yes. DailyCall can call mobile phones and landlines, which makes it simple for seniors who prefer a familiar phone."],
@@ -163,14 +161,12 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                 <span className="block whitespace-nowrap sm:inline">NO CREDIT CARD REQUIRED</span>
                 <span className="hidden sm:inline" aria-hidden="true">•</span>
                 <span className="whitespace-nowrap">CANCEL ANYTIME</span>
-                <span className="mx-1 sm:mx-0" aria-hidden="true">•</span>
-                <span className="whitespace-nowrap">NO APP NEEDED</span>
               </p>
               <div className="mt-6 grid gap-2 text-base md:text-sm font-semibold text-ink sm:max-w-xl sm:grid-cols-2">
                 {heroProof.map((item) => (
                   <div
                     key={item.label}
-                    className={`items-center gap-3 rounded-full bg-white/80 px-4 py-2 shadow-sm ring-1 ring-black/5 ${item.mobileOnly ? "flex sm:hidden" : "flex"}`}
+                    className="flex items-center gap-3 rounded-full bg-white/80 px-4 py-2 shadow-sm ring-1 ring-black/5"
                   >
                     <span className="h-2 w-2 shrink-0 rounded-full bg-brandPink" aria-hidden="true" />
                     <span>{item.label}</span>
@@ -193,7 +189,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
       <section data-mobile-reveal id="how-it-works" className="rounded-[2rem] bg-ink p-8 text-cream shadow-sm md:p-10">
         <div className="grid gap-8 md:grid-cols-[0.75fr_1fr] md:items-center">
           <div>
-            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-brandPink">How it works</p>
+            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-brandPinkLight">How it works</p>
             <h2 className="mt-3 text-3xl font-bold">Simple support, without new technology to learn.</h2>
             <p className="mt-4 leading-7 text-cream/75">Choose a daily call schedule, your loved one receives friendly calls, and you receive peace-of-mind updates by text message. No app. No passwords. No complicated setup.</p>
           </div>
@@ -228,7 +224,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           </div>
           <div className="mt-6 grid items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]">
             <div className="rounded-[2rem] bg-ink p-5 text-cream shadow-sm md:flex md:min-h-[360px] md:flex-col md:justify-center">
-              <p className="text-sm md:text-xs font-semibold uppercase tracking-wide text-cream/50">Sample conversation</p>
+              <p className="text-sm md:text-xs font-semibold uppercase tracking-wide text-cream/75">Sample conversation</p>
               <div className="mt-4 grid gap-3 text-base md:text-sm leading-6">
                 <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Hi, this is DailyCall calling for your daily check-in! How are you feeling today?</p>
                 <p className="ml-auto max-w-[88%] rounded-2xl bg-brandPink p-3 font-semibold text-white">A little tired, but okay. I slept in a bit.</p>
@@ -311,7 +307,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                   ["Missed calls", "0 this week"],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-2xl bg-brandBlue/10 p-3">
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-600">{label}</p>
                     <p className="mt-1 text-lg font-bold text-ink">{value}</p>
                   </div>
                 ))}
@@ -424,7 +420,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
         <TestimonialsCarousel testimonials={testimonials} />
       </section>
 
-      <section data-mobile-reveal id="plans" className="grid gap-5">
+      <section data-mobile-reveal id="pricing" className="grid gap-5">
         <div className="text-center">
           <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Pricing</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Companionship for them. Peace of mind for you.</h2>
@@ -440,7 +436,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
               </div>
               <p className="mt-3 text-4xl font-bold">{plan.price}<span className={`text-base font-medium ${plan.featured ? "text-cream/60" : "text-slate-500"}`}> / mo</span></p>
               <p className={`mt-3 min-h-12 text-base md:text-sm font-semibold leading-6 ${plan.featured ? "text-cream" : "text-ink"}`}>{plan.bestFor}</p>
-              <p className={`mt-2 text-base md:text-sm font-bold ${plan.featured ? "text-brandPink" : "text-sage"}`}>{plan.includedMinutes}</p>
+              <p className={`mt-2 text-base md:text-sm font-bold ${plan.featured ? "text-brandPinkLight" : "text-sage"}`}>{plan.includedMinutes}</p>
               <p className={`mt-2 text-base md:text-sm font-semibold ${plan.featured ? "text-cream/65" : "text-slate-500"}`}>{plan.trial}</p>
               <ul className={`mt-5 grid gap-2 text-base md:text-sm leading-6 ${plan.featured ? "text-cream/80" : "text-slate-600"}`}>
                 {plan.includes.map((item) => <li key={item} className="flex gap-3"><CheckIcon /><span>{item}</span></li>)}
@@ -454,7 +450,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
         </div>
         <div className="grid gap-5 rounded-[2rem] bg-ink p-5 text-cream shadow-sm ring-1 ring-ink md:grid-cols-[0.9fr_1.1fr] md:p-6">
           <div>
-            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-brandPink">Companion plan</p>
+            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-brandPinkLight">Companion plan</p>
             <h3 className="mt-2 text-2xl font-bold">Always reachable.</h3>
             <p className="mt-3 text-base md:text-sm leading-6 text-cream/75">
               Your loved one can call DailyCall anytime, day or night, simply by dialing back the same number. It is not just scheduled calls - it is a friendly voice that is there whenever they want to talk.
@@ -516,7 +512,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
         </div>
       </section>
 
-      <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
+      <section data-mobile-reveal id="faq" className="scroll-mt-24 rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:scroll-mt-28 md:p-10">
         <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">FAQ</p>
         <h2 className="mt-3 text-3xl font-bold text-ink">Questions families often ask.</h2>
         <div className="mt-6 grid gap-3 xl:grid-cols-2">

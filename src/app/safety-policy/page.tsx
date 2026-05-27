@@ -2,6 +2,10 @@ import { LegalPageShell } from "@/app/components/legal-page-shell";
 
 export const metadata = {
   title: "Safety Policy",
+  description: "DailyCall safety policy for non-clinical companion calls, emergency limits, escalation guidance, and responsible use.",
+  alternates: {
+    canonical: "/safety-policy",
+  },
 };
 
 export default function SafetyPolicyPage() {

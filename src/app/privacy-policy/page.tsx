@@ -2,6 +2,10 @@ import { LegalPageShell } from "@/app/components/legal-page-shell";
 
 export const metadata = {
   title: "Privacy Policy",
+  description: "DailyCall privacy practices for account data, calls, transcripts, SMS notifications, security, retention, and support.",
+  alternates: {
+    canonical: "/privacy-policy",
+  },
 };
 
 export default function PrivacyPolicyPage() {

@@ -4,6 +4,10 @@ import { CookiePreferencesForm } from "./cookie-preferences-form";
 
 export const metadata = {
   title: "Cookie Preferences",
+  description: "Manage optional DailyCall analytics cookies while keeping essential security and sign-in cookies active.",
+  alternates: {
+    canonical: "/cookie-preferences",
+  },
 };
 
 export default function CookiePreferencesPage() {

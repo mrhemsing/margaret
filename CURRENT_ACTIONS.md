@@ -32,7 +32,7 @@ Next:
 Status: **Active**
 
 Defaults:
-- `OPENAI_REALTIME_MODEL=gpt-realtime`
+- `OPENAI_REALTIME_MODEL=gpt-realtime-2`
 - `OPENAI_REALTIME_VOICE=marin`
 - `OPENAI_REALTIME_REASONING_EFFORT=low`
 - `OPENAI_REALTIME_VAD_EAGERNESS=low`

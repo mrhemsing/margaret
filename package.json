@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev-cartesia-streaming-server.mjs",
+    "dev:next": "next dev",
     "dev:cartesia-stream": "node scripts/dev-cartesia-streaming-server.mjs",
     "build": "prisma generate && next build",
     "start": "next start",

@@ -5,6 +5,10 @@ import { SignupForm } from "@/app/signup/signup-form";
 
 export const metadata = {
   title: "Sign Up",
+  description: "Start a DailyCall free trial and schedule friendly AI companion calls for an aging parent by regular phone.",
+  alternates: {
+    canonical: "/signup",
+  },
 };
 
 export default function SignupPage() {

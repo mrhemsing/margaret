@@ -18,22 +18,66 @@ const requestSchema = z.object({
 type CartesiaOutboundResponse = {
   id?: string;
   call_id?: string;
+  agent_call_id?: string;
   status?: string;
   message?: string;
   error?: string;
   detail?: string;
-  calls?: Array<{ id?: string; call_id?: string; status?: string }>;
+  calls?: Array<{ id?: string; call_id?: string; agent_call_id?: string; status?: string }>;
 };
 
 type CartesiaAgentResponse = {
   id?: string;
   phone_numbers?: Array<{ id?: string; phone_number_id?: string }>;
+  phoneNumbers?: Array<{ id?: string; phone_number_id?: string }>;
+  message?: string;
+  error?: string;
+};
+
+type CartesiaPhoneNumber = {
+  id?: string;
+  phone_number_id?: string;
+  number?: string;
+  agent?: { id?: string } | string | null;
+};
+
+type CartesiaPhoneNumbersResponse = {
+  data?: CartesiaPhoneNumber[];
   message?: string;
   error?: string;
 };
 
 function getCartesiaError(result: CartesiaOutboundResponse | null, status: number) {
   return result?.message ?? result?.error ?? result?.detail ?? `Cartesia outbound call failed with status ${status}.`;
+}
+
+function getPhoneNumberId(phoneNumber: CartesiaPhoneNumber | undefined) {
+  return phoneNumber?.id ?? phoneNumber?.phone_number_id;
+}
+
+function isAssignedToAgent(phoneNumber: CartesiaPhoneNumber, agentId: string) {
+  if (!phoneNumber.agent) return false;
+  return typeof phoneNumber.agent === "string" ? phoneNumber.agent === agentId : phoneNumber.agent.id === agentId;
+}
+
+async function listCartesiaPhoneNumbers(input: { apiKey: string; agentId?: string }) {
+  const url = new URL("https://api.cartesia.ai/agents/phone-numbers");
+  if (input.agentId) url.searchParams.set("agent_id", input.agentId);
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${input.apiKey}`,
+      "X-API-Key": input.apiKey,
+      "Cartesia-Version": "2026-03-01",
+    },
+  });
+  const result = (await response.json().catch(() => null)) as CartesiaPhoneNumbersResponse | null;
+
+  if (!response.ok) {
+    throw new Error(result?.message ?? result?.error ?? `Cartesia phone number lookup failed with status ${response.status}.`);
+  }
+
+  return result?.data ?? [];
 }
 
 async function getCartesiaFromNumberId(input: { apiKey: string; agentId: string; configuredFromNumberId?: string }) {
@@ -52,12 +96,22 @@ async function getCartesiaFromNumberId(input: { apiKey: string; agentId: string;
     throw new Error(agent?.message ?? agent?.error ?? `Cartesia agent lookup failed with status ${response.status}.`);
   }
 
-  const fromNumberId = agent?.phone_numbers?.[0]?.id ?? agent?.phone_numbers?.[0]?.phone_number_id;
+  const agentPhoneNumber = agent?.phone_numbers?.[0] ?? agent?.phoneNumbers?.[0];
+  const fromNumberId = getPhoneNumberId(agentPhoneNumber);
 
   if (!fromNumberId) {
-    throw new Error(
-      "Cartesia agent has no phone number assigned. In Cartesia, assign/import a phone number for this agent, then set CARTESIA_FROM_NUMBER_ID if it is not shown on the agent.",
-    );
+    const assignedNumbers = await listCartesiaPhoneNumbers({ apiKey: input.apiKey, agentId: input.agentId });
+    const assignedFromNumberId = getPhoneNumberId(assignedNumbers[0]);
+    if (assignedFromNumberId) return assignedFromNumberId;
+
+    const accountNumbers = await listCartesiaPhoneNumbers({ apiKey: input.apiKey });
+    const linkedFromNumberId =
+      getPhoneNumberId(accountNumbers.find((phoneNumber) => isAssignedToAgent(phoneNumber, input.agentId))) ??
+      getPhoneNumberId(accountNumbers[0]);
+
+    if (linkedFromNumberId) return linkedFromNumberId;
+
+    throw new Error("Cartesia has no linked phone numbers available for outbound agent calls.");
   }
 
   return fromNumberId;
@@ -167,13 +221,18 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       agent_id: env.CARTESIA_AGENT_ID,
       from_number_id: fromNumberId,
-      to_number: normalizedPhone,
-      metadata: {
-        callAttemptId: callAttempt.id,
-        memberName: member.name,
-        caregiverName: parsed.data.caregiverName ?? "DailyCall test reviewer",
-        initialPrompt: parsed.data.firstMessage,
-      },
+      ringing_timeout_seconds: 30,
+      outbound_calls: [
+        {
+          to_number: normalizedPhone,
+          metadata: {
+            callAttemptId: callAttempt.id,
+            memberName: member.name,
+            caregiverName: parsed.data.caregiverName ?? "DailyCall test reviewer",
+            initialPrompt: parsed.data.firstMessage,
+          },
+        },
+      ],
     }),
   });
 
@@ -194,7 +253,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error }, { status: 502 });
   }
 
-  const providerCallId = result?.call_id ?? result?.id ?? result?.calls?.[0]?.call_id ?? result?.calls?.[0]?.id ?? null;
+  const providerCallId =
+    result?.agent_call_id ??
+    result?.call_id ??
+    result?.id ??
+    result?.calls?.[0]?.agent_call_id ??
+    result?.calls?.[0]?.call_id ??
+    result?.calls?.[0]?.id ??
+    null;
 
   await prisma.callAttempt.update({
     where: { id: callAttempt.id },

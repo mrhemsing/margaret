@@ -2,6 +2,10 @@ import { LegalPageShell } from "@/app/components/legal-page-shell";
 
 export const metadata = {
   title: "Cookie Policy",
+  description: "How DailyCall uses essential and optional cookies for security, sign-in, preferences, analytics, and site reliability.",
+  alternates: {
+    canonical: "/cookie-policy",
+  },
 };
 
 export default function CookiePolicyPage() {

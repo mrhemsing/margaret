@@ -4,6 +4,10 @@ import { SupportContactForm } from "./support-contact-form";
 
 export const metadata = {
   title: "Support",
+  description: "Contact DailyCall support for help with signup, call scheduling, billing, transcripts, dashboard access, or call settings.",
+  alternates: {
+    canonical: "/support",
+  },
 };
 
 export default function SupportPage() {

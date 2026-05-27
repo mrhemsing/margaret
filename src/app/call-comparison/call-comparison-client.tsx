@@ -4,7 +4,7 @@ import { TestCallButtons, type TestCallTarget } from "@/app/components/test-call
 import { defaultVoiceId } from "@/lib/voice/voice-options";
 
 const comparisonIntroTemplate =
-  "Hi {name}, this is DailyCall with your quick check-in. I am here if anything is on your mind, or if you would just like a short chat. How are you doing today?";
+  "Hi {name}, it is DailyCall. How are you doing today?";
 
 const comparisonRows = [
   {
@@ -21,22 +21,11 @@ const comparisonRows = [
   },
   {
     title: "OpenAI Realtime SIP",
-    badge: "Direct SIP",
-    subtitle: "Single-provider realtime voice path.",
-    stack: "Twilio SIP, gpt-realtime, gpt-realtime-whisper, Marin voice",
+    badge: "Controlled SIP",
+    subtitle: "Single-provider realtime voice path with server-side turn control.",
+    stack: "Twilio SIP, gpt-realtime-2, server VAD, manual responses, Marin voice",
     endpoint: "/api/openai/realtime-test-call",
     caregiverName: "DailyCall OpenAI Realtime comparison reviewer",
-    buildPayload: (target: TestCallTarget) => ({
-      firstMessage: buildIntro(target.label),
-    }),
-  },
-  {
-    title: "OpenAI Realtime bridge",
-    badge: "Custom Bridge",
-    subtitle: "Custom Twilio Media Stream bridge for apples-to-apples bridge testing.",
-    stack: "Twilio Media Stream, gpt-realtime speech-to-speech, Marin voice",
-    endpoint: "/api/openai-realtime-bridge/call",
-    caregiverName: "DailyCall OpenAI Realtime bridge comparison reviewer",
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
     }),
@@ -79,23 +68,23 @@ const comparisonRows = [
     }),
   },
   {
-    title: "ElevenLabs streaming bridge",
-    badge: "Custom Bridge",
-    subtitle: "Custom bridge matching the Cartesia architecture.",
-    stack: "Twilio Media Stream, OpenAI transcription/text, ElevenLabs Flash v2.5",
-    endpoint: "/api/bridge-test/call",
-    caregiverName: "DailyCall ElevenLabs bridge comparison reviewer",
-    buildPayload: (target: TestCallTarget) => ({
-      firstMessage: buildIntro(target.label),
-    }),
-  },
-  {
     title: "Cartesia Line agent",
     badge: "Native Agent",
     subtitle: "Cartesia's native agent path for comparison against the custom Sonic bridge.",
     stack: "Twilio, Cartesia Line agent",
     endpoint: "/api/cartesia-agent-test/call",
     caregiverName: "DailyCall Cartesia native agent comparison reviewer",
+    buildPayload: (target: TestCallTarget) => ({
+      firstMessage: buildIntro(target.label),
+    }),
+  },
+  {
+    title: "Hume EVI",
+    badge: "Native Agent",
+    subtitle: "Hume's hosted empathic voice interface over Twilio.",
+    stack: "Twilio, Hume EVI 3, Ava Song voice",
+    endpoint: "/api/hume-evi-test/call",
+    caregiverName: "DailyCall Hume EVI comparison reviewer",
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
     }),

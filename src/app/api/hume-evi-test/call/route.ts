@@ -3,7 +3,6 @@ import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 
 import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { getPublicBaseUrl } from "@/lib/cartesia-test-call";
 import { prisma } from "@/lib/db";
 import { getServerEnv } from "@/lib/env";
 
@@ -30,16 +29,13 @@ export async function POST(request: Request) {
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { ok: false, error: "Invalid request. Expected toNumber, optional memberName, optional caregiverName." },
-      { status: 400 },
-    );
+    return NextResponse.json({ ok: false, error: "Invalid Hume EVI test call request." }, { status: 400 });
   }
 
   const env = getServerEnv();
 
-  if (!env.GEMINI_API_KEY) {
-    return NextResponse.json({ ok: false, error: "GEMINI_API_KEY is not configured." }, { status: 503 });
+  if (!env.HUME_API_KEY || !env.HUME_EVI_CONFIG_ID) {
+    return NextResponse.json({ ok: false, error: "Hume EVI is not configured." }, { status: 503 });
   }
 
   if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_FROM_NUMBER) {
@@ -49,11 +45,11 @@ export async function POST(request: Request) {
   const normalizedPhone = parsed.data.toNumber.replace(/\s+/g, "");
 
   const customer = await prisma.customer.upsert({
-    where: { email: "gemini-live-test@dailycall.local" },
-    update: { fullName: "Gemini Live Test", phoneNumber: "+16043138398" },
+    where: { email: "hume-evi-test@dailycall.local" },
+    update: { fullName: "Hume EVI Test", phoneNumber: "+16043138398" },
     create: {
-      email: "gemini-live-test@dailycall.local",
-      fullName: "Gemini Live Test",
+      email: "hume-evi-test@dailycall.local",
+      fullName: "Hume EVI Test",
       phoneNumber: "+16043138398",
     },
   });
@@ -69,10 +65,10 @@ export async function POST(request: Request) {
     : await prisma.member.create({
         data: {
           customerId: customer.id,
-          name: parsed.data.memberName ?? "Gemini Live phone test",
+          name: parsed.data.memberName ?? "Hume EVI phone test",
           phoneNumber: normalizedPhone,
           timezone: "America/Los_Angeles",
-          preferredCallTime: "Gemini Live bridge phone test",
+          preferredCallTime: "Hume EVI phone test",
         },
       });
 
@@ -82,26 +78,20 @@ export async function POST(request: Request) {
       scheduledFor: new Date(),
       startedAt: new Date(),
       status: "IN_PROGRESS",
-      summary: `Gemini Live bridge phone test started for ${member.name}.`,
+      summary: `Hume EVI phone test started for ${member.name}.`,
       conversationRaw: {
-        provider: "gemini_live_native_audio_stream_twilio",
-        geminiConfig: {
-          modelId: "gemini-2.5-flash-native-audio-preview-12-2025",
-          inputFormat: "pcm16_16000",
-          outputFormat: "pcm16_24000",
-        },
-        initialPrompt:
-          parsed.data.firstMessage ??
-          `Hi ${member.name}, it is DailyCall. How are you doing today?`,
+        provider: "hume_evi_twilio",
+        humeConfigId: env.HUME_EVI_CONFIG_ID,
+        initialPrompt: parsed.data.firstMessage,
         hybridTranscript: [],
       } as Prisma.InputJsonValue,
       syncedAt: new Date(),
     },
   });
 
-  const baseUrl = getPublicBaseUrl();
-  const voiceUrl = new URL(`${baseUrl}/api/gemini-live-bridge/stream-twiml`);
-  voiceUrl.searchParams.set("callAttemptId", callAttempt.id);
+  const voiceUrl = new URL("https://api.hume.ai/v0/evi/twilio");
+  voiceUrl.searchParams.set("config_id", env.HUME_EVI_CONFIG_ID);
+  voiceUrl.searchParams.set("api_key", env.HUME_API_KEY);
 
   const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Calls.json`, {
     method: "POST",
@@ -139,7 +129,11 @@ export async function POST(request: Request) {
   if (result?.sid) {
     await prisma.callAttempt.update({
       where: { id: callAttempt.id },
-      data: { providerCallSid: result.sid, syncedAt: new Date() },
+      data: {
+        providerCallSid: result.sid,
+        summary: `Hume EVI phone test started for ${member.name}. Twilio status: ${result.status ?? "queued"}.`,
+        syncedAt: new Date(),
+      },
     });
   }
 

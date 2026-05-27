@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       session: {
         type: "realtime",
-        model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime",
+        model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2",
         instructions,
         reasoning: {
           effort: reasoningEffort,
