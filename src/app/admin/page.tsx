@@ -252,20 +252,17 @@ function TrialBillingSection({ data }: { data: AdminData }) {
       </div>
 
       <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-ink">Recent trials and subscriptions</h2>
-            <p className="mt-1 text-sm text-slate-500">Newest customers and their latest subscription record.</p>
-          </div>
-          <span className="rounded-full bg-brandBlue/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brandButtonBlue">
+        <div className="grid gap-3">
+          <h2 className="text-xl font-bold text-ink">Recent trials and subscriptions</h2>
+          <p className="text-sm text-slate-500">Newest customers and their latest subscription record.</p>
+          <span className="inline-flex w-fit rounded-full bg-brandBlue/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brandButtonBlue">
             {data.subscriptions.length} records
           </span>
         </div>
 
         <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          <div className="hidden grid-cols-[1.2fr_0.9fr_0.8fr_0.8fr] gap-4 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500 md:grid">
+          <div className="hidden grid-cols-[1.6fr_0.7fr_0.7fr] gap-4 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500 md:grid">
             <span>Customer</span>
-            <span>Plan</span>
             <span>Status</span>
             <span>Trial / period end</span>
           </div>
@@ -276,14 +273,12 @@ function TrialBillingSection({ data }: { data: AdminData }) {
               data.subscriptions.map((subscription) => {
                 const primaryMember = subscription.customer.members[0];
                 return (
-                  <div key={subscription.id} className="grid gap-3 p-4 text-sm md:grid-cols-[1.2fr_0.9fr_0.8fr_0.8fr] md:items-center">
+                  <div key={subscription.id} className="grid gap-3 p-4 text-sm md:grid-cols-[1.6fr_0.7fr_0.7fr] md:items-center">
                     <div>
                       <p className="font-semibold text-ink">{subscription.customer.fullName}</p>
                       <p className="mt-1 text-slate-500">{subscription.customer.email ?? "No email"}</p>
                       <p className="mt-1 text-xs text-slate-400">Loved one: {primaryMember?.name ?? "Not set"}</p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-ink">{subscription.plan.replaceAll("_", " ").toLowerCase()}</p>
+                      <p className="mt-3 text-xs font-semibold text-ink">{subscription.plan.replaceAll("_", " ").toLowerCase()}</p>
                       <p className="mt-1 text-xs text-slate-500">Stripe: {subscription.stripeSubscriptionId ? "connected" : "pending"}</p>
                     </div>
                     <span className={statusClassName(subscription.status)}>{subscription.status.replaceAll("_", " ")}</span>
