@@ -173,10 +173,10 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                   </div>
                 ))}
               </div>
-              <p className="mt-6 flex flex-wrap gap-x-2 gap-y-1 text-sm font-extrabold uppercase tracking-normal text-ink sm:hidden">
-                <span className="whitespace-nowrap">NO CREDIT CARD REQUIRED</span>
-                <span aria-hidden="true">•</span>
-                <span className="whitespace-nowrap">CANCEL ANYTIME</span>
+              <p className="mt-6 flex whitespace-nowrap text-[0.72rem] font-extrabold uppercase tracking-normal text-ink sm:hidden">
+                <span>NO CREDIT CARD REQUIRED</span>
+                <span className="px-1" aria-hidden="true">•</span>
+                <span>CANCEL ANYTIME</span>
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a href="#demo" className="rounded-full bg-brandButtonBlue px-6 py-3 text-center font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover">
