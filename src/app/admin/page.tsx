@@ -1,4 +1,5 @@
 import { SubscriptionStatus } from "@prisma/client";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -241,9 +242,9 @@ function TrialBillingSection({ data }: { data: AdminData }) {
           <p className="mt-3 max-w-2xl leading-7 text-cream/75">
             Track new trial signups, selected plans, Stripe status, billing readiness, customers who may need follow-up, and export conversation history for review.
           </p>
-          <a href="/api/admin/export-transcripts" className="mt-5 inline-flex rounded-full bg-cream px-4 py-2.5 text-center text-sm font-semibold text-ink shadow-sm hover:bg-white">
+          <Link href="/api/admin/export-transcripts" className="mt-5 inline-flex rounded-full bg-cream px-4 py-2.5 text-center text-sm font-semibold text-ink shadow-sm hover:bg-white">
             Export transcript CSV
-          </a>
+          </Link>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
