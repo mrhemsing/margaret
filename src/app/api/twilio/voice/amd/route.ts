@@ -189,7 +189,7 @@ export async function POST(request: Request) {
       data: {
         status: "IN_PROGRESS",
         startedAt: new Date(),
-        summary: "Call answered. DailyCall is starting the conversation.",
+        summary: "They picked up. DailyCall is chatting with them now.",
         conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
         syncedAt: new Date(),
       },
@@ -247,7 +247,7 @@ export async function POST(request: Request) {
         await prisma.callAttempt.updateMany({
           where: { providerCallSid: callSid },
           data: {
-            summary: "Call answered. DailyCall is starting the conversation.",
+            summary: "They picked up. DailyCall is chatting with them now.",
             conversationRaw: {
               provider: "openai_text_elevenlabs_twilio",
               twilioAmd: Object.fromEntries(formData.entries()),
@@ -271,7 +271,7 @@ export async function POST(request: Request) {
         await prisma.callAttempt.updateMany({
           where: { providerCallSid: callSid },
           data: {
-            summary: "Call answered. DailyCall is starting the conversation.",
+            summary: "They picked up. DailyCall is chatting with them now.",
             conversationRaw: {
               provider: "openai_realtime",
               twilioAmd: Object.fromEntries(formData.entries()),

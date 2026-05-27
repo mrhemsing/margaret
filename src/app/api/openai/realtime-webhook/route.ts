@@ -143,7 +143,7 @@ export async function POST(request: Request) {
         status: "IN_PROGRESS",
         startedAt: callAttempt.startedAt ?? new Date(),
         providerConversationId: callId,
-        summary: "Call answered. DailyCall is starting the conversation.",
+        summary: "They picked up. DailyCall is chatting with them now.",
         conversationRaw: {
           ...existingRaw,
           provider: "openai_realtime",

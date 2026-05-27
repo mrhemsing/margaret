@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       where: { id: callAttemptId },
       data: {
         providerCallSid: callSid || callAttempt.providerCallSid,
-        summary: "Call answered. DailyCall is starting the conversation.",
+        summary: "They picked up. DailyCall is chatting with them now.",
         conversationRaw: {
           ...existingRaw,
           provider: "openai_realtime",

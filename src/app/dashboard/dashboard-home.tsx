@@ -365,12 +365,13 @@ function isStaleInProgressCall(call: DashboardMember["callAttempts"][number]) {
 
 function stripTechnicalDetails(value: string) {
   return value
-    .replace(/Human answer detected\.?\s*/gi, "Call answered. ")
-    .replace(/Human answered\.?\s*/gi, "Call answered. ")
-    .replace(/DailyCall is connecting the call to the voice agent\.?/gi, "DailyCall is starting the conversation.")
-    .replace(/DailyCall is connecting OpenAI Realtime into the silent conference\.?/gi, "DailyCall is starting the conversation.")
-    .replace(/DailyCall is connecting OpenAI text replies to ElevenLabs voice playback\.?/gi, "DailyCall is starting the conversation.")
-    .replace(/DailyCall is dialing OpenAI Realtime directly over SIP\.?/gi, "DailyCall is starting the conversation.")
+    .replace(/Human answer detected\.?\s*/gi, "They picked up. ")
+    .replace(/Human answered\.?\s*/gi, "They picked up. ")
+    .replace(/DailyCall is connecting the call to the voice agent\.?/gi, "DailyCall is chatting with them now.")
+    .replace(/DailyCall is connecting OpenAI Realtime into the silent conference\.?/gi, "DailyCall is chatting with them now.")
+    .replace(/DailyCall is connecting OpenAI text replies to ElevenLabs voice playback\.?/gi, "DailyCall is chatting with them now.")
+    .replace(/DailyCall is dialing OpenAI Realtime directly over SIP\.?/gi, "DailyCall is chatting with them now.")
+    .replace(/Call answered\. DailyCall is starting the conversation\.?/gi, "They picked up. DailyCall is chatting with them now.")
     .replace(/OpenAI Realtime SIP did not connect before Twilio completed the call\.?/gi, "DailyCall could not start the conversation before the call ended.")
     .replace(/SIP Call-ID:\s*\S+/gi, "")
     .replace(/SIP response:\s*\d+\.?/gi, "")
@@ -422,7 +423,7 @@ function getFamilyCallOutcome(call: DashboardMember["callAttempts"][number]) {
       dotClassName: "bg-brandBlue",
       badgeClassName: "bg-brandBlue/10 text-brandButtonBlue ring-brandBlue/20",
       label: "Calling now",
-      text: summary ? `In progress · ${summary}` : "DailyCall is on the call now. The recap will update when the conversation finishes.",
+      text: summary ? `In progress · ${summary}` : "DailyCall is chatting with them now. The recap will update when the conversation finishes.",
     };
   }
 
