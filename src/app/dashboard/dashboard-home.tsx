@@ -860,18 +860,18 @@ function MemberSummaryCard({ member, onUpdated }: { member: DashboardMember; onU
             <p className="mt-2 break-words text-sm leading-6 text-slate-600">{member.phoneNumber}</p>
           </div>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end md:ml-auto md:shrink-0">
+        <div className="grid grid-cols-2 gap-2 md:ml-auto md:shrink-0 md:justify-items-end">
           <button
             type="button"
             onClick={() => void startManualCall()}
             disabled={calling || !member.active}
-            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-4 py-3 text-center text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto md:px-5"
           >
-            {calling ? `Calling ${member.name}...` : "Call Now"}
+            {calling ? "Calling..." : "Call Now"}
           </button>
           <Link
             href="/dashboard/settings"
-            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 sm:w-auto"
+            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-4 py-3 text-center text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 md:w-auto md:px-5"
           >
             Settings
           </Link>
@@ -1436,18 +1436,18 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
             <p className="mt-2 break-words text-sm leading-6 text-slate-600">{member.phoneNumber}</p>
           </div>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 md:justify-items-end">
+        <div className="grid grid-cols-2 gap-2 md:justify-items-end">
           <button
             type="button"
             onClick={() => void startManualCall()}
             disabled={calling || !member.active}
-            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-brandButtonBlue px-5 py-3 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-brandButtonBlue px-4 py-3 text-center text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:opacity-60 md:w-auto md:px-5"
           >
-            {calling ? `Calling ${member.name}...` : "Call Now"}
+            {calling ? "Calling..." : "Call Now"}
           </button>
           <Link
             href="/dashboard/settings"
-            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 md:w-auto"
+            className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-4 py-3 text-center text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 md:w-auto md:px-5"
           >
             Settings
           </Link>
