@@ -148,19 +148,16 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           <div className="absolute inset-0 bg-[linear-gradient(to_top,white_0%,rgba(255,255,255,0.97)_35%,rgba(255,255,255,0.84)_39%,transparent_59%)] sm:bg-[linear-gradient(to_right,white_0%,rgba(255,255,255,0.88)_36%,transparent_62%)]" />
           <div className="relative flex max-w-2xl flex-col justify-between p-6 sm:block sm:p-8 md:p-12">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-ink md:text-5xl">
+              <h1 className="text-[2.05rem] font-bold leading-[1.05] tracking-tight text-ink md:text-5xl md:leading-none">
                 Someone to talk to{" "}
-                <span className="sm:block">when you can&apos;t be there.</span>
+                <span className="sm:block">
+                  when you can&apos;t <span className="block sm:inline">be there.</span>
+                </span>
               </h1>
             </div>
             <div className="pt-10 sm:pt-0">
               <p className="mt-2 w-[60%] max-w-[60%] -translate-y-8 text-base leading-7 text-slate-600 sm:mt-12 sm:w-[72%] sm:max-w-[72%] sm:text-lg sm:leading-8 md:mt-5 md:w-auto md:max-w-[72%] md:translate-y-0">
                 Friendly daily AI calls with text updates for family.
-              </p>
-              <p className="mt-4 hidden text-sm font-extrabold uppercase tracking-normal text-ink sm:flex sm:flex-wrap sm:gap-x-2 sm:gap-y-1 sm:text-base">
-                <span className="block whitespace-nowrap sm:inline">NO CREDIT CARD REQUIRED</span>
-                <span className="hidden sm:inline" aria-hidden="true">•</span>
-                <span className="whitespace-nowrap">CANCEL ANYTIME</span>
               </p>
               <div className="mt-[5.5rem] grid gap-2 text-base md:text-sm font-semibold text-ink sm:mt-6 sm:max-w-xl sm:grid-cols-2">
                 {heroProof.map((item) => (
@@ -173,7 +170,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                   </div>
                 ))}
               </div>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <a href="#demo" className="rounded-full bg-brandButtonBlue px-6 py-3 text-center font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover">
                   Try a free demo call
                 </a>
@@ -181,6 +178,11 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
                   Start Your Free 14-Day Trial
                 </Link>
               </div>
+              <p className="mt-3 hidden text-sm font-extrabold uppercase tracking-normal text-ink sm:mt-5 sm:flex sm:flex-wrap sm:gap-x-2 sm:gap-y-1 sm:text-base">
+                <span className="block whitespace-nowrap sm:inline">NO CREDIT CARD REQUIRED</span>
+                <span className="hidden sm:inline" aria-hidden="true">•</span>
+                <span className="whitespace-nowrap">CANCEL ANYTIME</span>
+              </p>
               <p className="mt-3 flex justify-center whitespace-nowrap text-[0.72rem] font-extrabold uppercase tracking-normal text-ink sm:hidden">
                 <span>NO CREDIT CARD REQUIRED</span>
                 <span className="px-1" aria-hidden="true">•</span>
@@ -419,8 +421,8 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
       <section data-mobile-reveal className="rounded-[2rem] bg-white/70 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
         <div className="max-w-2xl">
           <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Early access feedback</p>
-          <h2 className="mt-3 text-3xl font-bold text-ink">We&apos;re new. Here&apos;s what early families are saying.</h2>
-          <p className="mt-4 leading-7 text-slate-600">These notes come from early access families and members. Names are shortened for privacy while DailyCall is still young.</p>
+          <h2 className="mt-3 text-3xl font-bold text-ink">What our first families are saying.</h2>
+          <p className="mt-4 leading-7 text-slate-600">Real notes from early access members. Names shortened for privacy.</p>
         </div>
         <TestimonialsCarousel testimonials={testimonials} />
       </section>

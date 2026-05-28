@@ -1606,6 +1606,7 @@ const server = http.createServer((request, response) => {
   handle(request, response);
 });
 const wss = new WebSocketServer({ noServer: true });
+const nextUpgradeHandler = app.getUpgradeHandler();
 
 server.on("upgrade", (request, socket, head) => {
   const url = new URL(request.url ?? "", `http://${request.headers.host ?? "localhost"}`);
@@ -1623,8 +1624,7 @@ server.on("upgrade", (request, socket, head) => {
     url.pathname !== "/api/deepgram-cartesia-bridge/stream" &&
     url.pathname !== "/api/gemini-live-bridge/stream"
   ) {
-    console.error("bridge websocket upgrade rejected", { path: url.pathname });
-    socket.destroy();
+    nextUpgradeHandler(request, socket, head);
     return;
   }
 
