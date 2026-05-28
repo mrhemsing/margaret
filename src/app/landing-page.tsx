@@ -142,7 +142,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
         initialAuthenticated={initialAuthenticated}
       />
 
-      <header className="-mx-6 -mt-2 overflow-hidden bg-white/75 shadow-none ring-0 sm:mx-0 sm:rounded-[2rem] sm:shadow-sm sm:ring-1 sm:ring-black/5">
+      <header className="-mx-6 -mt-8 overflow-hidden bg-white/75 shadow-none ring-0 sm:mx-0 sm:-mt-2 sm:rounded-[2rem] sm:shadow-sm sm:ring-1 sm:ring-black/5">
         <div className="hero-splash-layer relative">
           <HeroSplashImage />
           <div className="absolute inset-0 bg-[linear-gradient(to_top,white_0%,rgba(255,255,255,0.97)_35%,rgba(255,255,255,0.84)_39%,transparent_59%)] sm:bg-[linear-gradient(to_right,white_0%,rgba(255,255,255,0.88)_36%,transparent_62%)]" />
