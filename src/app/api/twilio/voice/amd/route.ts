@@ -43,6 +43,8 @@ async function registerElevenLabsTwilioCall(input: {
   topicsToRevisit: string[];
   avoidRepeating: string[];
   preferredVoiceId?: string | null;
+  firstMessage?: string | null;
+  demoMaxDurationSeconds?: number | null;
 }) {
   const env = getServerEnv();
 
@@ -70,8 +72,16 @@ async function registerElevenLabsTwilioCall(input: {
           recent_topics: input.recentTopics.join(", ") || "none yet",
           topics_to_revisit: input.topicsToRevisit.join("; ") || "none yet",
           avoid_repeating: input.avoidRepeating.join("; ") || "Do not use a generic scripted wellness survey opening.",
+          demo_max_duration_seconds: input.demoMaxDurationSeconds ?? null,
         },
         conversation_config_override: {
+          ...(input.firstMessage
+            ? {
+                agent: {
+                  first_message: input.firstMessage,
+                },
+              }
+            : {}),
           tts: {
             voice_id: isAllowedVoiceId(input.preferredVoiceId ?? "") ? input.preferredVoiceId : defaultVoiceId,
           },
@@ -104,6 +114,19 @@ function getRequestedVoiceProvider(value: string | null) {
   }
 
   return null;
+}
+
+function getCallRawObject(value: Prisma.JsonValue | null) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function getRawString(raw: Record<string, unknown>, key: string) {
+  return typeof raw[key] === "string" ? raw[key] : null;
+}
+
+function getRawNumber(raw: Record<string, unknown>, key: string) {
+  const value = raw[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 export async function POST(request: Request) {
@@ -223,12 +246,13 @@ export async function POST(request: Request) {
         })
       : [];
     const cachedCurrentContext = await getCachedCallCurrentContext(prisma);
+    const callRaw = getCallRawObject(callAttempt?.conversationRaw ?? null);
     const companionContext = callAttempt
       ? buildCompanionContext({
           memberName: callAttempt.member.name,
           memory: callAttempt.member.memory,
           recentCalls,
-          currentContext: cachedCurrentContext,
+          currentContext: getRawString(callRaw, "demoCurrentContext") ?? cachedCurrentContext,
         })
       : {
           companionContext: [
@@ -300,6 +324,8 @@ export async function POST(request: Request) {
       memberName: callAttempt?.member.name ?? memberName,
       caregiverName,
       preferredVoiceId: callAttempt?.member.preferredVoiceId,
+      firstMessage: getRawString(callRaw, "firstMessage"),
+      demoMaxDurationSeconds: getRawNumber(callRaw, "demoMaxDurationSeconds"),
       ...companionContext,
     });
     const conversationId = extractConversationId(elevenLabsTwiml);

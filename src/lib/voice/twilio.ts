@@ -37,10 +37,10 @@ async function refreshCurrentContextBeforeCall() {
 }
 
 export async function startAmdProtectedCheckInCall(input: StartAmdProtectedCallInput) {
-  const { getServerEnv } = await import("@/lib/env");
+  const { getDailyCallOutboundFromNumber, getServerEnv } = await import("@/lib/env");
   const env = getServerEnv();
 
-  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_FROM_NUMBER) {
+  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN) {
     throw new Error("Twilio credentials are not configured.");
   }
 
@@ -61,7 +61,7 @@ export async function startAmdProtectedCheckInCall(input: StartAmdProtectedCallI
 
   const body = new URLSearchParams({
     To: input.toNumber,
-    From: env.TWILIO_FROM_NUMBER,
+    From: getDailyCallOutboundFromNumber(),
     Url: voiceUrl.toString(),
     Method: "POST",
     StatusCallback: `${baseUrl}/api/twilio/status`,

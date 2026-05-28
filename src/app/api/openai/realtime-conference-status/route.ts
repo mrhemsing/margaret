@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-import { getServerEnv } from "@/lib/env";
+import { getDailyCallOutboundFromNumber } from "@/lib/env";
 import { createOpenAIRealtimeConferenceParticipant } from "@/lib/voice/openai-realtime";
 
 export const dynamic = "force-dynamic";
@@ -43,10 +43,9 @@ export async function POST(request: Request) {
     (callStatus === "answered" || callStatus === "in-progress") && !existingRaw.openAISipParticipantSid;
 
   if (shouldConnectOpenAI) {
-    const env = getServerEnv();
     const participant = await createOpenAIRealtimeConferenceParticipant({
       conferenceName,
-      fromNumber: env.TWILIO_FROM_NUMBER ?? callSid,
+      fromNumber: getDailyCallOutboundFromNumber(),
       callAttemptId,
     });
 

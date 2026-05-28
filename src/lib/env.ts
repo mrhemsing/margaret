@@ -48,6 +48,12 @@ const serverEnvSchema = z.object({
   TWILIO_MESSAGING_SERVICE_SID: optionalString,
 });
 
+export const DAILYCALL_IOWA_FROM_NUMBER = "+16413268768";
+
+export function getDailyCallOutboundFromNumber() {
+  return DAILYCALL_IOWA_FROM_NUMBER;
+}
+
 export function getServerEnv() {
   return serverEnvSchema.parse({
     APP_URL: process.env.APP_URL,

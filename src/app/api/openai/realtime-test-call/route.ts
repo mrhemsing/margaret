@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
-import { getServerEnv } from "@/lib/env";
+import { getDailyCallOutboundFromNumber, getServerEnv } from "@/lib/env";
 import { buildOpenAIRealtimeSipTwiml } from "@/lib/voice/openai-realtime";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ async function startOpenAIRealtimeConferenceCall(input: {
 }) {
   const env = getServerEnv();
 
-  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_FROM_NUMBER) {
+  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN) {
     throw new Error("Twilio credentials are not configured.");
   }
 
@@ -41,7 +41,7 @@ async function startOpenAIRealtimeConferenceCall(input: {
 
   const body = new URLSearchParams({
     To: input.toNumber,
-    From: env.TWILIO_FROM_NUMBER,
+    From: getDailyCallOutboundFromNumber(),
     Twiml: twiml,
     StatusCallback: `${getPublicBaseUrl()}/api/twilio/openai-sip-dial-status?callAttemptId=${encodeURIComponent(input.callAttemptId)}`,
     StatusCallbackMethod: "POST",
@@ -87,6 +87,8 @@ export async function POST(request: Request) {
     );
   }
 
+  let callAttemptId: string | null = null;
+
   try {
     const normalizedPhone = parsed.data.toNumber.replaceAll(" ", "");
     const customer = await prisma.customer.upsert({
@@ -130,6 +132,7 @@ export async function POST(request: Request) {
         },
       },
     });
+    callAttemptId = callAttempt.id;
     const result = await startOpenAIRealtimeConferenceCall({
       toNumber: normalizedPhone,
       callAttemptId: callAttempt.id,
@@ -154,6 +157,18 @@ export async function POST(request: Request) {
       result,
     });
   } catch (error) {
+    if (callAttemptId) {
+      await prisma.callAttempt.update({
+        where: { id: callAttemptId },
+        data: {
+          status: "FAILED",
+          completedAt: new Date(),
+          summary: error instanceof Error ? error.message : "OpenAI realtime test call could not be started.",
+          syncedAt: new Date(),
+        },
+      });
+    }
+
     return NextResponse.json(
       {
         ok: false,

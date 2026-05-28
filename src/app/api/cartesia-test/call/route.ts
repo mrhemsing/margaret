@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { cartesiaTestCallSchema, getPublicBaseUrl } from "@/lib/cartesia-test-call";
 import { prisma } from "@/lib/db";
-import { getServerEnv } from "@/lib/env";
+import { getDailyCallOutboundFromNumber, getServerEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "CARTESIA_API_KEY is not configured." }, { status: 503 });
   }
 
-  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_FROM_NUMBER) {
+  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN) {
     return NextResponse.json({ ok: false, error: "Twilio call credentials are not configured." }, { status: 503 });
   }
 
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
   const body = new URLSearchParams({
     To: normalizedPhone,
-    From: env.TWILIO_FROM_NUMBER,
+    From: getDailyCallOutboundFromNumber(),
     Url: voiceUrl.toString(),
     Method: "POST",
   });

@@ -3,7 +3,8 @@ import { z } from "zod";
 
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
-import { scheduleTwilioCallEnd, startOutboundCheckInCall } from "@/lib/voice/elevenlabs";
+import { scheduleTwilioCallEnd } from "@/lib/voice/elevenlabs";
+import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,8 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: "Invalid ElevenLabs test call request." }, { status: 400 });
   }
+
+  let callAttemptId: string | null = null;
 
   try {
     const normalizedPhone = parsed.data.toNumber.replace(/\s+/g, "");
@@ -60,35 +63,44 @@ export async function POST(request: Request) {
           },
         });
 
-    const result = await startOutboundCheckInCall({
-      toNumber: normalizedPhone,
-      memberName: member.name,
-      caregiverName: parsed.data.caregiverName ?? "DailyCall ElevenLabs test reviewer",
-      currentContext: "Internal ElevenLabs voice test. Do not perform or wait on live current-events, news, weather, or sports lookup. Keep responses short, warm, and immediate.",
-      demoMaxDurationSeconds: TEST_CALL_MAX_DURATION_SECONDS,
-      preferredVoiceId,
-      firstMessage:
-        parsed.data.firstMessage ??
-        `Hi ${member.name}, this is DailyCall calling through the ElevenLabs test path. How are you doing today?`,
-    });
-
-    if (!result) {
-      throw new Error("ElevenLabs did not return a call result.");
-    }
-
-    if (result.callSid) {
-      scheduleTwilioCallEnd(result.callSid, TEST_CALL_MAX_DURATION_SECONDS * 1000);
-    }
-
     const callAttempt = await prisma.callAttempt.create({
       data: {
         memberId: member.id,
         scheduledFor: new Date(),
         startedAt: new Date(),
         status: "IN_PROGRESS",
-        providerCallSid: result.callSid ?? null,
-        providerConversationId: result.conversation_id ?? null,
-        summary: `ElevenLabs direct test call started for ${member.name}.`,
+        summary: `ElevenLabs Twilio test call is being placed for ${member.name}.`,
+        conversationRaw: {
+          demoCurrentContext:
+            "Internal ElevenLabs voice test. Do not perform or wait on live current-events, news, weather, or sports lookup. Keep responses short, warm, and immediate.",
+          demoMaxDurationSeconds: TEST_CALL_MAX_DURATION_SECONDS,
+          firstMessage:
+            parsed.data.firstMessage ??
+            `Hi ${member.name}, this is DailyCall calling through the ElevenLabs test path. How are you doing today?`,
+        },
+      },
+    });
+    callAttemptId = callAttempt.id;
+
+    const result = await startAmdProtectedCheckInCall({
+      toNumber: normalizedPhone,
+      callAttemptId: callAttempt.id,
+      memberName: member.name,
+      caregiverName: parsed.data.caregiverName ?? "DailyCall ElevenLabs test reviewer",
+      voiceProvider: "elevenlabs_twilio",
+      refreshCurrentContext: false,
+    });
+
+    if (result.sid) {
+      scheduleTwilioCallEnd(result.sid, TEST_CALL_MAX_DURATION_SECONDS * 1000);
+    }
+
+    const updatedCallAttempt = await prisma.callAttempt.update({
+      where: { id: callAttempt.id },
+      data: {
+        providerCallSid: result.sid ?? null,
+        summary: `ElevenLabs Twilio test call started for ${member.name}.`,
+        syncedAt: new Date(),
       },
     });
 
@@ -96,10 +108,21 @@ export async function POST(request: Request) {
       ok: true,
       provider: "elevenlabs_twilio",
       member,
-      callAttempt,
+      callAttempt: updatedCallAttempt,
       result,
     });
   } catch (error) {
+    if (callAttemptId) {
+      await prisma.callAttempt.update({
+        where: { id: callAttemptId },
+        data: {
+          status: "FAILED",
+          completedAt: new Date(),
+          summary: error instanceof Error ? error.message : "ElevenLabs test call could not be started.",
+          syncedAt: new Date(),
+        },
+      });
+    }
     return NextResponse.json(
       {
         ok: false,

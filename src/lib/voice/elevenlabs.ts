@@ -1,24 +1,3 @@
-type StartOutboundCheckInCallInput = {
-  toNumber: string;
-  memberName?: string;
-  caregiverName?: string;
-  companionContext?: string;
-  currentContext?: string;
-  recentTopics?: string[];
-  topicsToRevisit?: string[];
-  avoidRepeating?: string[];
-  demoMaxDurationSeconds?: number;
-  firstMessage?: string;
-  preferredVoiceId?: string | null;
-};
-
-type ElevenLabsOutboundCallResponse = {
-  success: boolean;
-  message?: string;
-  conversation_id?: string | null;
-  callSid?: string | null;
-};
-
 type ElevenLabsTranscriptTurn = {
   role?: string;
   message?: string | null;
@@ -99,64 +78,6 @@ export async function getConversationDetails(conversationId: string) {
   }
 
   return payload as ElevenLabsConversationDetails;
-}
-
-export async function startOutboundCheckInCall(input: StartOutboundCheckInCallInput) {
-  const { getServerEnv } = await import("@/lib/env");
-  const env = getServerEnv();
-
-  if (!env.ELEVENLABS_API_KEY || !env.ELEVENLABS_AGENT_ID || !env.ELEVENLABS_AGENT_PHONE_NUMBER_ID) {
-    throw new Error("ElevenLabs outbound calling is not configured.");
-  }
-
-  const response = await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound-call", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "xi-api-key": env.ELEVENLABS_API_KEY,
-    },
-    body: JSON.stringify({
-      agent_id: env.ELEVENLABS_AGENT_ID,
-      agent_phone_number_id: env.ELEVENLABS_AGENT_PHONE_NUMBER_ID,
-      to_number: input.toNumber,
-      conversation_initiation_client_data: {
-        dynamic_variables: {
-          member_name: input.memberName ?? "there",
-          caregiver_name: input.caregiverName ?? "your caregiver",
-          companion_context: input.companionContext ?? "No prior memory yet. Be warm, gentle, curious, and non-clinical.",
-          current_context: input.currentContext ?? "No fresh current context is available. Do not invent current news, weather, scores, or schedules.",
-          recent_topics: input.recentTopics?.join(", ") || "none yet",
-          topics_to_revisit: input.topicsToRevisit?.join("; ") || "none yet",
-          avoid_repeating: input.avoidRepeating?.join("; ") || "Do not use a generic scripted wellness survey opening.",
-          demo_max_duration_seconds: input.demoMaxDurationSeconds ?? null,
-        },
-        conversation_config_override: {
-          ...(input.firstMessage
-            ? {
-                agent: {
-                  first_message: input.firstMessage,
-                },
-              }
-            : {}),
-          ...(input.preferredVoiceId
-            ? {
-                tts: {
-                  voice_id: input.preferredVoiceId,
-                },
-              }
-            : {}),
-        },
-      },
-    }),
-  });
-
-  const payload = (await response.json().catch(() => null)) as ElevenLabsOutboundCallResponse | null;
-
-  if (!response.ok) {
-    throw new Error(payload?.message ?? `ElevenLabs outbound call failed with status ${response.status}`);
-  }
-
-  return payload;
 }
 
 export async function endTwilioCall(callSid: string) {

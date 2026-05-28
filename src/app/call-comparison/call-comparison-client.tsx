@@ -22,8 +22,8 @@ const comparisonRows = [
   {
     title: "OpenAI Realtime SIP",
     badge: "Controlled SIP",
-    subtitle: "Single-provider realtime voice path with server-side turn control.",
-    stack: "Twilio SIP, gpt-realtime-2, server VAD, manual responses, Marin voice",
+    subtitle: "Latest OpenAI Realtime candidate for patient senior calls and direct transcript events.",
+    stack: "Twilio SIP, gpt-realtime-2, low reasoning, gpt-realtime-whisper, VAD tuning, Marin voice",
     endpoint: "/api/openai/realtime-test-call",
     caregiverName: "DailyCall OpenAI Realtime comparison reviewer",
     buildPayload: (target: TestCallTarget) => ({
@@ -91,6 +91,24 @@ const comparisonRows = [
   },
 ] as const;
 
+const latestRealtimeChecks = [
+  "A/B OpenAI Realtime against the current strongest baseline with the same opener and phone target.",
+  "Use low reasoning for normal check-ins; reserve medium/high for harder safety or caregiver workflows.",
+  "Track live transcript quality from gpt-realtime-whisper before trusting summaries or safety triggers.",
+  "Score VAD on long pauses, soft speech, corrections, background TV, and false 'are you still there?' moments.",
+  "Verify the spoken AI disclosure feels warm but clear.",
+  "Record latency, interruption rate, summary accuracy, escalation correctness, and caller comfort.",
+];
+
+const seniorScenarioSet = [
+  "Long pause before answering",
+  "Correction of a family name",
+  "Medication mention",
+  "Loneliness or sadness",
+  "Background TV/noise",
+  "Emergency ambiguity",
+];
+
 function buildIntro(name: string) {
   return comparisonIntroTemplate.replace("{name}", name);
 }
@@ -104,6 +122,35 @@ export function CallComparisonClient() {
         <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
           {comparisonIntroTemplate.replace("{name}", "Matt")}
         </p>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brandButtonBlue">latest realtime test plan</p>
+          <h2 className="mt-2 text-2xl font-bold text-ink">What to score on every comparison call</h2>
+          <ul className="mt-4 grid gap-3 text-sm leading-6 text-slate-600">
+            {latestRealtimeChecks.map((check) => (
+              <li key={check} className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                {check}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sage">senior-call scenarios</p>
+          <h2 className="mt-2 text-2xl font-bold text-ink">Use these before promoting a voice lane</h2>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {seniorScenarioSet.map((scenario) => (
+              <p key={scenario} className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold leading-5 text-slate-600 ring-1 ring-slate-200">
+                {scenario}
+              </p>
+            ))}
+          </div>
+          <p className="mt-4 text-sm leading-6 text-slate-600">
+            The OpenAI lane should only move forward if it beats the current baseline on natural pacing, transcript reliability, and caregiver-safe summaries.
+          </p>
+        </section>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">

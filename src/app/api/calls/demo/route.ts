@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { scheduleTwilioCallEnd, startOutboundCheckInCall } from "@/lib/voice/elevenlabs";
+import { scheduleTwilioCallEnd } from "@/lib/voice/elevenlabs";
+import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 const requestSchema = z.object({
@@ -68,28 +69,9 @@ export async function POST(request: Request) {
 
   const memberName = parsed.data.firstName?.trim() || "there";
   const preferredVoiceId = isAllowedVoiceId(parsed.data.preferredVoiceId) ? parsed.data.preferredVoiceId : defaultVoiceId;
+  let callAttemptId: string | null = null;
 
   try {
-    const providerStartedAt = Date.now();
-    const result = await startOutboundCheckInCall({
-      toNumber: phoneNumber,
-      memberName,
-      caregiverName: "your family",
-      currentContext: DEMO_CURRENT_CONTEXT,
-      demoMaxDurationSeconds: DEMO_MAX_DURATION_SECONDS,
-      preferredVoiceId,
-      firstMessage: `Hi ${memberName}, this is DailyCall. I am an AI companion calling with a quick demo, just so you can hear what the service feels like. How are you doing today?`,
-    });
-    const providerMs = Date.now() - providerStartedAt;
-
-    if (!result) {
-      throw new Error("Demo call provider did not return a result.");
-    }
-
-    if (result.callSid) {
-      scheduleTwilioCallEnd(result.callSid, DEMO_MAX_DURATION_SECONDS * 1000);
-    }
-
     const customer = await prisma.customer.upsert({
       where: { email: "demo-family@dailycall.local" },
       update: { fullName: "Demo Family", phoneNumber: phoneNumber },
@@ -119,15 +101,43 @@ export async function POST(request: Request) {
           },
         });
 
-    await prisma.callAttempt.create({
+    const callAttempt = await prisma.callAttempt.create({
       data: {
         memberId: member.id,
         scheduledFor: new Date(),
         startedAt: new Date(),
         status: "IN_PROGRESS",
-        providerCallSid: result.callSid ?? null,
-        providerConversationId: result.conversation_id ?? null,
+        summary: `Landing page demo call is being placed for ${member.name}. Demo calls skip live current-info lookup to keep turn-taking fast.`,
+        conversationRaw: {
+          demoCurrentContext: DEMO_CURRENT_CONTEXT,
+          demoMaxDurationSeconds: DEMO_MAX_DURATION_SECONDS,
+          firstMessage: `Hi ${memberName}, this is DailyCall. I am an AI companion calling with a quick demo, just so you can hear what the service feels like. How are you doing today?`,
+        },
+      },
+    });
+    callAttemptId = callAttempt.id;
+
+    const providerStartedAt = Date.now();
+    const result = await startAmdProtectedCheckInCall({
+      toNumber: phoneNumber,
+      callAttemptId: callAttempt.id,
+      memberName,
+      caregiverName: "your family",
+      voiceProvider: "elevenlabs_twilio",
+      refreshCurrentContext: false,
+    });
+    const providerMs = Date.now() - providerStartedAt;
+
+    if (result.sid) {
+      scheduleTwilioCallEnd(result.sid, DEMO_MAX_DURATION_SECONDS * 1000);
+    }
+
+    await prisma.callAttempt.update({
+      where: { id: callAttempt.id },
+      data: {
+        providerCallSid: result.sid ?? null,
         summary: `Landing page demo call started for ${member.name}. Demo calls skip live current-info lookup to keep turn-taking fast.`,
+        syncedAt: new Date(),
       },
     });
 
@@ -135,13 +145,23 @@ export async function POST(request: Request) {
       phoneNumber,
       providerMs,
       totalMs: Date.now() - startedAt,
-      hasCallSid: Boolean(result.callSid),
-      hasConversationId: Boolean(result.conversation_id),
+      hasCallSid: Boolean(result.sid),
     });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
     demoCallAttempts.delete(phoneNumber);
+    if (callAttemptId) {
+      await prisma.callAttempt.update({
+        where: { id: callAttemptId },
+        data: {
+          status: "FAILED",
+          completedAt: new Date(),
+          summary: error instanceof Error ? error.message : "Demo call could not be started.",
+          syncedAt: new Date(),
+        },
+      });
+    }
     console.error("Demo call failed", {
       phoneNumber,
       totalMs: Date.now() - startedAt,

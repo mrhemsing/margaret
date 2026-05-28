@@ -97,10 +97,13 @@ async function processScheduledCalls() {
       where: {
         id: { not: call.id },
         status: "IN_PROGRESS",
-        OR: [
-          { memberId: call.memberId },
-          { member: { phoneNumber: call.member.phoneNumber } },
-        ],
+        member: {
+          ...cronEligibleMemberWhere,
+          OR: [
+            { id: call.memberId },
+            { phoneNumber: call.member.phoneNumber },
+          ],
+        },
         AND: [
           {
             OR: [
