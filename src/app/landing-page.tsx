@@ -148,7 +148,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
           <div className="absolute inset-0 bg-[linear-gradient(to_top,white_0%,rgba(255,255,255,0.97)_35%,rgba(255,255,255,0.84)_39%,transparent_59%)] sm:bg-[linear-gradient(to_right,white_0%,rgba(255,255,255,0.88)_36%,transparent_62%)]" />
           <div className="relative flex max-w-2xl flex-col justify-between p-6 sm:block sm:p-8 md:p-12">
             <div>
-              <h1 className="text-[2.05rem] font-bold leading-[1.05] tracking-tight text-ink md:text-5xl md:leading-none">
+              <h1 className="text-[2.05rem] font-bold leading-[1.08] tracking-tight text-ink md:text-5xl md:leading-none">
                 Someone to talk to{" "}
                 <span className="sm:block">
                   when you can&apos;t <span className="block sm:inline">be there.</span>
