@@ -8,12 +8,25 @@ const comparisonIntroTemplate =
 
 const comparisonRows = [
   {
-    title: "ElevenLabs Conversational",
+    title: "ElevenLabs Flash v2.5 bridge",
+    badge: "Custom Bridge",
+    subtitle: "Latest low-latency ElevenLabs Flash TTS lane available to our comparison stack.",
+    stack: "Twilio Media Stream, OpenAI realtime STT, OpenAI text, ElevenLabs TTS model eleven_flash_v2_5",
+    endpoint: "/api/bridge-test/call",
+    caregiverName: "DailyCall ElevenLabs Flash v2.5 comparison reviewer",
+    modelLabel: "eleven_flash_v2_5",
+    buildPayload: (target: TestCallTarget) => ({
+      firstMessage: buildIntro(target.label),
+    }),
+  },
+  {
+    title: "ElevenLabs V3 Conversational",
     badge: "Native Agent",
-    subtitle: "Current native ElevenLabs outbound-call baseline.",
-    stack: "Twilio, ElevenLabs Agent, ElevenLabs ASR/turn-taking, ElevenLabs TTS",
+    subtitle: "Latest expressive ElevenLabs conversational voice model now used by production DailyCall.",
+    stack: "Twilio, ElevenLabs Agent, ElevenLabs ASR/turn-taking, TTS model eleven_v3_conversational",
     endpoint: "/api/elevenlabs-test/call",
-    caregiverName: "DailyCall ElevenLabs comparison reviewer",
+    caregiverName: "DailyCall ElevenLabs V3 comparison reviewer",
+    modelLabel: "eleven_v3_conversational",
     buildPayload: (target: TestCallTarget) => ({
       preferredVoiceId: defaultVoiceId,
       firstMessage: buildIntro(target.label),
@@ -22,10 +35,11 @@ const comparisonRows = [
   {
     title: "OpenAI Realtime SIP",
     badge: "Controlled SIP",
-    subtitle: "Latest OpenAI Realtime candidate for patient senior calls and direct transcript events.",
+    subtitle: "Latest OpenAI speech-to-speech Realtime lane for patient senior calls and direct transcript events.",
     stack: "Twilio SIP, gpt-realtime-2, low reasoning, gpt-realtime-whisper, VAD tuning, Marin voice",
     endpoint: "/api/openai/realtime-test-call",
     caregiverName: "DailyCall OpenAI Realtime comparison reviewer",
+    modelLabel: "gpt-realtime-2 + gpt-realtime-whisper",
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
     }),
@@ -34,9 +48,10 @@ const comparisonRows = [
     title: "Gemini Live native audio",
     badge: "Custom Bridge",
     subtitle: "Recommended Gemini native-audio lane for model-agnostic comparison.",
-    stack: "Twilio Media Stream, Gemini 2.5 Flash Native Audio",
+    stack: "Twilio Media Stream, Gemini Live model gemini-2.5-flash-native-audio-preview-12-2025",
     endpoint: "/api/gemini-live-bridge/call",
     caregiverName: "DailyCall Gemini Live comparison reviewer",
+    modelLabel: "gemini-2.5-flash-native-audio-preview-12-2025",
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
     }),
@@ -45,9 +60,10 @@ const comparisonRows = [
     title: "Cartesia low-latency bridge",
     badge: "Custom Bridge",
     subtitle: "Best Cartesia voice path for low-latency bridge testing.",
-    stack: "Twilio Media Stream, OpenAI transcription/text, Cartesia Sonic 3.5",
+    stack: "Twilio Media Stream, OpenAI transcription/text, Cartesia TTS model sonic-3.5",
     endpoint: "/api/cartesia-test/call",
     caregiverName: "DailyCall Cartesia comparison reviewer",
+    modelLabel: "sonic-3.5",
     buildPayload: (target: TestCallTarget) => ({
       transcript: buildIntro(target.label),
       modelId: "sonic-3.5",
@@ -58,9 +74,10 @@ const comparisonRows = [
     title: "Deepgram + Cartesia bridge",
     badge: "Custom Bridge",
     subtitle: "Production telephony pipeline candidate with dedicated voice-agent STT.",
-    stack: "Twilio Media Stream, Deepgram Flux, OpenAI text, Cartesia Sonic 3.5",
+    stack: "Twilio Media Stream, Deepgram STT model flux-general-en, OpenAI text, Cartesia TTS model sonic-3.5",
     endpoint: "/api/deepgram-cartesia-bridge/call",
     caregiverName: "DailyCall Deepgram Cartesia comparison reviewer",
+    modelLabel: "flux-general-en + sonic-3.5",
     buildPayload: (target: TestCallTarget) => ({
       transcript: buildIntro(target.label),
       modelId: "sonic-3.5",
@@ -71,9 +88,10 @@ const comparisonRows = [
     title: "Cartesia Line agent",
     badge: "Native Agent",
     subtitle: "Cartesia's native agent path for comparison against the custom Sonic bridge.",
-    stack: "Twilio, Cartesia Line agent",
+    stack: "Cartesia Agents API 2026-03-01, configured Cartesia Line agent",
     endpoint: "/api/cartesia-agent-test/call",
     caregiverName: "DailyCall Cartesia native agent comparison reviewer",
+    modelLabel: "configured Cartesia Line agent",
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
     }),
@@ -82,9 +100,10 @@ const comparisonRows = [
     title: "Hume EVI",
     badge: "Native Agent",
     subtitle: "Hume's hosted empathic voice interface over Twilio.",
-    stack: "Twilio, Hume EVI 3, Ava Song voice",
+    stack: "Twilio, Hume EVI 3, configured EVI voice",
     endpoint: "/api/hume-evi-test/call",
     caregiverName: "DailyCall Hume EVI comparison reviewer",
+    modelLabel: "Hume EVI 3",
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
     }),
@@ -93,6 +112,7 @@ const comparisonRows = [
 
 const latestRealtimeChecks = [
   "A/B OpenAI Realtime against the current strongest baseline with the same opener and phone target.",
+  "Compare ElevenLabs Flash v2.5 and V3 Conversational separately before judging the native ElevenLabs lane.",
   "Use low reasoning for normal check-ins; reserve medium/high for harder safety or caregiver workflows.",
   "Track live transcript quality from gpt-realtime-whisper before trusting summaries or safety triggers.",
   "Score VAD on long pauses, soft speech, corrections, background TV, and false 'are you still there?' moments.",
@@ -167,6 +187,9 @@ export function CallComparisonClient() {
               <p className="mt-2 text-sm leading-6 text-slate-600">{row.subtitle}</p>
               <p className="mt-4 rounded-2xl bg-slate-50 p-3 text-xs font-semibold leading-5 text-slate-600 ring-1 ring-slate-200">
                 {row.stack}
+              </p>
+              <p className="mt-2 rounded-2xl bg-white p-3 text-xs font-bold leading-5 text-ink ring-1 ring-slate-200">
+                Model: {row.modelLabel}
               </p>
             </div>
 
