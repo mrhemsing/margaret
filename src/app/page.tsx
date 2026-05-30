@@ -1,4 +1,5 @@
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { absoluteSiteUrl } from "@/lib/site-url";
 import { LandingPage, faqs, testimonials } from "./landing-page";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +20,8 @@ export default async function HomePage() {
     "@type": "Organization",
     name: "DailyCall",
     legalName: "Hpro Web Development Inc.",
-    url: "https://dailycall.care/",
-    logo: "https://dailycall.care/dailycall-logo.jpg",
+    url: absoluteSiteUrl("/"),
+    logo: absoluteSiteUrl("/dailycall-logo.jpg"),
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
@@ -33,7 +34,7 @@ export default async function HomePage() {
     "@type": "Service",
     name: "DailyCall",
     serviceType: "AI companion phone calls for seniors",
-    url: "https://dailycall.care/",
+    url: absoluteSiteUrl("/"),
     description:
       "DailyCall provides friendly daily phone calls for aging parents and simple updates for families. No app or new device required.",
     areaServed: ["United States", "Canada"],
@@ -44,8 +45,8 @@ export default async function HomePage() {
     provider: {
       "@type": "Organization",
       name: "DailyCall",
-      url: "https://dailycall.care/",
-      logo: "https://dailycall.care/dailycall-logo.jpg",
+      url: absoluteSiteUrl("/"),
+      logo: absoluteSiteUrl("/dailycall-logo.jpg"),
     },
     offers: {
       "@type": "Offer",

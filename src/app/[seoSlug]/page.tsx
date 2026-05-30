@@ -4,8 +4,7 @@ import { notFound } from "next/navigation";
 
 import { SiteHeader } from "@/app/components/site-header";
 import { seoLandingPageMap, seoLandingPages } from "@/app/seo-pages";
-
-const siteUrl = process.env.PUBLIC_SITE_URL ?? "https://dailycall.care";
+import { absoluteSiteUrl } from "@/lib/site-url";
 
 type SeoPageProps = {
   params: Promise<{
@@ -66,9 +65,9 @@ export default async function SeoLandingPage({ params }: SeoPageProps) {
       provider: {
         "@type": "Organization",
         name: "DailyCall",
-        url: `${siteUrl}/`,
+        url: absoluteSiteUrl("/"),
       },
-      url: `${siteUrl}/${page.slug}`,
+      url: absoluteSiteUrl(`/${page.slug}`),
       description: page.description,
       areaServed: ["Canada", "United States"],
       audience: {
@@ -96,13 +95,13 @@ export default async function SeoLandingPage({ params }: SeoPageProps) {
           "@type": "ListItem",
           position: 1,
           name: "Home",
-          item: `${siteUrl}/`,
+          item: absoluteSiteUrl("/"),
         },
         {
           "@type": "ListItem",
           position: 2,
           name: page.title,
-          item: `${siteUrl}/${page.slug}`,
+          item: absoluteSiteUrl(`/${page.slug}`),
         },
       ],
     },

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LegalPageShell } from "@/app/components/legal-page-shell";
 import { plans } from "@/app/landing-page";
 import { trialLengthDays } from "@/lib/plans";
+import { absoluteSiteUrl } from "@/lib/site-url";
 
 export const metadata = {
   title: "Pricing",
@@ -21,13 +22,13 @@ export default function PricingPage() {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://dailycall.care/",
+        item: absoluteSiteUrl("/"),
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "Pricing",
-        item: "https://dailycall.care/pricing",
+        item: absoluteSiteUrl("/pricing"),
       },
     ],
   };

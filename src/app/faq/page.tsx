@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { LegalPageShell } from "@/app/components/legal-page-shell";
 import { faqs } from "@/app/landing-page";
+import { absoluteSiteUrl } from "@/lib/site-url";
 
 export const metadata = {
   title: "FAQ",
@@ -32,13 +33,13 @@ export default function FaqPage() {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://dailycall.care/",
+        item: absoluteSiteUrl("/"),
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "FAQ",
-        item: "https://dailycall.care/faq",
+        item: absoluteSiteUrl("/faq"),
       },
     ],
   };

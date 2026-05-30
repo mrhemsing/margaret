@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 
 import { AnalyticsScripts } from "@/app/components/analytics-scripts";
 import { SiteFooter } from "@/app/components/site-footer";
+import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
-
-const siteUrl = process.env.PUBLIC_SITE_URL ?? "https://dailycall.care";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
