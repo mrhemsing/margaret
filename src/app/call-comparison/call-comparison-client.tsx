@@ -10,6 +10,7 @@ const comparisonRows = [
   {
     title: "ElevenLabs Flash v2.5 bridge",
     badge: "Custom Bridge",
+    production: false,
     subtitle: "Latest low-latency ElevenLabs Flash TTS lane available to our comparison stack.",
     stack: "Twilio Media Stream, OpenAI realtime STT, OpenAI text, ElevenLabs TTS model eleven_flash_v2_5",
     endpoint: "/api/bridge-test/call",
@@ -22,11 +23,12 @@ const comparisonRows = [
   {
     title: "ElevenLabs V3 Conversational",
     badge: "Native Agent",
-    subtitle: "Latest expressive ElevenLabs conversational voice model now used by production DailyCall.",
-    stack: "Twilio, ElevenLabs Agent, ElevenLabs ASR/turn-taking, TTS model eleven_v3_conversational",
+    production: true,
+    subtitle: "Current production DailyCall lane for demos and subscriber calls.",
+    stack: "Twilio, ElevenLabs native Agent, ElevenLabs ASR/turn-taking, TTS model eleven_v3_conversational, LLM gemini-3.5-flash",
     endpoint: "/api/elevenlabs-test/call",
     caregiverName: "DailyCall ElevenLabs V3 comparison reviewer",
-    modelLabel: "eleven_v3_conversational",
+    modelLabel: "eleven_v3_conversational + gemini-3.5-flash",
     buildPayload: (target: TestCallTarget) => ({
       preferredVoiceId: defaultVoiceId,
       firstMessage: buildIntro(target.label),
@@ -35,6 +37,7 @@ const comparisonRows = [
   {
     title: "OpenAI Realtime SIP",
     badge: "Controlled SIP",
+    production: false,
     subtitle: "Latest OpenAI speech-to-speech Realtime lane for patient senior calls and direct transcript events.",
     stack: "Twilio SIP, gpt-realtime-2, low reasoning, gpt-realtime-whisper, VAD tuning, Marin voice",
     endpoint: "/api/openai/realtime-test-call",
@@ -47,6 +50,7 @@ const comparisonRows = [
   {
     title: "Gemini Live native audio",
     badge: "Custom Bridge",
+    production: false,
     subtitle: "Recommended Gemini native-audio lane for model-agnostic comparison.",
     stack: "Twilio Media Stream, Gemini Live model gemini-2.5-flash-native-audio-preview-12-2025",
     endpoint: "/api/gemini-live-bridge/call",
@@ -59,6 +63,7 @@ const comparisonRows = [
   {
     title: "Cartesia low-latency bridge",
     badge: "Custom Bridge",
+    production: false,
     subtitle: "Best Cartesia voice path for low-latency bridge testing.",
     stack: "Twilio Media Stream, OpenAI transcription/text, Cartesia TTS model sonic-3.5",
     endpoint: "/api/cartesia-test/call",
@@ -73,6 +78,7 @@ const comparisonRows = [
   {
     title: "Deepgram + Cartesia bridge",
     badge: "Custom Bridge",
+    production: false,
     subtitle: "Production telephony pipeline candidate with dedicated voice-agent STT.",
     stack: "Twilio Media Stream, Deepgram STT model flux-general-en, OpenAI text, Cartesia TTS model sonic-3.5",
     endpoint: "/api/deepgram-cartesia-bridge/call",
@@ -87,6 +93,7 @@ const comparisonRows = [
   {
     title: "Cartesia Line agent",
     badge: "Native Agent",
+    production: false,
     subtitle: "Cartesia's native agent path for comparison against the custom Sonic bridge.",
     stack: "Cartesia Agents API 2026-03-01, configured Cartesia Line agent",
     endpoint: "/api/cartesia-agent-test/call",
@@ -99,6 +106,7 @@ const comparisonRows = [
   {
     title: "Hume EVI",
     badge: "Native Agent",
+    production: false,
     subtitle: "Hume's hosted empathic voice interface over Twilio.",
     stack: "Twilio, Hume EVI 3, configured EVI voice",
     endpoint: "/api/hume-evi-test/call",
@@ -134,8 +142,20 @@ function buildIntro(name: string) {
 }
 
 export function CallComparisonClient() {
+  const productionRow = comparisonRows.find((row) => row.production);
+
   return (
     <section className="grid gap-5">
+      {productionRow ? (
+        <div className="rounded-[2rem] bg-brandButtonBlue p-6 text-white shadow-sm md:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/75">current production</p>
+          <h2 className="mt-2 text-2xl font-bold">{productionRow.title}</h2>
+          <p className="mt-3 max-w-4xl text-sm font-semibold leading-6 text-white/90">
+            {productionRow.stack}
+          </p>
+        </div>
+      ) : null}
+
       <div className="rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brandButtonBlue">shared opener</p>
         <h2 className="mt-2 text-2xl font-bold text-ink">Same first line for every test</h2>
@@ -175,10 +195,22 @@ export function CallComparisonClient() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         {comparisonRows.map((row) => (
-          <article key={row.title} className="grid content-between gap-5 rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5">
+          <article
+            key={row.title}
+            className={`grid content-between gap-5 rounded-[2rem] p-6 shadow-sm ${
+              row.production
+                ? "bg-brandButtonBlue/10 ring-2 ring-brandButtonBlue"
+                : "bg-white/85 ring-1 ring-black/5"
+            }`}
+          >
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sage">comparison lane</p>
+                {row.production ? (
+                  <span className="rounded-full bg-brandButtonBlue px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-white">
+                    Current production
+                  </span>
+                ) : null}
                 <span className="rounded-full bg-brandButtonBlue/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-brandButtonBlue">
                   {row.badge}
                 </span>
