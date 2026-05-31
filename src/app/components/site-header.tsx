@@ -22,11 +22,7 @@ type SiteHeaderProps = {
   links?: SiteHeaderLink[];
 };
 
-const defaultMarketingLinks: SiteHeaderLink[] = [
-  { href: "/#how-it-works", label: "About" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/faq", label: "FAQ" },
-];
+const defaultMarketingLinks: SiteHeaderLink[] = [];
 
 function PhoneIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -181,13 +177,15 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
 
         {showMarketingNav ? (
           <>
-            <div className="hidden items-center gap-6 text-sm font-bold text-slate-600 md:flex">
-              {marketingLinks.map((link) => (
-                <Link key={`${link.href}-${link.label}`} href={link.href} className={link.active ? "text-brandButtonBlue" : "hover:text-ink"}>
-                  {link.label}
-                </Link>
-              ))}
-            </div>
+            {marketingLinks.length > 0 ? (
+              <div className="hidden items-center gap-6 text-sm font-bold text-slate-600 md:flex">
+                {marketingLinks.map((link) => (
+                  <Link key={`${link.href}-${link.label}`} href={link.href} className={link.active ? "text-brandButtonBlue" : "hover:text-ink"}>
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
             {showVisitorActions ? (
               <div className="hidden items-center gap-3 md:flex">
                 {showLoginLink ? (
