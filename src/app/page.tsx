@@ -1,5 +1,6 @@
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { absoluteSiteUrl } from "@/lib/site-url";
+import { headers } from "next/headers";
 import { LandingPage, faqs, testimonials } from "./landing-page";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,12 @@ export const metadata = {
 
 export default async function HomePage() {
   const initialAuthenticated = await isAdminAuthenticated();
+  const requestHeaders = await headers();
+  const countryHeader =
+    requestHeaders.get("x-vercel-ip-country") ??
+    requestHeaders.get("cf-ipcountry") ??
+    requestHeaders.get("x-country-code");
+  const visitorCountry = countryHeader?.toUpperCase() === "US" ? "US" : "CA";
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -82,7 +89,7 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJsonLd, serviceJsonLd, faqJsonLd]) }}
       />
-      <LandingPage initialAuthenticated={initialAuthenticated} />
+      <LandingPage initialAuthenticated={initialAuthenticated} visitorCountry={visitorCountry} />
     </>
   );
 }

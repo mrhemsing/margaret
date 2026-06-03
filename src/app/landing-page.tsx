@@ -33,6 +33,21 @@ const familyBenefits = [
   "Peace of mind without making the senior feel watched or monitored",
 ];
 
+const careNeedSignals = [
+  {
+    title: "Friendly reminders",
+    copy: "DailyCall can gently bring up medication routines, meals, hydration, appointments, and other everyday habits families want to support.",
+  },
+  {
+    title: "Care requests",
+    copy: "Loved ones can mention practical needs like prescription refills, toiletries, groceries, rides, or help around the house.",
+  },
+  {
+    title: "Changes families may want to follow up on",
+    copy: "Repeated mentions of pain, dizziness, low mood, confusion, missed meals, or unusual fatigue can be surfaced so families know what to ask about next.",
+  },
+];
+
 const parentIntroPoints = [
   "Frame it as a friendly daily phone companion, not monitoring",
   "Choose a familiar call time, like after breakfast or before dinner",
@@ -132,7 +147,7 @@ function CheckIcon() {
   return <span className="bullet-dot h-2 w-2 shrink-0 rounded-full bg-brandPink" aria-hidden="true" />;
 }
 
-export function LandingPage({ initialAuthenticated = false }: { initialAuthenticated?: boolean }) {
+export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA" }: { initialAuthenticated?: boolean; visitorCountry?: "CA" | "US" }) {
   return (
     <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 pb-5 pt-0 md:px-10">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-white via-white/85 to-transparent md:left-1/2 md:right-auto md:w-screen md:-translate-x-1/2" />
@@ -140,6 +155,7 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
       <SiteHeader
         showTrialButton
         initialAuthenticated={initialAuthenticated}
+        visitorCountry={visitorCountry}
       />
 
       <header className="-mt-2 overflow-hidden rounded-[2rem] bg-white/75 shadow-sm ring-1 ring-black/5">
@@ -287,6 +303,29 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
             ))}
           </ul>
         </article>
+      </section>
+
+      <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
+        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+          <div>
+            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Between visits</p>
+            <h2 className="mt-3 text-3xl font-bold text-ink">DailyCall can help surface everyday care needs.</h2>
+            <p className="mt-4 leading-7 text-slate-600">
+              A friendly conversation can reveal the small practical things families often miss between visits: reminders, supplies, errands, and changes worth checking on.
+            </p>
+          </div>
+          <div className="grid gap-3">
+            {careNeedSignals.map((item) => (
+              <article key={item.title} className="rounded-2xl bg-brandBlue/10 p-4 ring-1 ring-brandBlue/15">
+                <h3 className="font-bold text-ink">{item.title}</h3>
+                <p className="mt-2 text-base leading-7 text-slate-600 md:text-sm md:leading-6">{item.copy}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+        <p className="mt-6 rounded-2xl bg-slate-50 p-4 text-base leading-7 text-slate-600 ring-1 ring-slate-200 md:text-sm md:leading-6">
+          DailyCall is not a medical device, emergency response service, or replacement for professional care. It does not diagnose conditions or monitor emergencies. If something may be urgent, call emergency services or contact a healthcare professional.
+        </p>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">

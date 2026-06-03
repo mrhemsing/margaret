@@ -19,6 +19,7 @@ type SiteHeaderProps = {
   showTrialButton?: boolean;
   showAccountControls?: boolean;
   initialAuthenticated?: boolean;
+  visitorCountry?: "CA" | "US";
   links?: SiteHeaderLink[];
 };
 
@@ -65,7 +66,40 @@ function AccountAvatar({ accountLabel }: { accountLabel: string }) {
   );
 }
 
-export function SiteHeader({ showLoginLink = true, showTrialButton = true, showAccountControls = true, initialAuthenticated = false, links = [] }: SiteHeaderProps) {
+function CountryFlag({ country }: { country: "CA" | "US" }) {
+  if (country === "US") {
+    return (
+      <span className="relative h-4 w-6 overflow-hidden rounded-[0.2rem] bg-white shadow-sm ring-1 ring-black/10" aria-hidden="true">
+        <span className="absolute inset-x-0 top-0 h-[12.5%] bg-red-600" />
+        <span className="absolute inset-x-0 top-[25%] h-[12.5%] bg-red-600" />
+        <span className="absolute inset-x-0 top-[50%] h-[12.5%] bg-red-600" />
+        <span className="absolute inset-x-0 top-[75%] h-[12.5%] bg-red-600" />
+        <span className="absolute left-0 top-0 h-[54%] w-[45%] bg-blue-800" />
+      </span>
+    );
+  }
+
+  return (
+    <span className="grid h-4 w-6 grid-cols-[0.65fr_1fr_0.65fr] overflow-hidden rounded-[0.2rem] bg-white shadow-sm ring-1 ring-black/10" aria-hidden="true">
+      <span className="bg-red-600" />
+      <span className="bg-white" />
+      <span className="bg-red-600" />
+    </span>
+  );
+}
+
+function CountryTrustBadge({ country }: { country: "CA" | "US" }) {
+  const label = country === "US" ? "United States" : "Canada";
+
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full bg-white/85 px-2.5 py-1.5 text-xs font-bold text-slate-600 shadow-sm ring-1 ring-black/10 sm:px-3" title={`Serving families in ${label}`}>
+      <CountryFlag country={country} />
+      <span className="hidden sm:inline">{label}</span>
+    </span>
+  );
+}
+
+export function SiteHeader({ showLoginLink = true, showTrialButton = true, showAccountControls = true, initialAuthenticated = false, visitorCountry = "CA", links = [] }: SiteHeaderProps) {
   const pathname = usePathname();
   const [accountEmail, setAccountEmail] = useState<string | null | undefined>(initialAuthenticated ? "" : undefined);
   const [dashboardLoading, setDashboardLoading] = useState(false);
@@ -188,6 +222,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
             ) : null}
             {showVisitorActions ? (
               <div className="hidden items-center gap-3 md:flex">
+                <CountryTrustBadge country={visitorCountry} />
                 {showLoginLink ? (
                   <Link href="/login" className="text-sm font-bold text-slate-600 hover:text-ink">
                     Log in
@@ -202,6 +237,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
             ) : null}
 
             <div className="flex items-center gap-3 md:hidden">
+              <CountryTrustBadge country={visitorCountry} />
               {showVisitorActions && showLoginLink ? (
                 <Link href="/login" className="text-sm font-bold text-slate-600 hover:text-ink">
                   Log in
