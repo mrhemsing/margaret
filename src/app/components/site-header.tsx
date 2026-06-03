@@ -109,7 +109,7 @@ function CountryTrustBadge({ country }: { country: "CA" | "US" }) {
   const label = country === "US" ? "United States" : "Canada";
 
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-white/85 px-2.5 py-1.5 text-xs font-bold text-slate-600 shadow-sm ring-1 ring-black/10 sm:px-3" title={`Serving families in ${label}`}>
+    <span className="inline-flex items-center gap-2 text-xs font-bold text-slate-600" title={`Serving families in ${label}`}>
       <CountryFlag country={country} />
       <span className="hidden sm:inline">{label}</span>
     </span>
