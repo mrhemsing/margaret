@@ -442,7 +442,7 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
         </article>
       </section>
 
-      <section data-mobile-reveal className="grid gap-4 lg:grid-cols-2">
+      <section data-mobile-reveal className="grid gap-4 md:grid-cols-2">
         <BenefitCard
           eyebrow="Why seniors love us"
           title="A familiar voice, not another piece of software."
