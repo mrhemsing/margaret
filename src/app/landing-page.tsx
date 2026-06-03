@@ -184,12 +184,12 @@ function CheckIcon() {
 
 function BenefitIcon({ name }: { name: BenefitIconName }) {
   const commonProps = {
-    width: 24,
-    height: 24,
+    width: 26,
+    height: 26,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 1.9,
+    strokeWidth: 2.25,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     "aria-hidden": true,
@@ -288,9 +288,9 @@ function BenefitCard({
     <article className={`rounded-[2rem] border p-6 md:p-8 ${cardClass}`}>
       <p className={`text-base font-semibold uppercase tracking-wide md:text-sm ${eyebrowClass}`}>{eyebrow}</p>
       <h2 className="mt-3 min-h-[4.8rem] text-3xl font-bold leading-tight text-ink">{title}</h2>
-      <ul className="mt-5 grid gap-3 text-base leading-7 text-slate-700 md:text-sm md:leading-6">
+      <ul className="mt-5 grid gap-3 text-base leading-7 text-slate-800 md:text-sm md:leading-6">
         {benefits.map((item) => (
-          <li key={item.lead} className="flex items-center gap-3">
+          <li key={item.lead} className="flex items-center gap-2 pl-1 md:pl-2">
             <span className={`flex h-8 w-8 shrink-0 items-center justify-center ${iconClass}`}>
               <BenefitIcon name={item.icon} />
             </span>
