@@ -441,7 +441,9 @@ function getFamilyCallOutcome(call: DashboardMember["callAttempts"][number]) {
       dotClassName: "bg-red-500",
       badgeClassName: "bg-red-50 text-red-700 ring-red-100",
       label: call.status === "NO_RESPONSE" ? "No answer" : "No connect",
-      text: "Answered but couldn't connect — likely a carrier issue.",
+      text: call.status === "NO_RESPONSE"
+        ? "DailyCall did not reach a live answer. The call may have gone to voicemail."
+        : "Answered but couldn't connect — likely a carrier issue.",
     };
   }
 

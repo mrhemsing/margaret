@@ -2,9 +2,18 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
-import { sendExampleReportSmsToTeam } from "@/lib/sms/twilio";
+import { sendCallReportSmsToAlertContacts } from "@/lib/sms/twilio";
 import { deriveConversationInsights, summarizeConversationForFamily } from "@/lib/voice/conversation-insights";
 import { formatConversationTranscript, getConversationDetails, getConversationTiming, mapConversationStatus } from "@/lib/voice/elevenlabs";
+
+function hasUserTranscriptTurn(transcript: Array<{ role?: string; message?: string | null; text?: string | null }> | undefined) {
+  return Boolean(
+    transcript?.some((turn) => {
+      const text = turn.message ?? turn.text ?? "";
+      return turn.role === "user" && text.trim().length > 0;
+    }),
+  );
+}
 
 async function syncTranscripts() {
   const pendingCalls = await prisma.callAttempt.findMany({
@@ -23,7 +32,7 @@ async function syncTranscripts() {
       if (call.providerConversationId?.startsWith("rtc_")) {
         const member = await prisma.member.findUnique({
           where: { id: call.memberId },
-          include: { memory: true, customer: true },
+          include: { memory: true, customer: { include: { alertContacts: true } } },
         });
         const isDemoCall = member?.customer.email === "demo-family@dailycall.local" || member?.preferredCallTime === "Landing page demo";
         const transcript = call.transcript ?? "";
@@ -43,12 +52,13 @@ async function syncTranscripts() {
         const isStuckInProgress = call.status === "IN_PROGRESS" && Boolean(call.startedAt) && Date.now() - call.startedAt!.getTime() > 15 * 60 * 1000;
         const finalStatus = isStuckInProgress ? "FAILED" : call.status === "IN_PROGRESS" ? "IN_PROGRESS" : call.status;
         const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE"].includes(finalStatus) ? call.completedAt ?? new Date() : call.completedAt;
-        let smsResults: Awaited<ReturnType<typeof sendExampleReportSmsToTeam>> | null = null;
+        let smsResults: Awaited<ReturnType<typeof sendCallReportSmsToAlertContacts>> | null = null;
         let smsError: string | null = null;
 
         if (completedAt && !call.reportSentAt) {
           try {
-            smsResults = await sendExampleReportSmsToTeam({
+            smsResults = await sendCallReportSmsToAlertContacts({
+              alertContacts: member?.customer.alertContacts ?? [],
               memberName: member?.name ?? "the call recipient",
               status: finalStatus,
               summary: finalSummary,
@@ -105,7 +115,7 @@ async function syncTranscripts() {
             followUpReason: transcript ? insights.followUpReason : call.followUpReason,
             memoryUpdates: transcript ? (insights.memoryUpdates as Prisma.InputJsonValue) : call.memoryUpdates ?? undefined,
             syncedAt: new Date(),
-            reportSentAt: smsResults ? new Date() : call.reportSentAt,
+            reportSentAt: smsResults?.length ? new Date() : call.reportSentAt,
           },
         });
 
@@ -116,7 +126,7 @@ async function syncTranscripts() {
           status: updated.status,
           timedOut: isStuckInProgress,
           hasTranscript: Boolean(updated.transcript),
-          smsSent: Boolean(smsResults),
+          smsSent: Boolean(smsResults?.length),
           smsResults,
           smsError,
         });
@@ -127,10 +137,11 @@ async function syncTranscripts() {
       const summary = details.analysis?.transcript_summary ?? call.summary;
       const status = mapConversationStatus(details.status);
       const timing = getConversationTiming(details);
+      const hasUserResponse = hasUserTranscriptTurn(details.transcript);
 
       const member = await prisma.member.findUnique({
         where: { id: call.memberId },
-        include: { memory: true, customer: true },
+        include: { memory: true, customer: { include: { alertContacts: true } } },
       });
       const isDemoCall = member?.customer.email === "demo-family@dailycall.local" || member?.preferredCallTime === "Landing page demo";
       const transcript = formatConversationTranscript(details.transcript, member?.name ?? "Member");
@@ -141,19 +152,23 @@ async function syncTranscripts() {
         priorRecentTopics: member?.memory?.recentTopics ?? [],
       });
       const isStuckInProgress = status === "IN_PROGRESS" && Boolean(call.startedAt) && Date.now() - call.startedAt!.getTime() > 15 * 60 * 1000;
-      const finalStatus = isStuckInProgress ? "FAILED" : status;
+      const isCompletedWithoutUserResponse = status === "ANSWERED_OK" && !hasUserResponse;
+      const finalStatus = isStuckInProgress ? "FAILED" : isCompletedWithoutUserResponse ? "NO_RESPONSE" : status;
       const finalSummary = isStuckInProgress
         ? "Call processing timed out after 15 minutes. DailyCall marked this attempt as failed so it does not linger in progress."
+        : isCompletedWithoutUserResponse
+          ? "DailyCall reached voicemail or did not capture a live response. No check-in conversation was completed."
         : summary;
-      const completedAt = finalStatus === "ANSWERED_OK" || finalStatus === "FAILED" ? timing.completedAt ?? call.completedAt ?? new Date() : call.completedAt;
-      let smsResults: Awaited<ReturnType<typeof sendExampleReportSmsToTeam>> | null = null;
+      const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE"].includes(finalStatus) ? timing.completedAt ?? call.completedAt ?? new Date() : call.completedAt;
+      let smsResults: Awaited<ReturnType<typeof sendCallReportSmsToAlertContacts>> | null = null;
       let smsError: string | null = null;
 
       const shouldSendSms = Boolean(completedAt && !call.reportSentAt);
 
       if (shouldSendSms) {
         try {
-          smsResults = await sendExampleReportSmsToTeam({
+          smsResults = await sendCallReportSmsToAlertContacts({
+            alertContacts: member?.customer.alertContacts ?? [],
             memberName: member?.name ?? "the call recipient",
             status: finalStatus,
             summary: finalSummary,
@@ -213,7 +228,7 @@ async function syncTranscripts() {
           memoryUpdates: insights.memoryUpdates as Prisma.InputJsonValue,
           conversationRaw: details as Prisma.InputJsonValue,
           syncedAt: new Date(),
-          reportSentAt: smsResults ? new Date() : call.reportSentAt,
+          reportSentAt: smsResults?.length ? new Date() : call.reportSentAt,
         },
       });
 
@@ -223,7 +238,7 @@ async function syncTranscripts() {
         status: updated.status,
         timedOut: isStuckInProgress,
         hasTranscript: Boolean(updated.transcript),
-        smsSent: Boolean(smsResults),
+        smsSent: Boolean(smsResults?.length),
         smsResults,
         smsError,
       });
