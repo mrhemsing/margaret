@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { AnalyticsScripts } from "@/app/components/analytics-scripts";
 import { SiteFooter } from "@/app/components/site-footer";
 import { siteUrl } from "@/lib/site-url";
+import "flag-icons/css/flag-icons.min.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
