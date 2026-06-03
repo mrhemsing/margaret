@@ -290,8 +290,8 @@ function BenefitCard({
       <h2 className="mt-3 min-h-[4.8rem] text-3xl font-bold leading-tight text-ink">{title}</h2>
       <ul className="mt-5 grid gap-3 text-base leading-7 text-slate-700 md:text-sm md:leading-6">
         {benefits.map((item) => (
-          <li key={item.lead} className="flex gap-3">
-            <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ${iconClass}`}>
+          <li key={item.lead} className="flex items-center gap-3">
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ${iconClass}`}>
               <BenefitIcon name={item.icon} />
             </span>
             <span>
