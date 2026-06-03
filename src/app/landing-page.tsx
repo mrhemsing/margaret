@@ -313,6 +313,15 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
             <p className="mt-4 leading-7 text-slate-600">
               A friendly conversation can reveal the small practical things families often miss between visits: reminders, supplies, errands, and changes worth checking on.
             </p>
+            <div className="relative mt-6 h-44 overflow-hidden rounded-3xl bg-slate-100 shadow-sm ring-1 ring-black/5 sm:h-52 lg:h-56">
+              <Image
+                src="/between-visits-grocery-bag.png"
+                alt="A grocery bag and medicine bottles on a bright kitchen counter"
+                width={1910}
+                height={823}
+                className="h-full w-full object-cover object-[44%_center]"
+              />
+            </div>
           </div>
           <div className="grid gap-3">
             {careNeedSignals.map((item) => (
