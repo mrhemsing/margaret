@@ -19,18 +19,53 @@ const steps = [
   { title: "You stay informed", copy: "Text summary after every call, plus alerts if a call is missed or something seems off." },
 ];
 
-const seniorBenefits = [
-  "Friendly conversations that feel calm, patient, and familiar",
-  "Remembers family, routines, pets, hobbies, and preferences",
-  "Can talk about music, memories, daily life, prayer, trivia, or simple company",
-  "Never requires an app, password, screen, or technical setup",
+type BenefitIconName = "bell" | "calendar" | "chat" | "heart" | "insight" | "music" | "phone" | "shield";
+type BenefitItem = { icon: BenefitIconName; lead: string; rest: string };
+
+const seniorBenefits: BenefitItem[] = [
+  {
+    icon: "chat",
+    lead: "Friendly conversations",
+    rest: "that feel calm, patient, and familiar",
+  },
+  {
+    icon: "heart",
+    lead: "Remembers",
+    rest: "family, routines, pets, hobbies, and preferences",
+  },
+  {
+    icon: "music",
+    lead: "Talks about what they love",
+    rest: "from music and memories to prayer, trivia, or simple company",
+  },
+  {
+    icon: "phone",
+    lead: "No app required",
+    rest: "no passwords, screens, or technical setup",
+  },
 ];
 
-const familyBenefits = [
-  "Daily companionship calls for a loved one who may be alone",
-  "Family visibility into engagement, mood, and routine changes",
-  "Missed-call alerts and gentle escalation when something seems off",
-  "Peace of mind without making the senior feel watched or monitored",
+const familyBenefits: BenefitItem[] = [
+  {
+    icon: "calendar",
+    lead: "Daily companionship",
+    rest: "for a loved one who may be alone",
+  },
+  {
+    icon: "insight",
+    lead: "Family visibility",
+    rest: "into engagement, mood, and routine changes",
+  },
+  {
+    icon: "bell",
+    lead: "Missed-call alerts",
+    rest: "and gentle escalation when something seems off",
+  },
+  {
+    icon: "shield",
+    lead: "Reassurance without hovering",
+    rest: "so support feels caring, not watched",
+  },
 ];
 
 const careNeedSignals = [
@@ -145,6 +180,129 @@ export const faqs = [
 
 function CheckIcon() {
   return <span className="bullet-dot h-2 w-2 shrink-0 rounded-full bg-brandPink" aria-hidden="true" />;
+}
+
+function BenefitIcon({ name }: { name: BenefitIconName }) {
+  const commonProps = {
+    width: 20,
+    height: 20,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.9,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  switch (name) {
+    case "bell":
+      return (
+        <svg {...commonProps}>
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+          <path d="M10 21h4" />
+        </svg>
+      );
+    case "calendar":
+      return (
+        <svg {...commonProps}>
+          <path d="M7 3v3" />
+          <path d="M17 3v3" />
+          <path d="M4 8h16" />
+          <rect x="4" y="5" width="16" height="16" rx="3" />
+          <path d="M8 12h.01" />
+          <path d="M12 12h.01" />
+          <path d="M16 12h.01" />
+        </svg>
+      );
+    case "chat":
+      return (
+        <svg {...commonProps}>
+          <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.2 9.4 9.4 0 0 1-4-.9L3 20l1.4-4.5A7.8 7.8 0 0 1 3.7 12 8.4 8.4 0 0 1 12.2 3.8 8.4 8.4 0 0 1 21 11.5Z" />
+          <path d="M8 11h8" />
+          <path d="M8 14h5" />
+        </svg>
+      );
+    case "heart":
+      return (
+        <svg {...commonProps}>
+          <path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.6 4.6 0 0 1 11 5.3l1 1 1-1a4.6 4.6 0 0 1 7.8 3.3Z" />
+        </svg>
+      );
+    case "insight":
+      return (
+        <svg {...commonProps}>
+          <path d="M4 19V5" />
+          <path d="M4 19h16" />
+          <path d="m7 15 3-3 3 2 5-6" />
+          <path d="M18 8h-4" />
+          <path d="M18 8v4" />
+        </svg>
+      );
+    case "music":
+      return (
+        <svg {...commonProps}>
+          <path d="M9 18V5l10-2v13" />
+          <circle cx="6" cy="18" r="3" />
+          <circle cx="16" cy="16" r="3" />
+        </svg>
+      );
+    case "phone":
+      return (
+        <svg {...commonProps}>
+          <rect x="7" y="2.8" width="10" height="18.4" rx="2.4" />
+          <path d="M11 17.6h2" />
+        </svg>
+      );
+    case "shield":
+      return (
+        <svg {...commonProps}>
+          <path d="M12 3 20 6v5.5c0 4.8-3.2 7.8-8 9.5-4.8-1.7-8-4.7-8-9.5V6l8-3Z" />
+          <path d="m9 12 2 2 4-5" />
+        </svg>
+      );
+  }
+}
+
+function BenefitCard({
+  eyebrow,
+  title,
+  benefits,
+  tone,
+}: {
+  eyebrow: string;
+  title: string;
+  benefits: BenefitItem[];
+  tone: "warm" | "cool";
+}) {
+  const isWarm = tone === "warm";
+  const cardClass = isWarm
+    ? "border-brandPink/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(253,242,248,0.92))] shadow-[0_18px_45px_rgba(204,31,136,0.10)]"
+    : "border-brandBlue/25 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(239,247,255,0.94))] shadow-[0_18px_45px_rgba(18,53,79,0.09)]";
+  const iconClass = isWarm
+    ? "bg-brandPink/10 text-brandPink ring-brandPink/15"
+    : "bg-brandBlue/12 text-brandButtonBlue ring-brandBlue/20";
+  const eyebrowClass = isWarm ? "text-brandPink" : "text-brandButtonBlue";
+
+  return (
+    <article className={`rounded-[2rem] border p-6 md:p-8 ${cardClass}`}>
+      <p className={`text-base font-semibold uppercase tracking-wide md:text-sm ${eyebrowClass}`}>{eyebrow}</p>
+      <h2 className="mt-3 min-h-[4.8rem] text-3xl font-bold leading-tight text-ink">{title}</h2>
+      <ul className="mt-5 grid gap-3 text-base leading-7 text-slate-700 md:text-sm md:leading-6">
+        {benefits.map((item) => (
+          <li key={item.lead} className="flex gap-3">
+            <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ${iconClass}`}>
+              <BenefitIcon name={item.icon} />
+            </span>
+            <span>
+              <strong className="font-bold text-ink">{item.lead}</strong>{" "}
+              {item.rest}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
 }
 
 export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA" }: { initialAuthenticated?: boolean; visitorCountry?: "CA" | "US" }) {
@@ -285,24 +443,18 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
       </section>
 
       <section data-mobile-reveal className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Why seniors love it</p>
-          <h2 className="mt-3 text-3xl font-bold text-ink">A familiar voice, not another piece of software.</h2>
-          <ul className="mt-5 grid gap-3 text-base md:text-sm leading-6 text-slate-600">
-            {seniorBenefits.map((item) => (
-              <li key={item} className="flex gap-3"><CheckIcon /><span>{item}</span></li>
-            ))}
-          </ul>
-        </article>
-        <article className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Why families choose it</p>
-          <h2 className="mt-3 text-3xl font-bold text-ink">Peace of mind without surveillance.</h2>
-          <ul className="mt-5 grid gap-3 text-base md:text-sm leading-6 text-slate-600">
-            {familyBenefits.map((item) => (
-              <li key={item} className="flex gap-3"><CheckIcon /><span>{item}</span></li>
-            ))}
-          </ul>
-        </article>
+        <BenefitCard
+          eyebrow="Why seniors love us"
+          title="A familiar voice, not another piece of software."
+          benefits={seniorBenefits}
+          tone="warm"
+        />
+        <BenefitCard
+          eyebrow="Why families choose us"
+          title="Know when to check in, without hovering."
+          benefits={familyBenefits}
+          tone="cool"
+        />
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
@@ -313,15 +465,6 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
             <p className="mt-4 leading-7 text-slate-600">
               A friendly conversation can reveal the small practical things families often miss between visits: reminders, supplies, errands, and changes worth checking on.
             </p>
-            <div className="relative mt-6 h-44 overflow-hidden rounded-3xl bg-slate-100 shadow-sm ring-1 ring-black/5 sm:h-52 lg:h-56">
-              <Image
-                src="/between-visits-grocery-bag.png"
-                alt="A grocery bag and medicine bottles on a bright kitchen counter"
-                width={1910}
-                height={823}
-                className="h-full w-full object-cover object-[44%_center]"
-              />
-            </div>
           </div>
           <div className="grid gap-3">
             {careNeedSignals.map((item) => (
