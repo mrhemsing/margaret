@@ -1,4 +1,5 @@
 import { getServerEnv } from "@/lib/env";
+import type { AlertContact } from "@prisma/client";
 
 type SendSmsInput = {
   to: string;
@@ -10,6 +11,8 @@ type TwilioMessageResponse = {
   status?: string;
   message?: string;
 };
+
+type SmsRecipient = Pick<AlertContact, "name" | "phoneNumber" | "receivesAlerts" | "receivesReports">;
 
 const exampleReportRecipients = [
   { name: "Matt", phoneNumber: "+16043138398" },
@@ -69,15 +72,19 @@ export function buildCallReportSms(input: {
   return `DailyCall report for ${input.memberName}: ${input.status.replaceAll("_", " ").toLowerCase()}. ${summary}\n\nDashboard: ${dashboardUrl}`;
 }
 
-async function sendSmsToExampleTeam(body: string) {
+async function sendSmsToRecipients(recipients: Array<Pick<SmsRecipient, "name" | "phoneNumber">>, body: string) {
   const results = [];
 
-  for (const recipient of exampleReportRecipients) {
+  for (const recipient of recipients) {
     const result = await sendSms({ to: recipient.phoneNumber, body });
     results.push({ recipient: recipient.name, phoneNumber: recipient.phoneNumber, sid: result.sid, status: result.status });
   }
 
   return results;
+}
+
+async function sendSmsToExampleTeam(body: string) {
+  return sendSmsToRecipients(exampleReportRecipients, body);
 }
 
 export async function sendExampleReportSmsToTeam(input: {
@@ -87,6 +94,19 @@ export async function sendExampleReportSmsToTeam(input: {
   isDemo?: boolean;
 }) {
   return sendSmsToExampleTeam(buildCallReportSms(input));
+}
+
+export async function sendCallReportSmsToAlertContacts(input: {
+  alertContacts: SmsRecipient[];
+  memberName: string;
+  status: string;
+  summary?: string | null;
+  isDemo?: boolean;
+}) {
+  const recipients = input.alertContacts.filter((contact) => contact.receivesReports);
+  if (recipients.length === 0) return [];
+
+  return sendSmsToRecipients(recipients, buildCallReportSms(input));
 }
 
 export function buildVoicemailAlertSms(input: {
@@ -104,6 +124,18 @@ export function buildVoicemailAlertSms(input: {
   }
 
   return `DailyCall alert for ${input.memberName}: voicemail reached. ${summary}\n\nDashboard: ${dashboardUrl}`;
+}
+
+export async function sendVoicemailAlertSmsToAlertContacts(input: {
+  alertContacts: SmsRecipient[];
+  memberName: string;
+  summary?: string | null;
+  isDemo?: boolean;
+}) {
+  const recipients = input.alertContacts.filter((contact) => contact.receivesAlerts);
+  if (recipients.length === 0) return [];
+
+  return sendSmsToRecipients(recipients, buildVoicemailAlertSms(input));
 }
 
 export async function sendExampleVoicemailAlertSmsToTeam(input: {
