@@ -184,8 +184,8 @@ function CheckIcon() {
 
 function BenefitIcon({ name }: { name: BenefitIconName }) {
   const commonProps = {
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
@@ -280,8 +280,8 @@ function BenefitCard({
     ? "border-brandPink/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(253,242,248,0.92))] shadow-[0_18px_45px_rgba(204,31,136,0.10)]"
     : "border-brandBlue/25 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(239,247,255,0.94))] shadow-[0_18px_45px_rgba(18,53,79,0.09)]";
   const iconClass = isWarm
-    ? "bg-brandPink/10 text-brandPink ring-brandPink/15"
-    : "bg-brandBlue/12 text-brandButtonBlue ring-brandBlue/20";
+    ? "text-brandPink"
+    : "text-brandButtonBlue";
   const eyebrowClass = isWarm ? "text-brandPink" : "text-brandButtonBlue";
 
   return (
@@ -291,7 +291,7 @@ function BenefitCard({
       <ul className="mt-5 grid gap-3 text-base leading-7 text-slate-700 md:text-sm md:leading-6">
         {benefits.map((item) => (
           <li key={item.lead} className="flex items-center gap-3">
-            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ${iconClass}`}>
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center ${iconClass}`}>
               <BenefitIcon name={item.icon} />
             </span>
             <span>
