@@ -598,7 +598,7 @@ export function SignupForm() {
           </div>
 
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
-            Daily routines or rituals
+            Daily routines
             <textarea name="routines" rows={2} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink" placeholder="Coffee at 9, watches Jeopardy, evening walk, Sunday church." />
           </label>
 

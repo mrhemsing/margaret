@@ -109,7 +109,7 @@ Dailycall must become a trusted emotional presence, not an assistant.
 
 ### Deep Emotional Memory
 
-The companion should remember specific people, relationships, pets, appointments, rituals, worries, and stories. Generic check-ins are weak. Contextual callbacks are the product.
+The companion should remember specific people, relationships, pets, appointments, routines, worries, and stories. Generic check-ins are weak. Contextual callbacks are the product.
 
 Examples:
 - “How did your grandson’s hockey tournament go?”
@@ -131,9 +131,9 @@ The agent must sound:
 
 Avoid overly energetic assistant voice. Prioritize reassurance and natural pauses.
 
-### Rituals Create Habit
+### Routines Create Habit
 
-Humans bond through recurring rituals. Dailycall should support:
+Humans bond through recurring routines. Dailycall should support:
 - morning coffee chats
 - evening wind-down calls
 - trivia
@@ -173,7 +173,7 @@ Ask for:
 - favorite conversation topics
 - important upcoming events
 - sensitive topics to avoid
-- preferred tone and rituals
+- preferred tone and routines
 - questions the family wishes someone would ask
 
 Use warm microcopy: “The more you share, the more familiar and personal the calls will feel.”

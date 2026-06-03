@@ -373,8 +373,8 @@ export function LandingPage({ initialAuthenticated = false }: { initialAuthentic
 
       <section data-mobile-reveal className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
         <article className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Rituals and routine</p>
-          <h2 className="mt-3 text-3xl font-bold text-ink">Humans bond through ritual.</h2>
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Routines</p>
+          <h2 className="mt-3 text-3xl font-bold text-ink">Humans bond through routine.</h2>
           <p className="mt-4 leading-7 text-slate-600">DailyCall becomes part of your loved one&apos;s daily rhythm: a call after coffee, an evening wind-down, a trivia game, or a familiar music conversation.</p>
         </article>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
