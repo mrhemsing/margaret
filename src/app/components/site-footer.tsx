@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { CountryFooterFlag } from "@/app/components/country-footer-flag";
+
 const footerLinks = [
   { href: "/support", label: "Contact" },
   { href: "/terms-and-conditions", label: "Terms & Conditions" },
@@ -14,7 +16,10 @@ export function SiteFooter() {
 
   return (
     <footer className="mx-auto flex w-full max-w-6xl flex-col gap-3 bg-transparent px-6 pb-6 text-center md:flex-row md:items-center md:justify-between md:px-10 md:text-left">
-      <p className="text-sm font-semibold text-slate-500">© {currentYear} DailyCall</p>
+      <p className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-slate-500 md:justify-start">
+        <CountryFooterFlag />
+        <span>© {currentYear} DailyCall</span>
+      </p>
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-base font-semibold text-brandButtonBlue md:justify-end md:text-sm">
         {footerLinks.map((link) => (
           <Link key={link.href} href={link.href} className="hover:text-ink">
