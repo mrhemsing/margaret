@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 import { AutoCloseDetails } from "@/app/components/auto-close-details";
 import { CountryFlag } from "@/app/components/country-flag";
+import { CountryMobileFlag } from "@/app/components/country-mobile-flag";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export type SiteHeaderLink = {
@@ -215,6 +216,7 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
             ) : null}
 
             <div className="flex items-center gap-3 md:hidden">
+              <CountryMobileFlag />
               {showVisitorActions && showLoginLink ? (
                 <Link href="/login" className="text-sm font-bold text-slate-600 hover:text-ink">
                   Log in
@@ -302,44 +304,47 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
               </AutoCloseDetails>
             </div>
 
-            <AutoCloseDetails className="group relative z-50 md:hidden">
-              <summary
-                className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:text-brandButtonBlue [&::-webkit-details-marker]:hidden"
-                aria-label="Open account menu"
-              >
-                <MenuIcon />
-              </summary>
-              <div className="absolute right-0 z-50 mt-2 w-56 rounded-2xl bg-white p-2 text-sm font-bold shadow-xl ring-1 ring-black/10">
-                {appLinks.map((link) => (
-                  <Link
-                    key={`${link.href}-${link.label}-mobile`}
-                    href={link.href}
-                    className={`block rounded-xl px-3 py-2 transition hover:bg-slate-50 hover:text-brandButtonBlue ${link.active ? "bg-sky-50 text-brandButtonBlue" : "text-ink"}`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <div className="mt-1 border-t border-slate-200 pt-1">
-                  <p className="truncate px-3 py-2 text-xs font-semibold text-slate-500">{accountLabel}</p>
-                  <form
-                    action="/api/admin/sign-out"
-                    method="post"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      void signOut();
-                    }}
-                  >
-                    <button
-                      type="submit"
-                      className="block w-full rounded-xl px-3 py-2 text-left text-sm font-bold text-ink transition hover:bg-slate-50 hover:text-brandButtonBlue disabled:cursor-wait disabled:opacity-60"
-                      disabled={signingOut}
+            <div className="flex items-center gap-3 md:hidden">
+              <CountryMobileFlag />
+              <AutoCloseDetails className="group relative z-50">
+                <summary
+                  className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-black/10 transition hover:text-brandButtonBlue [&::-webkit-details-marker]:hidden"
+                  aria-label="Open account menu"
+                >
+                  <MenuIcon />
+                </summary>
+                <div className="absolute right-0 z-50 mt-2 w-56 rounded-2xl bg-white p-2 text-sm font-bold shadow-xl ring-1 ring-black/10">
+                  {appLinks.map((link) => (
+                    <Link
+                      key={`${link.href}-${link.label}-mobile`}
+                      href={link.href}
+                      className={`block rounded-xl px-3 py-2 transition hover:bg-slate-50 hover:text-brandButtonBlue ${link.active ? "bg-sky-50 text-brandButtonBlue" : "text-ink"}`}
                     >
-                      {signingOut ? "Loading..." : "Sign out"}
-                    </button>
-                  </form>
+                      {link.label}
+                    </Link>
+                  ))}
+                  <div className="mt-1 border-t border-slate-200 pt-1">
+                    <p className="truncate px-3 py-2 text-xs font-semibold text-slate-500">{accountLabel}</p>
+                    <form
+                      action="/api/admin/sign-out"
+                      method="post"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void signOut();
+                      }}
+                    >
+                      <button
+                        type="submit"
+                        className="block w-full rounded-xl px-3 py-2 text-left text-sm font-bold text-ink transition hover:bg-slate-50 hover:text-brandButtonBlue disabled:cursor-wait disabled:opacity-60"
+                        disabled={signingOut}
+                      >
+                        {signingOut ? "Loading..." : "Sign out"}
+                      </button>
+                    </form>
+                  </div>
                 </div>
-              </div>
-            </AutoCloseDetails>
+              </AutoCloseDetails>
+            </div>
           </>
         ) : null}
         </div>

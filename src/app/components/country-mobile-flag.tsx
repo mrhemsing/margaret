@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { CountryFlag } from "@/app/components/country-flag";
 
-export function CountryFooterFlag() {
+export function CountryMobileFlag() {
   const [country, setCountry] = useState<"CA" | "US">("CA");
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export function CountryFooterFlag() {
   const label = country === "US" ? "United States" : "Canada";
 
   return (
-    <span className="md:hidden" title={`Serving families in ${label}`}>
+    <span className="inline-flex items-center md:hidden" title={`Serving families in ${label}`}>
       <CountryFlag country={country} />
     </span>
   );
