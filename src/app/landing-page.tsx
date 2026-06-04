@@ -643,26 +643,28 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
           <p className="mx-auto mt-3 max-w-4xl text-xl font-bold leading-7 text-ink md:whitespace-nowrap">Less than a single caregiver hour. Less than one dinner out. Daily peace of mind.</p>
           <p className="mx-auto mt-2 max-w-2xl leading-7 text-slate-600">Both plans include a {trialLengthDays}-day free trial. No credit card required.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
-          {plans.map((plan) => (
-            <article key={plan.name} className={`flex flex-col rounded-3xl p-6 shadow-sm ring-1 md:h-full ${plan.featured ? "bg-ink text-cream ring-ink" : "bg-white/80 text-ink ring-black/5"}`}>
-              <div className="flex items-center justify-between gap-3">
-                <p className={`text-base md:text-sm font-semibold uppercase tracking-wide ${plan.featured ? "text-cream/60" : "text-sage"}`}>{plan.name}</p>
-                {plan.featured ? <span className="rounded-full bg-brandPink px-3 py-1 text-sm md:text-xs font-bold text-white">Recommended</span> : null}
-              </div>
-              <p className="mt-3 text-4xl font-bold">{plan.price}<span className={`text-base font-medium ${plan.featured ? "text-cream/60" : "text-slate-500"}`}> / mo</span></p>
-              <p className={`mt-3 min-h-12 text-base md:text-sm font-semibold leading-6 ${plan.featured ? "text-cream" : "text-ink"}`}>{plan.bestFor}</p>
-              <p className={`mt-2 text-base md:text-sm font-bold ${plan.featured ? "text-brandPinkLight" : "text-sage"}`}>{plan.includedMinutes}</p>
-              <p className={`mt-2 text-base md:text-sm font-semibold ${plan.featured ? "text-cream/65" : "text-slate-500"}`}>{plan.trial}</p>
-              <ul className={`mt-5 grid gap-2 text-base md:text-sm leading-6 ${plan.featured ? "text-cream/80" : "text-slate-600"}`}>
-                {plan.includes.map((item) => <li key={item} className="flex gap-3"><CheckIcon /><span>{item}</span></li>)}
-              </ul>
-              <div className={plan.featured ? "grow min-h-10" : "grow min-h-6"} />
-              <Link href="/signup" className={`inline-flex rounded-full px-5 py-3 text-base md:text-sm font-semibold shadow-sm md:w-fit md:translate-y-0 ${plan.featured ? "bg-cream text-ink hover:bg-white" : "bg-brandButtonBlue text-cream hover:bg-brandButtonBlueHover"}`}>
-                {plan.cta}
-              </Link>
-            </article>
-          ))}
+        <div className="rounded-[2rem] bg-white/55 p-2 shadow-sm ring-1 ring-black/5 md:bg-transparent md:p-0 md:shadow-none md:ring-0">
+          <div className="grid gap-3 md:grid-cols-2 md:items-stretch md:gap-4">
+            {plans.map((plan) => (
+              <article key={plan.name} className={`flex flex-col rounded-3xl p-6 shadow-sm ring-1 md:h-full ${plan.featured ? "bg-ink text-cream ring-ink" : "bg-white/80 text-ink ring-black/5"}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <p className={`text-base md:text-sm font-semibold uppercase tracking-wide ${plan.featured ? "text-cream/60" : "text-sage"}`}>{plan.name}</p>
+                  {plan.featured ? <span className="rounded-full bg-brandPink px-3 py-1 text-sm md:text-xs font-bold text-white">Recommended</span> : null}
+                </div>
+                <p className="mt-3 text-4xl font-bold">{plan.price}<span className={`text-base font-medium ${plan.featured ? "text-cream/60" : "text-slate-500"}`}> / mo</span></p>
+                <p className={`mt-3 min-h-12 text-base md:text-sm font-semibold leading-6 ${plan.featured ? "text-cream" : "text-ink"}`}>{plan.bestFor}</p>
+                <p className={`mt-2 text-base md:text-sm font-bold ${plan.featured ? "text-brandPinkLight" : "text-sage"}`}>{plan.includedMinutes}</p>
+                <p className={`mt-2 text-base md:text-sm font-semibold ${plan.featured ? "text-cream/65" : "text-slate-500"}`}>{plan.trial}</p>
+                <ul className={`mt-5 grid gap-2 text-base md:text-sm leading-6 ${plan.featured ? "text-cream/80" : "text-slate-600"}`}>
+                  {plan.includes.map((item) => <li key={item} className="flex gap-3"><CheckIcon /><span>{item}</span></li>)}
+                </ul>
+                <div className={plan.featured ? "grow min-h-10" : "grow min-h-6"} />
+                <Link href="/signup" className={`inline-flex rounded-full px-5 py-3 text-base md:text-sm font-semibold shadow-sm md:w-fit md:translate-y-0 ${plan.featured ? "bg-cream text-ink hover:bg-white" : "bg-brandButtonBlue text-cream hover:bg-brandButtonBlueHover"}`}>
+                  {plan.cta}
+                </Link>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
