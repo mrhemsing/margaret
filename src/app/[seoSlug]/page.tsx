@@ -108,7 +108,7 @@ export default async function SeoLandingPage({ params }: SeoPageProps) {
   ];
 
   return (
-    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 pb-12 pt-0 text-ink md:px-10">
+    <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-5 pb-12 pt-0 text-ink sm:px-6 md:px-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SiteHeader />
 
