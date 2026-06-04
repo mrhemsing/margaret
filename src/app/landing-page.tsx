@@ -138,6 +138,7 @@ export const plans = [
     trial: "14-day free trial included",
     includes: [
       "A friendly daily check-in call",
+      "120 minutes comfortably covers a daily check-in",
       "Access to call transcripts",
     ],
     cta: "Start Free 14-Day Trial",
@@ -153,7 +154,7 @@ export const plans = [
       "Up to 3 preferred daily call windows",
       "Up to 10 custom questions for the companion to ask",
       "Richer, more personalized conversations",
-      "Call-anytime access for flexible conversations",
+      "Call-anytime access - your loved one can dial the same number back, day or night, and pick up where they left off",
     ],
     cta: "Start Free 14-Day Trial",
     featured: true,
@@ -421,63 +422,70 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
         </div>
       </section>
 
-      <section data-mobile-reveal className="grid gap-4 md:grid-cols-3">
-        <article className="relative overflow-hidden rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-brandPink/20 to-transparent" />
-          <p className="relative text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Connection</p>
-          <h2 className="relative mt-3 text-2xl font-bold text-ink">For the in-between days.</h2>
-          <p className="relative mt-3 leading-7 text-slate-600">Life gets busy. Companion calls help loved ones feel connected even when families can&apos;t call every day.</p>
-        </article>
-        <article className="relative overflow-hidden rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-brandPink/20 to-transparent" />
-          <p className="relative text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Routine</p>
-          <h2 className="relative mt-3 text-2xl font-bold text-ink">A familiar daily voice.</h2>
-          <p className="relative mt-3 leading-7 text-slate-600">The goal is not technology for its own sake. It is connection, routine, reassurance, companionship — and helping keep seniors’ minds active while sparking joy through meaningful conversation.</p>
-        </article>
-        <article className="relative overflow-hidden rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-brandPink/20 to-transparent" />
-          <p className="relative text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Relief for families</p>
-          <h2 className="relative mt-3 text-2xl font-bold text-ink">A little less worry.</h2>
-          <p className="relative mt-3 leading-7 text-slate-600">For adult children balancing distance, guilt, and caregiver stress, DailyCall adds a steady touchpoint.</p>
-        </article>
-      </section>
-
-      <section data-mobile-reveal className="grid gap-4 md:grid-cols-2">
-        <BenefitCard
-          eyebrow="Why seniors love us"
-          title="A familiar voice, not another piece of software."
-          benefits={seniorBenefits}
-          tone="warm"
-        />
-        <BenefitCard
-          eyebrow="Why families choose us"
-          title="Know when to check in, without hovering."
-          benefits={familyBenefits}
-          tone="cool"
-        />
+      <section data-mobile-reveal className="rounded-[2rem] bg-white/75 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
+        <div className="max-w-3xl">
+          <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">Why it works</p>
+          <h2 className="mt-3 text-3xl font-bold text-ink">One call. Two kinds of peace of mind.</h2>
+          <p className="mt-4 leading-7 text-slate-600">
+            Life gets busy, and you can&apos;t call every day. DailyCall fills the in-between days with a warm, familiar conversation for your loved one - and gives you a steady touchpoint that takes a little worry off your plate.
+          </p>
+        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <BenefitCard
+            eyebrow="Why seniors love it"
+            title="A familiar voice, not another piece of software."
+            benefits={seniorBenefits}
+            tone="warm"
+          />
+          <BenefitCard
+            eyebrow="Why families choose it"
+            title="Know when to check in, without hovering."
+            benefits={familyBenefits}
+            tone="cool"
+          />
+        </div>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
-        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-          <div>
-            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Between visits</p>
-            <h2 className="mt-3 text-3xl font-bold text-ink">DailyCall can help surface everyday care needs.</h2>
-            <p className="mt-4 leading-7 text-slate-600">
-              A friendly conversation can reveal the small practical things families often miss between visits: reminders, supplies, errands, and changes worth checking on.
-            </p>
-          </div>
-          <div className="grid gap-3">
-            {careNeedSignals.map((item) => (
-              <article key={item.title} className="rounded-2xl bg-brandBlue/10 p-4 ring-1 ring-brandBlue/15">
-                <h3 className="font-bold text-ink">{item.title}</h3>
-                <p className="mt-2 text-base leading-7 text-slate-600 md:text-sm md:leading-6">{item.copy}</p>
-              </article>
-            ))}
-          </div>
+        <div className="max-w-4xl">
+          <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">What the calls feel like</p>
+          <h2 className="mt-3 text-3xl font-bold text-ink">Familiar enough to feel easy. Personal enough to <span className="whitespace-nowrap">feel real.</span></h2>
+          <p className="mt-4 leading-7 text-slate-600">
+            A DailyCall isn&apos;t a script being read out. It settles into your loved one&apos;s daily rhythm and remembers what matters - so each call feels less like a check-in and more like hearing from someone who knows them.
+          </p>
         </div>
-        <p className="mt-6 rounded-2xl bg-slate-50 p-4 text-base leading-7 text-slate-600 ring-1 ring-slate-200 md:text-sm md:leading-6">
-          DailyCall is not a medical device, emergency response service, or replacement for professional care. It does not diagnose conditions or monitor emergencies. If something may be urgent, call emergency services or contact a healthcare professional.
-        </p>
+        <div className="mt-7 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+          <article className="rounded-3xl bg-white p-5 ring-1 ring-black/5 md:p-6">
+            <h3 className="text-2xl font-bold text-ink">A rhythm that fits their day.</h3>
+            <p className="mt-3 leading-7 text-slate-700">
+              Whether it&apos;s a chat over morning coffee or a wind-down before bed, the call becomes a small, dependable part of the day.
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {rituals.map((ritual) => (
+                <div key={ritual.label} className="group relative min-h-32 overflow-hidden rounded-3xl bg-ink text-center font-bold text-white shadow-sm ring-1 ring-black/5 sm:min-h-36">
+                  <Image src={ritual.image} alt="" fill sizes="(min-width: 1024px) 10rem, (min-width: 640px) 50vw, 100vw" className="object-cover transition duration-300 group-hover:scale-105" style={{ objectPosition: ritual.position }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/35 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-4 text-center text-base leading-6 text-white drop-shadow-sm">
+                    {ritual.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+          <article className="rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15 md:p-6">
+            <h3 className="text-2xl font-bold text-ink">It picks up where you left off.</h3>
+            <p className="mt-3 leading-7 text-slate-700">
+              DailyCall remembers family, pets, routines, and the little things that came up last time - so conversations build over time instead of starting over.
+            </p>
+            <div className="mt-5 grid gap-3">
+              {memoryExamples.map((example) => (
+                <blockquote key={example} className="rounded-2xl bg-white/80 p-4 text-base font-semibold leading-7 text-ink shadow-sm ring-1 ring-black/5 md:text-sm md:leading-6">
+                  &quot;{example}&quot;
+                </blockquote>
+              ))}
+            </div>
+          </article>
+        </div>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
@@ -525,73 +533,44 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
-        <div className="grid gap-7 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div>
-            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Introducing DailyCall</p>
-            <h2 className="mt-3 text-3xl font-bold text-ink">Make the first call feel natural.</h2>
+            <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">Between visits</p>
+            <h2 className="mt-3 text-3xl font-bold text-ink">DailyCall can help surface everyday needs.</h2>
             <p className="mt-4 leading-7 text-slate-600">
-              Families are often worried their parent will resist anything that sounds like technology. DailyCall is easiest to explain as a friendly phone call that helps them stay connected.
+              A friendly conversation often reveals the small things families miss between visits - gentle reminders about meals, meds, and appointments; practical requests like refills, groceries, or a ride; and changes worth a follow-up, such as repeated mentions of pain, low mood, or missed meals.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {parentIntroPoints.map((item) => (
-              <div key={item} className="rounded-2xl bg-brandBlue/10 p-4 text-base md:text-sm font-bold leading-6 text-ink ring-1 ring-brandBlue/15">
-                {item}
-              </div>
-            ))}
-          </div>
+          <article className="rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15 md:p-6">
+            <p className="text-sm font-bold uppercase tracking-wide text-sage">Everyday signals</p>
+            <ul className="mt-4 grid gap-3 text-base font-semibold leading-7 text-ink md:text-sm md:leading-6">
+              {careNeedSignals.map((item) => (
+                <li key={item.title} className="flex gap-3">
+                  <CheckIcon />
+                  <span>{item.title}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
         </div>
-      </section>
-
-      <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
-        <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-          <div>
-            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Memory and personalization</p>
-            <h2 className="mt-3 text-3xl font-bold text-ink">Conversations feel continuous, not repetitive.</h2>
-            <p className="mt-4 leading-7 text-slate-600">
-              DailyCall remembers what matters - family members, routines, interests, pets, hobbies, and ongoing conversations - so every call feels more personal over time.
-            </p>
-          </div>
-          <div className="grid gap-3">
-            {memoryExamples.map((example) => (
-              <blockquote key={example} className="rounded-2xl bg-brandBlue/10 p-5 text-lg font-semibold leading-8 text-ink ring-1 ring-brandBlue/15">
-                &quot;{example}&quot;
-              </blockquote>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section data-mobile-reveal className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-        <article className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Routines</p>
-          <h2 className="mt-3 text-3xl font-bold text-ink">Humans bond through routine.</h2>
-          <p className="mt-4 leading-7 text-slate-600">DailyCall becomes part of your loved one&apos;s daily rhythm: a call after coffee, an evening wind-down, a trivia game, or a familiar music conversation.</p>
-        </article>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {rituals.map((ritual) => (
-            <div key={ritual.label} className="group relative min-h-32 overflow-hidden rounded-3xl bg-ink text-center font-bold text-white shadow-sm ring-1 ring-black/5 sm:min-h-36">
-              <Image src={ritual.image} alt="" fill sizes="(min-width: 1024px) 16rem, (min-width: 640px) 50vw, 100vw" className="object-cover transition duration-300 group-hover:scale-105" style={{ objectPosition: ritual.position }} />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/35 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-4 text-center text-lg leading-6 text-white drop-shadow-sm">
-                {ritual.label}
-              </div>
-            </div>
-          ))}
-        </div>
+        <p className="mt-6 rounded-2xl bg-slate-50 p-4 text-base leading-7 text-slate-600 ring-1 ring-slate-200 md:text-sm md:leading-6">
+          DailyCall is not a medical device, emergency response service, or replacement for professional care. It does not diagnose conditions or monitor emergencies. If something may be urgent, call emergency services or contact a healthcare professional.
+        </p>
       </section>
 
       <section data-mobile-reveal className="rounded-[2rem] bg-brandBlue/10 p-6 shadow-sm ring-1 ring-brandBlue/15 md:p-10">
-        <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Why daily connection matters</p>
-        <h2 className="mt-3 text-3xl font-bold text-ink">Loneliness is not a small problem.</h2>
-        <p className="mt-4 max-w-2xl leading-7 text-slate-600">
-          A short daily call will not replace family or professional care. It can, however, create a steady moment of conversation that helps families notice changes sooner and helps older adults feel less alone.
-        </p>
+        <div className="max-w-3xl">
+          <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">Why it matters</p>
+          <h2 className="mt-3 text-3xl font-bold text-ink">Loneliness is not a small problem.</h2>
+          <p className="mt-4 leading-7 text-slate-600">
+            A short daily call will not replace family or professional care. It can, however, create a steady moment of conversation that helps families notice changes sooner and helps older adults feel less alone.
+          </p>
+        </div>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           {lonelinessStats.map((item) => (
             <div key={item.label} className="rounded-2xl bg-white/80 p-5 shadow-sm ring-1 ring-black/5">
               <p className="text-3xl font-bold text-ink">{item.value}</p>
-              <p className="mt-2 text-base md:text-sm font-semibold leading-6 text-slate-600">{item.label}</p>
+              <p className="mt-2 text-base font-semibold leading-6 text-slate-600 md:text-sm">{item.label}</p>
             </div>
           ))}
         </div>
@@ -607,15 +586,54 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
           </a>
           .
         </p>
+        <div className="mt-8 rounded-[2rem] bg-white/80 p-5 shadow-sm ring-1 ring-black/5 md:p-6">
+          <div className="max-w-2xl">
+            <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">Early access feedback</p>
+            <h3 className="mt-3 text-2xl font-bold text-ink">What our first families are saying.</h3>
+            <p className="mt-3 leading-7 text-slate-600">Real notes from early access members. Names shortened for privacy.</p>
+          </div>
+          <TestimonialsCarousel testimonials={testimonials} />
+        </div>
       </section>
 
-      <section data-mobile-reveal className="rounded-[2rem] bg-white/70 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
-        <div className="max-w-2xl">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Early access feedback</p>
-          <h2 className="mt-3 text-3xl font-bold text-ink">What our first families are saying.</h2>
-          <p className="mt-4 leading-7 text-slate-600">Real notes from early access members. Names shortened for privacy.</p>
+      <section data-mobile-reveal className="relative overflow-hidden rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
+        <Image
+          src="/trust-son-mom-v2.png"
+          alt="Adult son sitting with his elderly mother in a warm home setting"
+          width={1536}
+          height={1024}
+          className="absolute inset-y-0 -left-[60px] hidden h-full w-[calc(100%+5rem)] object-cover object-left opacity-90 lg:block"
+        />
+        <div
+          className="absolute inset-y-0 left-[42%] hidden w-[58%] lg:block"
+          style={{ background: "linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 14%, rgba(255,255,255,0.26) 28%, rgba(255,255,255,0.52) 46%, rgba(255,255,255,0.78) 66%, rgba(255,255,255,0.94) 84%, rgba(255,255,255,1) 100%)" }}
+        />
+        <div className="pointer-events-none absolute inset-x-0 -top-[25px] h-[24rem] overflow-hidden lg:hidden">
+          <Image
+            src="/trust-son-mom-v2.png"
+            alt="Adult son sitting with his elderly mother in a warm home setting"
+            width={1536}
+            height={1024}
+            className="h-full w-full object-cover object-[0%_center]"
+          />
+          <div className="absolute inset-x-0 bottom-0 h-52 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_34%,rgba(255,255,255,0.66)_72%,rgba(255,255,255,0.98)_100%)]" />
         </div>
-        <TestimonialsCarousel testimonials={testimonials} />
+        <div className="relative max-w-2xl pt-[20.5rem] lg:ml-auto lg:max-w-[28rem] lg:translate-x-4 lg:pt-0 lg:pr-8 xl:max-w-[30rem] xl:translate-x-6 xl:pr-10">
+          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Trust & privacy</p>
+          <h2 className="mt-3 text-3xl font-bold text-ink">
+            <span className="md:hidden">Designed for trust.</span>
+            <span className="hidden md:inline">Designed to feel supportive, not intrusive.</span>
+          </h2>
+          <div className="mt-6 rounded-3xl bg-ink p-5 text-cream shadow-sm md:max-w-[90%] md:pb-[4.25rem]">
+            <p className="text-xl font-bold">Honest about AI. Always.</p>
+            <p className="mt-3 max-w-xl leading-7 text-cream/75">
+              Every call begins with a clear disclosure that DailyCall is an AI companion - not a human. We will never pretend otherwise, and we believe families shouldn&apos;t have to either.
+            </p>
+          </div>
+          <p className="mt-6 max-w-xl text-base md:text-sm leading-7 text-slate-600">
+            Your loved one&apos;s conversations stay private. Family summaries are written to support connection - never to surveil, score, or pathologize. We don&apos;t sell your data, and we use encryption in transit and at rest while limiting access to what is needed to operate DailyCall.
+          </p>
+        </div>
       </section>
 
       <section data-mobile-reveal id="pricing" className="grid gap-5">
@@ -646,67 +664,24 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
             </article>
           ))}
         </div>
-        <div className="grid gap-5 rounded-[2rem] bg-ink p-5 text-cream shadow-sm ring-1 ring-ink md:grid-cols-[0.9fr_1.1fr] md:p-6">
+      </section>
+
+      <section data-mobile-reveal className="rounded-[1.5rem] bg-white/70 p-5 shadow-sm ring-1 ring-black/5 md:p-6">
+        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <div>
-            <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-brandPinkLight">Companion plan</p>
-            <h3 className="mt-2 text-2xl font-bold">Always reachable.</h3>
-            <p className="mt-3 text-base md:text-sm leading-6 text-cream/75">
-              Your loved one can call DailyCall anytime, day or night, simply by dialing back the same number. It is not just scheduled calls - it is a friendly voice that is there whenever they want to talk.
+            <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">Introducing DailyCall</p>
+            <h2 className="mt-2 text-2xl font-bold text-ink">Helping your parent say yes.</h2>
+            <p className="mt-3 leading-7 text-slate-600">
+              Families are often worried their parent will resist anything that sounds like technology. DailyCall is easiest to explain as a friendly phone call that helps them stay connected.
             </p>
           </div>
-          <div className="grid gap-3 rounded-3xl bg-white/10 p-4 ring-1 ring-white/10">
-            {[
-              "They dial the same number that calls them.",
-              "The companion recognizes them and picks up where they left off.",
-              "Conversations feel continuous, like calling a friend.",
-              "Included with the Companion plan.",
-            ].map((item) => (
-              <div key={item} className="flex gap-3 text-base md:text-sm font-semibold leading-6 text-cream/85">
-                <CheckIcon />
-                <span>{item}</span>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {parentIntroPoints.map((item) => (
+              <div key={item} className="rounded-2xl bg-brandBlue/10 p-3 text-base font-bold leading-6 text-ink ring-1 ring-brandBlue/15 md:text-sm">
+                {item}
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section data-mobile-reveal className="relative overflow-hidden rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
-        <Image
-          src="/trust-son-mom-v2.png"
-          alt="Adult son sitting with his elderly mother in a warm home setting"
-          width={1536}
-          height={1024}
-          className="absolute inset-y-0 left-0 hidden h-full w-[77%] object-cover object-center opacity-90 lg:block"
-        />
-        <div
-          className="absolute inset-y-0 left-[50%] hidden w-[50%] lg:block"
-          style={{ background: "linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 14%, rgba(255,255,255,0.28) 34%, rgba(255,255,255,0.68) 58%, rgba(255,255,255,0.94) 78%, rgba(255,255,255,1) 100%)" }}
-        />
-        <div className="pointer-events-none absolute inset-x-0 -top-[25px] h-[24rem] overflow-hidden lg:hidden">
-          <Image
-            src="/trust-son-mom-v2.png"
-            alt="Adult son sitting with his elderly mother in a warm home setting"
-            width={1536}
-            height={1024}
-            className="h-full w-full object-cover object-[0%_center]"
-          />
-          <div className="absolute inset-x-0 bottom-0 h-52 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_34%,rgba(255,255,255,0.66)_72%,rgba(255,255,255,0.98)_100%)]" />
-        </div>
-        <div className="relative max-w-2xl pt-[20.5rem] lg:ml-auto lg:max-w-[31rem] lg:translate-x-4 lg:pt-0 xl:max-w-[34rem] xl:translate-x-6">
-          <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Trust & privacy</p>
-          <h2 className="mt-3 text-3xl font-bold text-ink">
-            <span className="md:hidden">Designed for trust.</span>
-            <span className="hidden md:inline">Designed to feel supportive, not intrusive.</span>
-          </h2>
-          <div className="mt-6 rounded-3xl bg-ink p-5 text-cream shadow-sm">
-            <p className="text-xl font-bold">Honest about AI. Always.</p>
-            <p className="mt-3 max-w-xl text-base md:text-sm leading-6 text-cream/75">
-              Every call begins with a clear disclosure that DailyCall is an AI companion - not a human. We will never pretend otherwise, and we believe families shouldn&apos;t have to either.
-            </p>
-          </div>
-          <p className="mt-6 max-w-xl text-base md:text-sm leading-7 text-slate-600">
-            Your loved one&apos;s conversations stay private. Family summaries are written to support connection - never to surveil, score, or pathologize. We don&apos;t sell your data, and we use encryption in transit and at rest while limiting access to what is needed to operate DailyCall.
-          </p>
         </div>
       </section>
 
@@ -748,41 +723,6 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
               Start free 14-day trial
             </Link>
           </div>
-        </div>
-      </section>
-
-      <section data-mobile-reveal aria-label="Service disclaimer and privacy standards" className="grid gap-8 rounded-[1.5rem] border border-slate-300/80 bg-white/80 p-5 text-base leading-7 text-slate-600 shadow-sm md:p-6 lg:grid-cols-[minmax(0,1fr)_max-content] lg:items-start lg:gap-12">
-        <div>
-          <p className="font-semibold text-ink">Our Approach to Care</p>
-          <div className="mt-3 grid gap-3">
-            <p>
-              Our companion calls are designed to provide daily reassurance, wellness check-ins, conversation, routine, companionship, and a warm sense of connection for loved ones and families.
-            </p>
-            <p>
-              While our service can help reduce loneliness and provide comfort, companionship, and entertainment throughout the day, we strongly encourage family members and friends to stay actively connected with their loved ones whenever possible.
-            </p>
-            <p>
-              Human relationships and social connection are deeply important. Our service is not intended to replace family interaction, caregiving, friendship, or socialization — but rather to support and enhance everyday connection, comfort, safety, and peace of mind for everyone involved.
-            </p>
-            <p>
-              We follow industry-standard privacy and security practices designed to support Canadian privacy requirements, including Personal Information Protection and Electronic Documents Act (PIPEDA), as well as U.S. healthcare privacy standards associated with Health Insurance Portability and Accountability Act (HIPAA).
-            </p>
-          </div>
-        </div>
-
-        <div className="grid justify-center gap-5 lg:mt-[2.3rem] lg:justify-start">
-          <div className="flex items-center justify-center gap-4 lg:justify-start">
-            <Image src="/trust/pipeda.webp" alt="PIPEDA privacy standards" width={625} height={625} className="h-auto w-[4.5rem] rounded-2xl sm:w-[4.86rem]" />
-            <Image src="/trust/hipaa.png" alt="HIPAA privacy standards" width={1455} height={677} className="h-auto w-[8.1rem] rounded-2xl sm:w-[8.1rem]" />
-          </div>
-          <ul className="grid gap-y-1 text-base md:text-sm font-semibold leading-6 text-slate-600">
-            <li>• HIPAA Ready</li>
-            <li>• PIPEDA Aligned</li>
-            <li>• Encrypted Calls &amp; Data</li>
-            <li>• We Never Sell Your Data</li>
-            <li>• Secure Payments by Stripe</li>
-            <li>• Built with Early Access Families</li>
-          </ul>
         </div>
       </section>
 
