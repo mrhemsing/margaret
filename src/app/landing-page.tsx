@@ -637,7 +637,7 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
       </section>
 
       <section data-mobile-reveal id="pricing" className="grid gap-5">
-        <div className="text-center">
+        <div className="text-left md:text-center">
           <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Pricing</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Companionship for them. Peace of mind for you.</h2>
           <p className="mx-auto mt-3 max-w-4xl text-xl font-bold leading-7 text-ink md:whitespace-nowrap">Less than a single caregiver hour. Less than one dinner out. Daily peace of mind.</p>
@@ -703,7 +703,7 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
         </div>
       </section>
 
-      <section data-mobile-reveal className="relative overflow-hidden rounded-[2rem] bg-ink p-8 text-center text-cream shadow-sm md:p-10 md:text-left">
+      <section data-mobile-reveal className="relative overflow-hidden rounded-[2rem] bg-ink p-8 text-left text-cream shadow-sm md:p-10">
         <Image
           src="/family-parent-happy-cta.jpg"
           alt="Middle-aged adult child enjoying time with an elderly parent"
