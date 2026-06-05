@@ -149,9 +149,7 @@ export default function AboutPage() {
             />
             <div className="min-w-0">
               <p className="text-lg font-bold text-ink sm:text-xl">- Matt Hemsing</p>
-              <p className="mt-1 text-base font-semibold leading-7 text-slate-600">
-                Founder, DailyCall &middot; Software engineer, 15 years at IBM
-              </p>
+              <p className="mt-1 text-base font-semibold leading-7 text-slate-600">Founder, DailyCall</p>
               <Link
                 href="https://www.linkedin.com/in/matt-hemsing-85427776/"
                 className="mt-4 inline-flex items-center gap-2 rounded-full bg-brandButtonBlue px-4 py-3 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover sm:px-5"
