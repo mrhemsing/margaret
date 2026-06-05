@@ -640,7 +640,10 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
         <div className="rounded-[2rem] bg-white/55 p-4 shadow-sm ring-1 ring-black/5 md:bg-transparent md:p-0 md:shadow-none md:ring-0">
           <div className="text-left md:text-center">
             <p className="text-base md:text-sm font-semibold uppercase tracking-wide text-sage">Pricing</p>
-            <h2 className="mt-3 text-3xl font-bold text-ink">Companionship for them. Peace of mind for you.</h2>
+            <h2 className="mt-3 text-3xl font-bold text-ink">
+              <span className="md:hidden">Comfort for them. Peace of mind for you.</span>
+              <span className="hidden md:inline">Companionship for them. Peace of mind for you.</span>
+            </h2>
             <p className="mx-auto mt-3 max-w-4xl text-xl font-bold leading-7 text-ink md:whitespace-nowrap">Less than a single caregiver hour. Less than one dinner out. Daily peace of mind.</p>
             <p className="mx-auto mt-2 max-w-2xl leading-7 text-slate-600">Both plans include a {trialLengthDays}-day free trial. No credit card required.</p>
           </div>
