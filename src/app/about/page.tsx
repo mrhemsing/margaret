@@ -150,7 +150,7 @@ export default function AboutPage() {
               alt="DailyCall founder Matt Hemsing"
               width={1200}
               height={1600}
-              className="h-28 w-28 rounded-2xl object-cover object-top sm:h-32 sm:w-32"
+              className="h-14 w-14 rounded-xl object-cover object-top sm:h-16 sm:w-16"
             />
             <div>
               <p className="text-xl font-bold text-ink">- Matt Hemsing</p>
