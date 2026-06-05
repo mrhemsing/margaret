@@ -139,22 +139,22 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-6 border-t border-slate-200 pt-8 sm:grid-cols-[11rem_1fr] sm:items-center md:grid-cols-[13rem_1fr]">
+          <div className="mt-8 grid grid-cols-[9rem_minmax(0,1fr)] items-center gap-4 border-t border-slate-200 pt-8 sm:grid-cols-[11rem_1fr] sm:gap-6 md:grid-cols-[13rem_1fr]">
             <Image
               src="/founder-matt-hemsing.jpg"
               alt="DailyCall founder Matt Hemsing"
-              width={1200}
-              height={1600}
-              className="h-40 w-40 rounded-2xl object-cover object-top sm:h-44 sm:w-44 md:h-52 md:w-52"
+              width={760}
+              height={1014}
+              className="h-36 w-36 rounded-2xl object-cover object-top sm:h-44 sm:w-44 md:h-52 md:w-52"
             />
-            <div>
-              <p className="text-xl font-bold text-ink">- Matt Hemsing</p>
+            <div className="min-w-0">
+              <p className="text-lg font-bold text-ink sm:text-xl">- Matt Hemsing</p>
               <p className="mt-1 text-base font-semibold leading-7 text-slate-600">
                 Founder, DailyCall &middot; Software engineer, 15 years at IBM
               </p>
               <Link
                 href="https://www.linkedin.com/in/matt-hemsing-85427776/"
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-brandButtonBlue px-5 py-3 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover"
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-brandButtonBlue px-4 py-3 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover sm:px-5"
               >
                 <svg
                   aria-hidden="true"
