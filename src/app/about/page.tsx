@@ -75,7 +75,7 @@ export default function AboutPage() {
         <div>
           <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">About us</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-bold tracking-normal text-ink md:text-5xl">
-            Built from a family question.
+            Inspired by Margaret. Built for families like ours.
           </h1>
           <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-slate-700">
             DailyCall began with Margaret, and with the quiet stretches families know too well.
