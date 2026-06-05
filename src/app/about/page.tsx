@@ -8,14 +8,14 @@ import { absoluteSiteUrl } from "@/lib/site-url";
 export const metadata: Metadata = {
   title: "About us",
   description:
-    "Read the founder's message behind DailyCall, a warm daily phone call for aging parents and grandparents, inspired by Margaret.",
+    "Read the founder's message behind DailyCall, a warm daily phone call for aging parents and grandparents.",
   alternates: {
     canonical: "/about",
   },
   openGraph: {
     title: "About DailyCall",
     description:
-      "DailyCall was built from a family question: what if someone kind and patient could check in on the days we cannot be there?",
+      "DailyCall began with the quiet stretches every family knows, and was made for the days you cannot be there.",
     url: "/about",
     images: [
       {
@@ -98,10 +98,10 @@ export default function AboutPage() {
         <div>
           <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">About us</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-bold tracking-normal text-ink md:text-5xl">
-            Inspired by Margaret. Built for families like ours.
+            Inspired by Margaret. Made for the days you can&apos;t be there.
           </h1>
           <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-slate-700">
-            DailyCall began with Margaret, and with the quiet stretches families know too well.
+            DailyCall began with my grandmother - and with the quiet stretches every family knows.
           </p>
         </div>
 
@@ -122,19 +122,19 @@ export default function AboutPage() {
             <h2 className="mt-3 text-3xl font-bold text-ink">Why we built DailyCall</h2>
             <div className="mt-6 grid gap-5 text-base leading-7 text-slate-700 md:text-lg md:leading-8">
               <p>
-                My grandmother Margaret lost her husband when she was 55, and lived another 25 years after that.
+                My grandmother Margaret was widowed at 55 and lived another twenty-five years. For much of that time she was with us, and we counted ourselves lucky to have her close.
               </p>
               <p>
-                For a good part of that time she lived with us, and we were lucky to have her close. But even then, there were long stretches where she was on her own: quiet afternoons and slow days when there wasn&apos;t always someone around to talk to. She was independent and sharp, and never wanted to be a burden, so she rarely said much about it.
+                But even with family around, the days had long quiet stretches - slow afternoons when there wasn&apos;t anyone to talk to. Margaret was sharp and fiercely independent, and she never wanted to be a burden, so she almost never mentioned it. You had to notice it yourself.
               </p>
               <p>
-                I spent 15 years as a software engineer at IBM before starting DailyCall, and through all of it I kept coming back to the same question: what if someone kind and patient could check in with her on the days we couldn&apos;t be there? Not an alert, not another app to learn, just a real conversation.
+                I spent fifteen years building software at IBM, and the whole time one question kept following me home: what if someone patient and kind could check in with her on the days we couldn&apos;t? Not an alert. Not another app to figure out. Just a real conversation.
               </p>
               <p>
-                That&apos;s what DailyCall is. A warm daily phone call for an aging parent or grandparent, and a simple text update afterward so the family knows how it went. It&apos;s meant to add a steady moment of connection to the day, never to replace the people who love them.
+                That&apos;s DailyCall. A warm phone call every day for an aging parent or grandparent, and a short text to the family afterward so they know how it went. It&apos;s meant to add one steady moment of connection to the day - never to stand in for the people who love them.
               </p>
               <p>
-                I built it the way I&apos;d want it for my own family: honest about being AI, private by default, and simple enough to work on the phone already sitting on the kitchen counter.
+                I built it the way I&apos;d want it for my own family. It&apos;s honest about being an AI, so no one is ever misled about who&apos;s calling. It&apos;s private by default. And it&apos;s simple enough to work on the phone already sitting on the kitchen counter - nothing to download, nothing to set up.
               </p>
             </div>
           </div>
