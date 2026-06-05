@@ -143,8 +143,8 @@ export default function AboutPage() {
             <Image
               src="/founder-matt-hemsing.jpg"
               alt="DailyCall founder Matt Hemsing"
-              width={760}
-              height={1014}
+              width={1087}
+              height={1457}
               className="h-36 w-36 rounded-2xl object-cover object-top sm:h-44 sm:w-44 md:h-52 md:w-52"
             />
             <div className="min-w-0">
