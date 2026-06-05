@@ -82,7 +82,7 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <figure className="overflow-hidden rounded-[2rem] bg-white p-3 shadow-sm ring-1 ring-black/5">
+        <figure>
           <Image
             src="/founder-margaret-family.jpg"
             alt="Matt Hemsing with his grandmother Margaret and family"
@@ -91,7 +91,7 @@ export default function AboutPage() {
             priority
             className="aspect-[4/3] w-full rounded-[1.5rem] object-cover"
           />
-          <figcaption className="px-2 pt-3 text-sm font-semibold leading-6 text-slate-500">
+          <figcaption className="pt-3 text-sm font-semibold leading-6 text-slate-500">
             Matt with Margaret, whose independence and quiet strength shaped DailyCall.
           </figcaption>
         </figure>
