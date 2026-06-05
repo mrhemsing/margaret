@@ -139,13 +139,13 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col gap-5 border-t border-slate-200 pt-8 sm:flex-row sm:items-center">
+          <div className="mt-8 grid gap-6 border-t border-slate-200 pt-8 sm:grid-cols-[11rem_1fr] sm:items-center md:grid-cols-[13rem_1fr]">
             <Image
               src="/founder-matt-hemsing.jpg"
               alt="DailyCall founder Matt Hemsing"
               width={1200}
               height={1600}
-              className="h-14 w-14 rounded-xl object-cover object-top sm:h-16 sm:w-16"
+              className="h-40 w-40 rounded-2xl object-cover object-top sm:h-44 sm:w-44 md:h-52 md:w-52"
             />
             <div>
               <p className="text-xl font-bold text-ink">- Matt Hemsing</p>
