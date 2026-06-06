@@ -169,7 +169,7 @@ export const faqs = [
   ["What are DailyCall conversations like?", "DailyCall has warm, everyday conversations about routines, memories, family, hobbies, music, plans, and how the day is going."],
   [
     "Can my parent ask DailyCall questions, or does it just check in?",
-    "Both. Beyond the daily check-in, your loved one can ask about almost anything - a bird outside, a recipe, a piece of history, how something works - and get a clear, patient answer. For many families it becomes a small daily spark of curiosity, not just a wellness call.",
+    "Both. Beyond the daily check-in, your loved one can ask about almost anything, like a bird outside, a recipe, a piece of history, or how something works, and get a clear, patient answer. For many families it becomes a small daily spark of curiosity, not just a wellness call.",
   ],
   ["Is DailyCall replacing family connection?", "No. DailyCall is designed to support connection, not replace family, friends, caregivers, or emergency services."],
   ["What happens if a call is missed?", "Missed calls can be shown in the family dashboard, and DailyCall can help families notice changes in call patterns over time."],
