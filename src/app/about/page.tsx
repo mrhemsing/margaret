@@ -97,14 +97,11 @@ export default function AboutPage() {
       <section className="grid gap-8 rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5 md:rounded-none md:bg-transparent md:p-0 md:shadow-none md:ring-0 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">About us</p>
-          <h1 className="mt-3 max-w-3xl text-[clamp(1.7rem,7.2vw,2.15rem)] font-bold leading-[1.1] tracking-normal text-ink md:text-5xl md:leading-tight">
-            DailyCall began <span className="whitespace-nowrap">with my grandmother.</span>
+          <h1 className="mt-3 max-w-3xl text-4xl font-bold tracking-normal text-ink md:text-5xl">
+            It began with my grandmother.
           </h1>
           <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-slate-700">
-            <span className="md:hidden">It began with my grandmother.</span>
-            <span className="hidden md:inline">
-              Built for aging parents and grandparents who value their independence, but still need one more voice in the day.
-            </span>
+            Built for aging parents and grandparents who value their independence, but still need one more voice in the day.
           </p>
         </div>
 
