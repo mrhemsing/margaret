@@ -154,6 +154,9 @@ export default function AboutPage() {
                 One more moment in the day where someone asks, &quot;How are you doing today?&quot;
               </p>
               <p>
+                And it became more than a check-in. My grandmother was sharp and endlessly curious right to the end. She just ran out of people to ask. A companion like this can answer the questions that surface when no one&apos;s nearby: what kind of bird is that, how do you make a certain dish, what year did something happen. Company for the quiet days, and a little spark for a curious mind.
+              </p>
+              <p>
                 I spent fifteen years building software at IBM, and I built DailyCall because I wish something like it had existed for my grandmother.
               </p>
             </div>
