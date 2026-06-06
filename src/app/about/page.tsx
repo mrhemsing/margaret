@@ -8,7 +8,7 @@ import { absoluteSiteUrl } from "@/lib/site-url";
 export const metadata: Metadata = {
   title: "About us",
   description:
-    "Read the founder's message behind DailyCall, a warm daily phone call for aging parents and grandparents.",
+    "Read the founder's message behind DailyCall, a warm daily phone call for older adults.",
   alternates: {
     canonical: "/about",
   },
@@ -32,19 +32,19 @@ export default function AboutPage() {
   const beliefs = [
     {
       title: "Honest about AI, always.",
-      body: "Every call says it's an AI companion. We'll never pretend otherwise.",
+      body: "Every call says it's an AI companion.",
     },
     {
       title: "A companion, not a replacement.",
-      body: "Built to add connection - never to stand in for family or care.",
+      body: "Built to add connection, never replace family or care.",
     },
     {
       title: "Care without surveillance.",
-      body: "Summaries help families stay close, not monitor or score a person.",
+      body: "Summaries keep families close, not watching.",
     },
     {
       title: "Simple by design.",
-      body: "No apps, passwords, or screens - just a phone call anyone can answer.",
+      body: "No apps or passwords. Just a phone call.",
     },
     {
       title: "Private by default.",
@@ -101,7 +101,7 @@ export default function AboutPage() {
             It began with my grandmother.
           </h1>
           <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-slate-700">
-            Built for aging parents and grandparents who value their independence, but still need one more voice in the day.
+            Built for older adults who value their independence, but still want one more voice in the day.
           </p>
         </div>
 
@@ -122,42 +122,22 @@ export default function AboutPage() {
             <h2 className="mt-3 text-3xl font-bold text-ink">Why we built DailyCall</h2>
             <div className="mt-6 grid gap-5 text-base leading-7 text-slate-700 md:text-lg md:leading-8">
               <p>
-                She was widowed at just 55. For years afterward she split her time. Some of it she spent living with our family, the rest on her own, in an apartment about an hour away. Looking back, I don&apos;t think I understood what those long stretches of solitude were really like for her.
+                She was widowed at 55 and spent long stretches living alone in an apartment an hour from us. I don&apos;t think I understood what that solitude was really like for her.
               </p>
               <p>
-                One day I caught her talking to the walls.
+                One day I caught her talking to the walls. I asked who she was talking to. She smiled and said, &quot;You would be too if you lived alone for as long as I have.&quot;
               </p>
               <p>
-                I asked, &quot;Grandma, who are you talking to?&quot;
+                I thought she was joking. Years later, I realized she wasn&apos;t.
               </p>
               <p>
-                She smiled and said, &quot;You would be too if you lived alone for as long as I have.&quot;
+                Loneliness is rarely dramatic. More often it&apos;s quiet days with nobody to talk to and nobody noticing when something feels off. Independence can quietly come with isolation, and DailyCall was built to bridge that gap.
               </p>
               <p>
-                At the time, I thought she was joking. Years later, I realized she wasn&apos;t.
+                Every day, it makes a friendly phone call. A real conversation, not an alert. It won&apos;t replace family or friends. It&apos;s simply one more voice in the day.
               </p>
               <p>
-                Loneliness is rarely dramatic. It doesn&apos;t always look like sadness. More often it looks like quiet days with nobody to talk to, nobody asking how you&apos;re doing, and nobody noticing when something feels off. As our parents and grandparents age, many keep living independently. They value their freedom, their routines, their homes. But independence can quietly come with isolation.
-              </p>
-              <p>
-                DailyCall was built to help bridge that gap.
-              </p>
-              <p>
-                Every day, it makes a friendly phone call. A real conversation, not an alert.
-              </p>
-              <p>
-                It isn&apos;t meant to replace family, friends, neighbors, or real human connection.
-              </p>
-              <p>
-                It&apos;s simply one more voice.<br />
-                One more conversation.<br />
-                One more moment in the day where someone asks, &quot;How are you doing today?&quot;
-              </p>
-              <p>
-                And it became more than a check-in. My grandmother stayed sharp and curious to the end, and a companion like this answers the questions that surface when no one&apos;s around. Company for the quiet days, and a spark for a curious mind.
-              </p>
-              <p>
-                I spent fifteen years building software at IBM, and I built DailyCall because I wish something like it had existed for my grandmother.
+                I spent fifteen years building software at IBM, and I built DailyCall because I wish it had existed for her.
               </p>
             </div>
           </div>
@@ -216,10 +196,7 @@ export default function AboutPage() {
           <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">Try DailyCall</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Hear what a DailyCall feels like.</h2>
           <p className="mt-4 text-base leading-7 text-slate-700 md:text-lg md:leading-8">
-            The best way to understand DailyCall is to hear one. Try a free one-minute demo call, or start your 14-day free trial - no credit card, cancel anytime.
-          </p>
-          <p className="mt-3 text-base leading-7 text-slate-600">
-            DailyCall is new, and we&apos;re building it alongside our first families.
+            The best way to understand it is to hear one. Try a free one-minute demo, or start your 14-day trial. No credit card, cancel anytime.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link
