@@ -94,7 +94,7 @@ export default function AboutPage() {
       />
       <SiteHeader />
 
-      <section className="grid gap-8 pt-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+      <section className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">About us</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-bold tracking-normal text-ink md:text-5xl">
