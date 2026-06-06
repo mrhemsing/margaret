@@ -178,7 +178,14 @@ export default function AboutPage() {
         <div className="grid gap-8 lg:grid-cols-[0.55fr_1.45fr]">
           <div>
             <p className="text-base font-semibold uppercase tracking-wide text-cream/65 md:text-sm">What we believe</p>
-            <h2 className="mt-3 text-3xl font-bold">Built for trust from day one.</h2>
+            <h2 className="mt-3 text-3xl font-bold">
+              <span className="md:hidden">
+                Built for trust from
+                <br />
+                day one.
+              </span>
+              <span className="hidden md:inline">Built for trust from day one.</span>
+            </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {beliefs.map((belief) => (
