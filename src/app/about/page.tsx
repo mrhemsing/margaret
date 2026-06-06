@@ -94,7 +94,7 @@ export default function AboutPage() {
       />
       <SiteHeader />
 
-      <section className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+      <section className="grid gap-8 rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5 md:p-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:p-10">
         <div>
           <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">About us</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-bold tracking-normal text-ink md:text-5xl">
@@ -111,7 +111,7 @@ export default function AboutPage() {
           width={2192}
           height={1982}
           priority
-          className="w-full object-cover"
+          className="w-full rounded-[1.5rem] object-cover"
         />
       </section>
 
