@@ -122,7 +122,7 @@ export default function AboutPage() {
             <h2 className="mt-3 text-3xl font-bold text-ink">Why we built DailyCall</h2>
             <div className="mt-6 grid gap-5 text-base leading-7 text-slate-700 md:text-lg md:leading-8">
               <p>
-                She was widowed at just 55. For years afterward she split her time - part of it living with our family, the rest on her own, in an apartment about an hour away. Looking back, I don&apos;t think I understood what those long stretches of solitude were really like for her.
+                She was widowed at just 55. For years afterward she split her time. Some of it she spent living with our family, the rest on her own, in an apartment about an hour away. Looking back, I don&apos;t think I understood what those long stretches of solitude were really like for her.
               </p>
               <p>
                 One day I caught her talking to the walls.
@@ -137,13 +137,13 @@ export default function AboutPage() {
                 At the time, I thought she was joking. Years later, I realized she wasn&apos;t.
               </p>
               <p>
-                Loneliness is rarely dramatic. It doesn&apos;t always look like sadness. More often it looks like quiet days with nobody to talk to, nobody asking how you&apos;re doing, and nobody noticing when something feels off. As our parents and grandparents age, many keep living independently - they value their freedom, their routines, their homes. But independence can quietly come with isolation.
+                Loneliness is rarely dramatic. It doesn&apos;t always look like sadness. More often it looks like quiet days with nobody to talk to, nobody asking how you&apos;re doing, and nobody noticing when something feels off. As our parents and grandparents age, many keep living independently. They value their freedom, their routines, their homes. But independence can quietly come with isolation.
               </p>
               <p>
                 DailyCall was built to help bridge that gap.
               </p>
               <p>
-                Every day, it makes a friendly phone call to check in, have a real conversation, and ask a few personalized questions. Afterward, family members get a brief update - enough to stay close, not to keep watch. And it&apos;s always honest about what it is: an AI companion, never pretending to be a person.
+                Every day, it makes a friendly phone call. A real conversation, not an alert.
               </p>
               <p>
                 It isn&apos;t meant to replace family, friends, neighbors, or real human connection.
@@ -182,7 +182,7 @@ export default function AboutPage() {
                   <path d="M20.45 20.45h-3.56v-5.58c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.67H9.34V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.32 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12Zm1.78 13.02H3.54V9H7.1v11.45ZM22.22 0H1.78C.8 0 0 .77 0 1.72v20.56C0 23.23.8 24 1.78 24h20.44c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z" />
                 </svg>
               </Link>
-              <p className="mt-1 text-base font-semibold leading-7 text-slate-600">Founder, DailyCall Care</p>
+              <p className="mt-1 text-base font-semibold leading-7 text-slate-600">Founder, DailyCall</p>
             </div>
           </div>
         </article>
