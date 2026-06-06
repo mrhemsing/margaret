@@ -484,7 +484,10 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
             </div>
           </article>
           <article className="rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15 md:p-6">
-            <h3 className="text-2xl font-bold text-ink">It picks up where you left off.</h3>
+            <h3 className="text-2xl font-bold text-ink">
+              <span className="md:hidden">Right where you left off.</span>
+              <span className="hidden md:inline">It picks up where you left off.</span>
+            </h3>
             <p className="mt-3 leading-7 text-slate-700">
               DailyCall remembers family, pets, routines, and the little things that came up last time, so conversations build over time instead of starting over.
             </p>
