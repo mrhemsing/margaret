@@ -19,9 +19,9 @@ export const metadata: Metadata = {
     url: "/about",
     images: [
       {
-        url: "/founder-margaret-family-watercolor-about-us-99g.png",
+        url: "/founder-margaret-family-real-photo-99.png",
         width: 2192,
-        height: 1982,
+        height: 1968,
         alt: "DailyCall founder Matt Hemsing with his grandmother Margaret and family",
       },
     ],
@@ -106,10 +106,10 @@ export default function AboutPage() {
         </div>
 
         <Image
-          src="/founder-margaret-family-watercolor-about-us-99g.png"
+          src="/founder-margaret-family-real-photo-99.png"
           alt="Matt Hemsing with his grandmother Margaret and family"
           width={2192}
-          height={1982}
+          height={1968}
           priority
           className="w-full object-cover"
         />
