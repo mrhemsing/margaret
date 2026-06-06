@@ -39,6 +39,11 @@ const seniorBenefits: BenefitItem[] = [
     rest: "from music and memories to prayer, trivia, or simple company",
   },
   {
+    icon: "chat",
+    lead: "Curious about anything?",
+    rest: "Ask about a bird outside, an old song, or how a recipe turns out, and get a real, patient answer.",
+  },
+  {
     icon: "phone",
     lead: "No app required",
     rest: "no passwords, screens, or technical setup",
