@@ -443,7 +443,7 @@ function getFamilyCallOutcome(call: DashboardMember["callAttempts"][number]) {
       label: call.status === "NO_RESPONSE" ? "No answer" : "No connect",
       text: call.status === "NO_RESPONSE"
         ? "DailyCall did not reach a live answer. The call may have gone to voicemail."
-        : "Answered but couldn't connect — likely a carrier issue.",
+        : "Answered but couldn't connect - likely a carrier issue.",
     };
   }
 

@@ -674,7 +674,7 @@ export function SignupForm() {
           <div>
             <legend className="text-xl font-bold text-ink">Choose your trial experience</legend>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Your {trialLengthDays}-day trial is free. No credit card today. Choose the experience you want to try — you can change plans before billing starts.
+              Your {trialLengthDays}-day trial is free. No credit card today. Choose the experience you want to try - you can change plans before billing starts.
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">

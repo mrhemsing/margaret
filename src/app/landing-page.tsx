@@ -410,7 +410,7 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
               <div className="mt-4 grid gap-3 text-base md:text-sm leading-6">
                 <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Hi, this is DailyCall calling for your daily check-in! How are you feeling today?</p>
                 <p className="ml-auto max-w-[88%] rounded-2xl bg-brandPink p-3 font-semibold text-white">A little tired, but okay. I slept in a bit.</p>
-                <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Glad you got some extra rest — sometimes that&apos;s exactly what we need. Do you have anything you&apos;re looking forward to today?</p>
+                <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">Glad you got some extra rest - sometimes that&apos;s exactly what we need. Do you have anything you&apos;re looking forward to today?</p>
                 <p className="ml-auto max-w-[88%] rounded-2xl bg-brandPink p-3 font-semibold text-white">My daughter is coming over for lunch.</p>
                 <p className="max-w-[88%] rounded-2xl bg-white/10 p-3">That&apos;s wonderful! Is there anything else you&apos;d like to talk about or I can help with? If not, enjoy your lunch with her!</p>
               </div>

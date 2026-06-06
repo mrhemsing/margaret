@@ -53,7 +53,7 @@ export default function SignupPage() {
             <li>• Choose a comfortable call schedule.</li>
             <li>• Select a simple monthly plan.</li>
             <li>• Schedule the first companion call.</li>
-            <li>• Your loved one uses their regular phone — no app or password required.</li>
+            <li>• Your loved one uses their regular phone - no app or password required.</li>
             <li>• Most families complete setup in under 2 minutes.</li>
           </ul>
           <p className="rounded-2xl bg-white/10 p-4 text-sm font-semibold leading-6 text-cream ring-1 ring-white/10 md:mt-6">
