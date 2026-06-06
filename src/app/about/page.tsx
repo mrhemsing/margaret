@@ -171,12 +171,12 @@ export default function AboutPage() {
               className="h-36 w-36 rounded-2xl object-cover object-top sm:h-44 sm:w-44 md:h-52 md:w-52"
             />
             <div className="min-w-0">
-              <p className="text-lg font-bold text-ink sm:text-xl">- Matt Hemsing</p>
-              <p className="mt-1 text-base font-semibold leading-7 text-slate-600">Founder, DailyCall Care</p>
               <Link
                 href="https://www.linkedin.com/in/matt-hemsing-85427776/"
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-brandButtonBlue px-4 py-3 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover sm:px-5"
+                className="inline-flex items-center gap-2 text-lg font-bold text-ink hover:text-brandButtonBlue sm:text-xl"
+                aria-label="Matt Hemsing on LinkedIn"
               >
+                <span>- Matt Hemsing</span>
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 24 24"
@@ -184,8 +184,8 @@ export default function AboutPage() {
                 >
                   <path d="M20.45 20.45h-3.56v-5.58c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.67H9.34V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.32 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12Zm1.78 13.02H3.54V9H7.1v11.45ZM22.22 0H1.78C.8 0 0 .77 0 1.72v20.56C0 23.23.8 24 1.78 24h20.44c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z" />
                 </svg>
-                LinkedIn profile
               </Link>
+              <p className="mt-1 text-base font-semibold leading-7 text-slate-600">Founder, DailyCall Care</p>
             </div>
           </div>
         </article>
