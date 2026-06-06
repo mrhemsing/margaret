@@ -101,7 +101,10 @@ export default function AboutPage() {
             DailyCall began <span className="whitespace-nowrap">with my grandmother.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-slate-700">
-            Built for aging parents and grandparents who value their independence, but still need one more voice in the day.
+            <span className="md:hidden">It began with my grandmother.</span>
+            <span className="hidden md:inline">
+              Built for aging parents and grandparents who value their independence, but still need one more voice in the day.
+            </span>
           </p>
         </div>
 
