@@ -167,6 +167,10 @@ export const faqs = [
   ["Can DailyCall call landlines?", "Yes. DailyCall can call mobile phones and landlines, which makes it simple for seniors who prefer a familiar phone."],
   ["Is DailyCall easy to set up?", "Yes. Families can sign up and start calls in just a few minutes. No credit card required."],
   ["What are DailyCall conversations like?", "DailyCall has warm, everyday conversations about routines, memories, family, hobbies, music, plans, and how the day is going."],
+  [
+    "Can my parent ask DailyCall questions, or does it just check in?",
+    "Both. Beyond the daily check-in, your loved one can ask about almost anything - a bird outside, a recipe, a piece of history, how something works - and get a clear, patient answer. For many families it becomes a small daily spark of curiosity, not just a wellness call.",
+  ],
   ["Is DailyCall replacing family connection?", "No. DailyCall is designed to support connection, not replace family, friends, caregivers, or emergency services."],
   ["What happens if a call is missed?", "Missed calls can be shown in the family dashboard, and DailyCall can help families notice changes in call patterns over time."],
   ["Can I choose how often DailyCall calls?", "Yes. Call timing and routines can be adjusted as your loved one's needs change."],
