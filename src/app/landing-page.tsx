@@ -114,6 +114,8 @@ const rituals = [
   { label: "Music discussions", image: "/rituals/music-elderly-woman.jpg", position: "50% 24%" },
   { label: "Prayer or reflection", image: "/rituals/reflection-elderly-woman.jpg", position: "50% 26%" },
   { label: "Memory-lane stories", image: "/rituals/memory-elderly-man.jpg", position: "50% 28%" },
+  { label: "Curiosity & questions", image: "/rituals/trivia-elderly-man.jpg", position: "50% 30%" },
+  { label: "Sports & current events", image: "/rituals/evening-elderly-man.jpg", position: "50% 28%" },
 ];
 
 export const testimonials = [
@@ -457,10 +459,10 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
 
       <section data-mobile-reveal className="rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-black/5 md:p-10">
         <div className="max-w-4xl">
-          <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">What the calls feel like</p>
+          <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">WHAT THE CALLS FEEL LIKE</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">Familiar enough to feel easy. Personal enough to <span className="whitespace-nowrap">feel real.</span></h2>
           <p className="mt-4 leading-7 text-slate-600">
-            A DailyCall isn&apos;t a script being read out. It settles into your loved one&apos;s daily rhythm and remembers what matters - so each call feels less like a check-in and more like hearing from someone who knows them.
+            A DailyCall isn&apos;t a script being read out. It settles into your loved one&apos;s daily rhythm and remembers what matters, so each call feels less like a check-in and more like hearing from someone who knows them. And when curiosity strikes, they can ask about almost anything and get a real, patient answer.
           </p>
         </div>
         <div className="mt-7 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
@@ -484,7 +486,7 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
           <article className="rounded-3xl bg-brandBlue/10 p-5 ring-1 ring-brandBlue/15 md:p-6">
             <h3 className="text-2xl font-bold text-ink">It picks up where you left off.</h3>
             <p className="mt-3 leading-7 text-slate-700">
-              DailyCall remembers family, pets, routines, and the little things that came up last time - so conversations build over time instead of starting over.
+              DailyCall remembers family, pets, routines, and the little things that came up last time, so conversations build over time instead of starting over.
             </p>
             <div className="mt-5 grid gap-3">
               {memoryExamples.map((example) => (
