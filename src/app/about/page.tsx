@@ -87,7 +87,7 @@ export default function AboutPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-5 pb-16 pt-0 text-ink sm:px-6 md:px-10">
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-5 pb-16 pt-0 text-ink sm:px-6 md:px-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify([aboutJsonLd, breadcrumbJsonLd]) }}
