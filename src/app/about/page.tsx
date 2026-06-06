@@ -156,9 +156,6 @@ export default function AboutPage() {
               <p>
                 I spent fifteen years building software at IBM, and I built DailyCall because I wish something like it had existed for my grandmother.
               </p>
-              <p>
-                And because nobody should ever feel like they&apos;re talking to the walls.
-              </p>
             </div>
           </div>
 
