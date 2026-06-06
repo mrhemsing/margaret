@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "About DailyCall",
     description:
-      "DailyCall began with the quiet stretches every family knows, and was made for the days you cannot be there.",
+      "DailyCall began with Matt Hemsing's grandmother and the quiet isolation that can come with aging independently.",
     url: "/about",
     images: [
       {
@@ -98,10 +98,10 @@ export default function AboutPage() {
         <div>
           <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">About us</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-bold tracking-normal text-ink md:text-5xl">
-            Inspired by Margaret. Made for the days you can&apos;t be there.
+            DailyCall began with my grandmother.
           </h1>
           <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-slate-700">
-            DailyCall began with my grandmother - and with the quiet stretches every family knows.
+            Built for aging parents and grandparents who value their independence, but still need one more voice in the day.
           </p>
         </div>
 
@@ -122,19 +122,42 @@ export default function AboutPage() {
             <h2 className="mt-3 text-3xl font-bold text-ink">Why we built DailyCall</h2>
             <div className="mt-6 grid gap-5 text-base leading-7 text-slate-700 md:text-lg md:leading-8">
               <p>
-                My grandmother Margaret was widowed at 55 and lived another twenty-five years. For much of that time she was with us, and we counted ourselves lucky to have her close.
+                She was widowed at just 55. For years afterward she split her time - part of it living with our family, the rest on her own, in an apartment about an hour away. Looking back, I don&apos;t think I understood what those long stretches of solitude were really like for her.
               </p>
               <p>
-                But even with family around, the days had long quiet stretches - slow afternoons when there wasn&apos;t anyone to talk to. Margaret was sharp and fiercely independent, and she never wanted to be a burden, so she almost never mentioned it. You had to notice it yourself.
+                One day I caught her talking to the walls.
               </p>
               <p>
-                I spent fifteen years building software at IBM, and the whole time one question kept following me home: what if someone patient and kind could check in with her on the days we couldn&apos;t? Not an alert. Not another app to figure out. Just a real conversation.
+                I asked, &quot;Grandma, who are you talking to?&quot;
               </p>
               <p>
-                That&apos;s DailyCall. A warm phone call every day for an aging parent or grandparent, and a short text to the family afterward so they know how it went. It&apos;s meant to add one steady moment of connection to the day - never to stand in for the people who love them.
+                She smiled and said, &quot;You would be too if you lived alone for as long as I have.&quot;
               </p>
               <p>
-                I built it the way I&apos;d want it for my own family. It&apos;s honest about being an AI, so no one is ever misled about who&apos;s calling. It&apos;s private by default. And it&apos;s simple enough to work on the phone already sitting on the kitchen counter - nothing to download, nothing to set up.
+                At the time, I thought she was joking. Years later, I realized she wasn&apos;t.
+              </p>
+              <p>
+                Loneliness is rarely dramatic. It doesn&apos;t always look like sadness. More often it looks like quiet days with nobody to talk to, nobody asking how you&apos;re doing, and nobody noticing when something feels off. As our parents and grandparents age, many keep living independently - they value their freedom, their routines, their homes. But independence can quietly come with isolation.
+              </p>
+              <p>
+                DailyCall was built to help bridge that gap.
+              </p>
+              <p>
+                Every day, it makes a friendly phone call to check in, have a real conversation, and ask a few personalized questions. Afterward, family members get a brief update - enough to stay close, not to keep watch. And it&apos;s always honest about what it is: an AI companion, never pretending to be a person.
+              </p>
+              <p>
+                It isn&apos;t meant to replace family, friends, neighbors, or real human connection.
+              </p>
+              <p>
+                It&apos;s simply one more voice.<br />
+                One more conversation.<br />
+                One more moment in the day where someone asks, &quot;How are you doing today?&quot;
+              </p>
+              <p>
+                I spent fifteen years building software at IBM, and I built DailyCall because I wish something like it had existed for my grandmother.
+              </p>
+              <p>
+                And because nobody should ever feel like they&apos;re talking to the walls.
               </p>
             </div>
           </div>
