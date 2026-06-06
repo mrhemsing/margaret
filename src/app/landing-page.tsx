@@ -19,7 +19,7 @@ const steps = [
   { title: "You stay informed", copy: "Text summary after every call, plus alerts if a call is missed or something seems off." },
 ];
 
-type BenefitIconName = "bell" | "calendar" | "chat" | "heart" | "insight" | "music" | "phone" | "shield";
+type BenefitIconName = "bell" | "calendar" | "chat" | "heart" | "insight" | "lightbulb" | "message" | "music" | "phone" | "shield";
 type BenefitItem = { icon: BenefitIconName; lead: string; rest: string };
 
 const seniorBenefits: BenefitItem[] = [
@@ -39,9 +39,9 @@ const seniorBenefits: BenefitItem[] = [
     rest: "from music and memories to prayer, trivia, or simple company",
   },
   {
-    icon: "chat",
+    icon: "lightbulb",
     lead: "Curious about anything?",
-    rest: "Ask about a bird outside, an old song, or how a recipe turns out, and get a real, patient answer.",
+    rest: "Ask about a bird outside or how a recipe turns out, and get a real, patient answer.",
   },
   {
     icon: "phone",
@@ -65,6 +65,11 @@ const familyBenefits: BenefitItem[] = [
     icon: "bell",
     lead: "Missed-call alerts",
     rest: "and gentle escalation when something seems off",
+  },
+  {
+    icon: "message",
+    lead: "A text recap after every call",
+    rest: "so you are never left guessing how they are doing",
   },
   {
     icon: "shield",
@@ -249,6 +254,22 @@ function BenefitIcon({ name }: { name: BenefitIconName }) {
           <path d="m7 15 3-3 3 2 5-6" />
           <path d="M18 8h-4" />
           <path d="M18 8v4" />
+        </svg>
+      );
+    case "lightbulb":
+      return (
+        <svg {...commonProps}>
+          <path d="M9 18h6" />
+          <path d="M10 22h4" />
+          <path d="M12 2a6 6 0 0 0-3.5 10.9c.9.6 1.5 1.7 1.5 2.8V16h4v-.3c0-1.1.6-2.2 1.5-2.8A6 6 0 0 0 12 2Z" />
+        </svg>
+      );
+    case "message":
+      return (
+        <svg {...commonProps}>
+          <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z" />
+          <path d="M8 9h8" />
+          <path d="M8 13h5" />
         </svg>
       );
     case "music":
@@ -438,7 +459,7 @@ export function LandingPage({ initialAuthenticated = false, visitorCountry = "CA
           <p className="text-base font-semibold uppercase tracking-wide text-sage md:text-sm">Why it works</p>
           <h2 className="mt-3 text-3xl font-bold text-ink">One call. Two kinds of peace of mind.</h2>
           <p className="mt-4 leading-7 text-slate-600">
-            Life gets busy, and you can&apos;t call every day. DailyCall fills the in-between days with a warm, familiar conversation for your loved one - and gives you a steady touchpoint that takes a little worry off your plate.
+            Life gets busy, and you can&apos;t call every day. DailyCall fills the in-between days with a warm, familiar conversation for your loved one, and gives you a steady touchpoint that takes a little worry off your plate.
           </p>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
