@@ -111,7 +111,7 @@ export default function AboutPage() {
           width={2192}
           height={1968}
           priority
-          className="w-full object-cover"
+          className="w-full object-cover md:w-4/5 md:justify-self-center"
         />
       </section>
 
