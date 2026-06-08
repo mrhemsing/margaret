@@ -18,7 +18,7 @@ export function SiteFooter() {
   return (
     <footer className="mx-auto flex w-full max-w-6xl flex-col gap-6 bg-transparent px-5 pb-6 sm:px-6 md:px-10">
       <div className="flex flex-col gap-4 border-t border-slate-200/80 pt-6 text-center">
-        <p className="mx-auto max-w-3xl text-sm leading-6 text-slate-500">
+        <p className="w-full text-sm leading-6 text-slate-500">
           DailyCall uses AI-generated phone calls for daily check-ins. It is not emergency monitoring, medical advice,
           or a replacement for caregivers.
         </p>
