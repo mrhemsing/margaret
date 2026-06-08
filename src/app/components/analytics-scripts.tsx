@@ -1,20 +1,24 @@
 import Script from "next/script";
 
 const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+const googleAnalyticsId = "G-6S03SVZEJD";
+const googleAdsId = "AW-18222060091";
 const clarityProjectId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
 
 export function AnalyticsScripts() {
+  const gtagIds = Array.from(new Set([gaMeasurementId, googleAnalyticsId, googleAdsId].filter(Boolean)));
+
   return (
     <>
-      {gaMeasurementId ? (
+      {gtagIds.length > 0 ? (
         <>
-          <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} strategy="afterInteractive" />
-          <Script id="dailycall-ga4" strategy="afterInteractive">
+          <Script src={`https://www.googletagmanager.com/gtag/js?id=${gtagIds[0]}`} strategy="afterInteractive" />
+          <Script id="dailycall-gtag" strategy="afterInteractive">
             {`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', '${gaMeasurementId}');
+              ${gtagIds.map((id) => `gtag('config', '${id}');`).join("\n              ")}
             `}
           </Script>
         </>
