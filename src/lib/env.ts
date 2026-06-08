@@ -4,7 +4,7 @@ const optionalString = z.preprocess((value) => (value === "" ? undefined : value
 const optionalUrl = z.preprocess((value) => (value === "" ? undefined : value), z.string().url().optional());
 const optionalVoiceProvider = z.preprocess(
   (value) => (value === "" ? undefined : value),
-  z.enum(["openai_realtime_twilio", "openai_text_elevenlabs_twilio", "elevenlabs_twilio"]).optional(),
+  z.literal("elevenlabs_twilio").optional(),
 );
 const optionalReasoningEffort = z.preprocess(
   (value) => (value === "" ? undefined : value),
@@ -48,10 +48,10 @@ const serverEnvSchema = z.object({
   TWILIO_MESSAGING_SERVICE_SID: optionalString,
 });
 
-export const DAILYCALL_IOWA_FROM_NUMBER = "+16413268768";
+export const DAILYCALL_CANADA_FROM_NUMBER = "+12362058677";
 
 export function getDailyCallOutboundFromNumber() {
-  return DAILYCALL_IOWA_FROM_NUMBER;
+  return DAILYCALL_CANADA_FROM_NUMBER;
 }
 
 export function getServerEnv() {
