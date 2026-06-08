@@ -33,6 +33,14 @@ export default function TermsAndConditionsPage() {
           DailyCall is not an emergency response service, medical provider, or substitute for professional care. Families
           remain responsible for urgent follow-up and emergency decisions.
         </p>
+        <section id="cancellation-info" className="scroll-mt-24 space-y-3">
+          <h2 className="text-2xl font-bold text-ink">Cancellation info</h2>
+          <p>
+            DailyCall plans can be cancelled by contacting support. Cancellation stops future billing and scheduled
+            DailyCall service after the current paid period, unless a different cancellation date is confirmed in
+            writing.
+          </p>
+        </section>
         <p>
           We may change, pause, or discontinue parts of the service as needed for reliability, compliance, security, or
           business reasons.
