@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
+
+import { formatRetryScheduledSummary, scheduleNoResponseRetry } from "@/lib/calls/retries";
 import { prisma } from "@/lib/db";
 
 function mapTwilioStatus(callStatus: string | null) {
@@ -21,7 +23,7 @@ export async function POST(request: Request) {
   if (callSid && (mappedStatus || callStatus === "completed")) {
     const existingCall = await prisma.callAttempt.findFirst({
       where: { providerCallSid: callSid },
-      select: { providerConversationId: true, status: true, summary: true },
+      select: { id: true, providerConversationId: true, status: true, summary: true },
     });
     const openAISipBridgeDidNotConnect =
       callStatus === "completed" &&
@@ -40,6 +42,11 @@ export async function POST(request: Request) {
         : completedWithoutConfirmedConversation
           ? "NO_RESPONSE"
           : mappedStatus ?? existingCall?.status ?? "IN_PROGRESS";
+    const shouldScheduleRetry = nextStatus === "NO_RESPONSE" && Boolean(existingCall?.id) && !isTerminalStatus(existingCall?.status);
+    const retry = shouldScheduleRetry ? await scheduleNoResponseRetry(prisma, { callAttemptId: existingCall!.id }) : null;
+    const noResponseSummary = mappedStatus === "NO_RESPONSE"
+      ? "DailyCall did not reach a live answer."
+      : "Call ended before DailyCall could confirm a live conversation. Treating it as no answer or voicemail.";
 
     await prisma.callAttempt.updateMany({
       where: { providerCallSid: callSid },
@@ -48,9 +55,13 @@ export async function POST(request: Request) {
         completedAt: isTerminalStatus(nextStatus) ? new Date() : undefined,
         summary: openAISipBridgeDidNotConnect
           ? "The call was answered, but DailyCall could not start the conversation before the call ended."
-          : completedWithoutConfirmedConversation
-            ? "Call ended before DailyCall could confirm a live conversation. Treating it as no answer or voicemail."
-          : undefined,
+          : nextStatus === "NO_RESPONSE" && !isTerminalStatus(existingCall?.status)
+            ? formatRetryScheduledSummary({
+                summary: noResponseSummary,
+                retryScheduledFor: retry?.retryScheduledFor ?? null,
+                timeZone: retry?.callAttempt?.member.timezone,
+              })
+            : undefined,
         conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
         syncedAt: new Date(),
       },

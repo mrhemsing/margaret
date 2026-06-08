@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 
+import { formatRetryScheduledSummary, scheduleNoResponseRetry } from "@/lib/calls/retries";
 import { prisma } from "@/lib/db";
 import { getServerEnv } from "@/lib/env";
 
@@ -50,12 +51,23 @@ export async function POST(request: Request) {
     console.error("Failed to end async AMD machine call", error);
   }
 
+  const callAttempt = await prisma.callAttempt.findFirst({
+    where: { providerCallSid: callSid },
+    select: { id: true },
+  });
+  const retry = callAttempt ? await scheduleNoResponseRetry(prisma, { callAttemptId: callAttempt.id }) : null;
+  const summary = "Voicemail or answering machine detected asynchronously. DailyCall ended the call.";
+
   await prisma.callAttempt.updateMany({
     where: { providerCallSid: callSid },
     data: {
       status: "NO_RESPONSE",
       completedAt: new Date(),
-      summary: "Voicemail or answering machine detected asynchronously. DailyCall ended the call.",
+      summary: formatRetryScheduledSummary({
+        summary,
+        retryScheduledFor: retry?.retryScheduledFor ?? null,
+        timeZone: retry?.callAttempt?.member.timezone,
+      }),
       conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
       syncedAt: new Date(),
     },

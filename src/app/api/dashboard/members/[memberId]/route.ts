@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db";
+import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { withMemberPhotoDisplayUrl } from "@/lib/member-photos";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAllowedVoiceId } from "@/lib/voice/voice-options";
@@ -13,6 +14,12 @@ const updateMemberSchema = z.object({
       phoneNumber: z.string().trim().min(7).max(30).optional(),
       preferredCallTime: z.string().trim().min(1).max(20).optional(),
       preferredVoiceId: z.string().trim().optional().refine((value) => !value || isAllowedVoiceId(value), "Voice not available."),
+    })
+    .optional(),
+  retrySettings: z
+    .object({
+      voicemailRetryCount: z.number().int().min(0).max(3).optional(),
+      voicemailRetryDelayMins: z.number().int().min(5).max(120).optional(),
     })
     .optional(),
   questionsToAsk: z.array(z.string().trim().min(1).max(300)).max(10).optional(),
@@ -71,6 +78,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
       where: { id: memberId },
       data: parsed.data.profile,
     });
+
+    if (parsed.data.profile.preferredCallTime) {
+      const scheduledMember = await prisma.member.findUnique({
+        where: { id: memberId },
+        select: { id: true, active: true, preferredCallTime: true, timezone: true },
+      });
+
+      if (scheduledMember) {
+        await ensureUpcomingScheduledCalls(prisma, [scheduledMember]);
+      }
+    }
+  }
+
+  if (parsed.data.retrySettings) {
+    await prisma.member.update({
+      where: { id: memberId },
+      data: parsed.data.retrySettings,
+    });
   }
 
   if (parsed.data.questionsToAsk) {
@@ -94,7 +119,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
       memory: true,
       callAttempts: {
         orderBy: { scheduledFor: "desc" },
-        take: 20,
+        take: 90,
       },
     },
   });

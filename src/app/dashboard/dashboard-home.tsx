@@ -20,6 +20,8 @@ type DashboardCustomer = {
     photoUrl: string | null;
     preferredCallTime: string;
     preferredVoiceId: string;
+    voicemailRetryCount: number;
+    voicemailRetryDelayMins: number;
     active: boolean;
     memory: {
       topicsToRevisit: string[];
@@ -31,7 +33,12 @@ type DashboardCustomer = {
       completedAt: string | null;
       status: string;
       summary: string | null;
+      transcript: string | null;
       mood: string | null;
+      topics: string[];
+      notableMoments: string[];
+      followUpSuggested: boolean;
+      followUpReason: string | null;
     }>;
   }>;
   subscriptions: Array<{
@@ -49,9 +56,10 @@ type DashboardState =
 
 type DashboardMember = DashboardCustomer["members"][number];
 
-type EditPanel = "profile" | "questions" | "voice" | null;
+type EditPanel = "profile" | "questions" | "voice" | "retries" | null;
 
 const LIVE_CALL_WINDOW_MS = 30 * 60 * 1000;
+const CALL_HISTORY_WINDOW_DAYS = 7;
 
 function normalizeIdentityText(value: string | null | undefined) {
   return (value ?? "").trim().toLowerCase();
@@ -124,6 +132,10 @@ function formatDateTime(value: string | null) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
+function formatShortDate(value: Date) {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(value);
+}
+
 function formatCheckInDateTime(value: string | null) {
   if (!value) return "Pending";
   const date = new Date(value);
@@ -175,6 +187,12 @@ function formatPreferredCallTime(value: string | null | undefined) {
   const suffix = hour >= 12 ? "PM" : "AM";
 
   return `${displayHour}:${match[2]} ${suffix}`;
+}
+
+function formatRetrySettings(member: DashboardMember) {
+  if (member.voicemailRetryCount <= 0) return "No retry after missed calls";
+
+  return `${member.voicemailRetryCount} ${member.voicemailRetryCount === 1 ? "retry" : "retries"} (${member.voicemailRetryDelayMins} min delay)`;
 }
 
 function prepareMemberPhotoPreview(file: File) {
@@ -306,6 +324,49 @@ function getPastCalls(member: DashboardMember) {
   return sortCallsNewestFirst(
     member.callAttempts.filter((call) => call.id !== nextCall?.id && (call.status !== "SCHEDULED" || new Date(call.scheduledFor).getTime() < now)),
   );
+}
+
+function getHistoryWindow(windowIndex: number) {
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  end.setDate(end.getDate() - windowIndex * CALL_HISTORY_WINDOW_DAYS);
+
+  const start = new Date(end);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (CALL_HISTORY_WINDOW_DAYS - 1));
+
+  return { start, end };
+}
+
+function getHistoryWindowLabel(windowIndex: number) {
+  const { start, end } = getHistoryWindow(windowIndex);
+  return windowIndex === 0 ? "Last 7 days" : `${formatShortDate(start)}-${formatShortDate(end)}`;
+}
+
+function getCallsInHistoryWindow(member: DashboardMember, windowIndex: number) {
+  const { start, end } = getHistoryWindow(windowIndex);
+  const startTime = start.getTime();
+  const endTime = end.getTime();
+
+  return getPastCalls(member).filter((call) => {
+    const scheduledTime = new Date(call.scheduledFor).getTime();
+    return scheduledTime >= startTime && scheduledTime <= endTime;
+  });
+}
+
+function hasOlderHistory(member: DashboardMember, windowIndex: number) {
+  const { start } = getHistoryWindow(windowIndex);
+  const startTime = start.getTime();
+  return getPastCalls(member).some((call) => new Date(call.scheduledFor).getTime() < startTime);
+}
+
+function getLoadedHistoryRange(member: DashboardMember) {
+  const pastCalls = getPastCalls(member);
+  if (pastCalls.length === 0) return "No history loaded yet";
+
+  const oldest = new Date(pastCalls[pastCalls.length - 1].scheduledFor);
+  const newest = new Date(pastCalls[0].scheduledFor);
+  return `${formatShortDate(oldest)}-${formatShortDate(newest)}`;
 }
 
 function getLastCompletedCall(member: DashboardMember) {
@@ -602,6 +663,39 @@ function getMoodTrendText(calls: DashboardMember["callAttempts"]) {
   }
 
   return "Mood holding steady";
+}
+
+function getCallHistoryStats(calls: DashboardMember["callAttempts"]) {
+  const completedCalls = calls.filter((call) => isCompletedStatus(call.status));
+  const missedCalls = calls.filter((call) => isNoConnectCall(call));
+  const followUps = calls.filter((call) => call.followUpSuggested || call.status === "FOLLOW_UP_NEEDED" || call.status === "HELP_REQUESTED");
+  const completedMinutes = completedCalls.reduce((total, call) => {
+    if (!call.startedAt || !call.completedAt) return total;
+    return total + Math.max(0, new Date(call.completedAt).getTime() - new Date(call.startedAt).getTime()) / 60000;
+  }, 0);
+
+  return {
+    completedCount: completedCalls.length,
+    missedCount: missedCalls.length,
+    followUpCount: followUps.length,
+    averageMinutes: completedCalls.length > 0 ? Math.max(1, Math.round(completedMinutes / completedCalls.length)) : 0,
+  };
+}
+
+function getFrequentHistoryTopics(calls: DashboardMember["callAttempts"]) {
+  const counts = new Map<string, number>();
+  calls.forEach((call) => {
+    call.topics.forEach((topic) => {
+      const cleaned = topic.trim();
+      if (!cleaned) return;
+      counts.set(cleaned, (counts.get(cleaned) ?? 0) + 1);
+    });
+  });
+
+  return Array.from(counts.entries())
+    .sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]))
+    .slice(0, 4)
+    .map(([topic]) => topic);
 }
 
 function getMoodSparklineCalls(member: DashboardMember) {
@@ -965,6 +1059,10 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
     const storedQuestions = normalizeQuestions(member.memory?.topicsToRevisit ?? []);
     return storedQuestions.length > 0 ? storedQuestions : [""];
   });
+  const [retryForm, setRetryForm] = useState({
+    voicemailRetryCount: member.voicemailRetryCount,
+    voicemailRetryDelayMins: member.voicemailRetryDelayMins,
+  });
   const [saving, setSaving] = useState<EditPanel>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -985,6 +1083,13 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
     setSelectedPhotoFile(null);
     setRemovePhoto(false);
   }, [member.name, member.phoneNumber, member.photoUrl, member.preferredCallTime, member.preferredVoiceId]);
+
+  useEffect(() => {
+    setRetryForm({
+      voicemailRetryCount: member.voicemailRetryCount,
+      voicemailRetryDelayMins: member.voicemailRetryDelayMins,
+    });
+  }, [member.voicemailRetryCount, member.voicemailRetryDelayMins]);
 
   const lastCompletedCall = getLastCompletedCall(member);
   const selectedVoice = getVoiceOption(member.preferredVoiceId);
@@ -1076,7 +1181,10 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
     }
   }
 
-  async function saveMember(payload: { profile?: Partial<typeof profileForm>; questionsToAsk?: string[] }, panel: Exclude<EditPanel, null>) {
+  async function saveMember(
+    payload: { profile?: Partial<typeof profileForm>; retrySettings?: Partial<typeof retryForm>; questionsToAsk?: string[] },
+    panel: Exclude<EditPanel, null>,
+  ) {
     setSaving(panel);
     setMessage(null);
     setError(null);
@@ -1107,7 +1215,7 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
         const storedQuestions = normalizeQuestions(result.member.memory?.topicsToRevisit ?? []);
         setQuestions(storedQuestions.length > 0 ? storedQuestions : [""]);
       }
-      setMessage(panel === "profile" ? "Profile updated." : panel === "voice" ? "Voice updated." : "Questions updated.");
+      setMessage(panel === "profile" ? "Profile updated." : panel === "voice" ? "Voice updated." : panel === "retries" ? "Retry settings updated." : "Questions updated.");
       setEditPanel(null);
     } catch (saveError) {
       setError(saveError instanceof Error ? translateCallError(saveError.message) : "Could not save changes.");
@@ -1159,6 +1267,7 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Preferences</p>
           <p className="mt-2 text-base font-bold text-ink">Preferred time: {formatPreferredCallTime(member.preferredCallTime)}</p>
           <p className="mt-1 break-words text-sm leading-6 text-slate-600">{selectedVoice.name} voice ({selectedVoice.gender})</p>
+          <p className="mt-1 break-words text-sm leading-6 text-slate-600">{formatRetrySettings(member)}</p>
           <div className="mt-4 grid gap-2">
             <button
               type="button"
@@ -1180,6 +1289,13 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
               className="w-full rounded-full bg-white px-4 py-3 text-sm font-bold text-ink shadow-[0_4px_12px_rgba(18,53,79,0.08)] ring-1 ring-brandBlue/20 hover:bg-slate-50 active:translate-y-px md:py-2"
             >
               Change voice
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditPanel(editPanel === "retries" ? null : "retries")}
+              className="w-full rounded-full bg-white px-4 py-3 text-sm font-bold text-ink shadow-[0_4px_12px_rgba(18,53,79,0.08)] ring-1 ring-brandBlue/20 hover:bg-slate-50 active:translate-y-px md:py-2"
+            >
+              Edit retries
             </button>
           </div>
         </div>
@@ -1317,6 +1433,59 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
         </form>
       ) : null}
 
+      {editPanel === "retries" ? (
+        <form
+          className="mt-5 grid gap-4 rounded-2xl bg-slate-50 p-4 md:grid-cols-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void saveMember({ retrySettings: retryForm }, "retries");
+          }}
+        >
+          <div className="md:col-span-2">
+            <p className="text-sm font-semibold text-slate-700">Missed-call retries</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Choose how many times DailyCall should try again after no answer or voicemail.</p>
+          </div>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Retry attempts
+            <select
+              value={retryForm.voicemailRetryCount}
+              onChange={(event) => setRetryForm((current) => ({ ...current, voicemailRetryCount: Number(event.target.value) }))}
+              className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 font-normal text-ink outline-none focus:border-brandPink"
+            >
+              <option value={0}>No retries</option>
+              <option value={1}>1 retry</option>
+              <option value={2}>2 retries</option>
+              <option value={3}>3 retries</option>
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Retry delay
+            <select
+              value={retryForm.voicemailRetryDelayMins}
+              onChange={(event) => setRetryForm((current) => ({ ...current, voicemailRetryDelayMins: Number(event.target.value) }))}
+              className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 font-normal text-ink outline-none focus:border-brandPink"
+            >
+              <option value={5}>5 minutes</option>
+              <option value={10}>10 minutes</option>
+              <option value={15}>15 minutes</option>
+              <option value={30}>30 minutes</option>
+              <option value={45}>45 minutes</option>
+              <option value={60}>60 minutes</option>
+              <option value={90}>90 minutes</option>
+              <option value={120}>120 minutes</option>
+            </select>
+          </label>
+          <div className="flex gap-2 md:col-span-2">
+            <button type="submit" disabled={saving === "retries"} className="rounded-full bg-brandButtonBlue px-5 py-2 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:opacity-60">
+              {saving === "retries" ? "Saving..." : "Save retries"}
+            </button>
+            <button type="button" onClick={() => setEditPanel(null)} className="rounded-full bg-white px-5 py-2 text-sm font-bold text-slate-600 ring-1 ring-black/10 hover:text-ink">
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : null}
+
       {editPanel === "questions" ? (
         <form
           className="mt-5 grid gap-4 rounded-2xl bg-slate-50 p-4"
@@ -1387,11 +1556,126 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
   );
 }
 
+function CallHistorySection({ member }: { member: DashboardMember }) {
+  const [historyWindowIndex, setHistoryWindowIndex] = useState(0);
+  const windowCalls = getCallsInHistoryWindow(member, historyWindowIndex);
+  const stats = getCallHistoryStats(windowCalls);
+  const topTopics = getFrequentHistoryTopics(windowCalls);
+  const olderAvailable = hasOlderHistory(member, historyWindowIndex);
+  const loadedRange = getLoadedHistoryRange(member);
+
+  return (
+    <section id={`call-history-${member.id}`} className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xl font-bold text-ink">Call history</p>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            Showing {getHistoryWindowLabel(historyWindowIndex).toLowerCase()}. Use older history as calls build up over time.
+          </p>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Loaded range: {loadedRange}</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setHistoryWindowIndex((current) => Math.max(0, current - 1))}
+            disabled={historyWindowIndex === 0}
+            className="rounded-full bg-white px-4 py-2 text-sm font-bold text-ink ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Newer
+          </button>
+          <button
+            type="button"
+            onClick={() => setHistoryWindowIndex((current) => current + 1)}
+            disabled={!olderAvailable}
+            className="rounded-full bg-white px-4 py-2 text-sm font-bold text-ink ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Older
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-black/5">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Completed</p>
+          <p className="mt-1 text-2xl font-bold text-ink">{stats.completedCount}</p>
+        </div>
+        <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-black/5">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Missed</p>
+          <p className="mt-1 text-2xl font-bold text-ink">{stats.missedCount}</p>
+        </div>
+        <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-black/5">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Avg length</p>
+          <p className="mt-1 text-2xl font-bold text-ink">{stats.averageMinutes > 0 ? `${stats.averageMinutes}m` : "-"}</p>
+        </div>
+        <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-black/5">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Follow-ups</p>
+          <p className="mt-1 text-2xl font-bold text-ink">{stats.followUpCount}</p>
+        </div>
+      </div>
+
+      {topTopics.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {topTopics.map((topic) => (
+            <span key={topic} className="rounded-full bg-brandBlue/10 px-3 py-1 text-xs font-bold text-brandButtonBlue ring-1 ring-brandBlue/20">
+              {topic}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {windowCalls.length > 0 ? (
+        <div className="mt-4 grid gap-3">
+          {windowCalls.map((call) => {
+            const outcome = getFamilyCallOutcome(call);
+            const callHighlights = [...call.notableMoments, ...(call.followUpReason ? [call.followUpReason] : [])].filter(Boolean).slice(0, 3);
+
+            return (
+              <article key={call.id} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-black/5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 gap-3">
+                    <span className={"mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full " + outcome.dotClassName} aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-ink">{outcome.label}</p>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{formatDateTime(call.scheduledFor)}</p>
+                    </div>
+                  </div>
+                  <span className={"w-fit rounded-full px-3 py-1 text-xs font-bold ring-1 " + outcome.badgeClassName}>{outcome.label}</span>
+                </div>
+                <p className="mt-3 text-base leading-7 text-slate-600 sm:text-sm sm:leading-6">{outcome.text}</p>
+                {callHighlights.length > 0 ? (
+                  <div className="mt-3 grid gap-2">
+                    {callHighlights.map((highlight) => (
+                      <p key={highlight} className="rounded-xl bg-white p-3 text-sm leading-6 text-slate-600 ring-1 ring-black/5">
+                        {highlight}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+                {call.transcript ? (
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-sm font-bold text-brandButtonBlue">View transcript</summary>
+                    <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-2xl bg-white p-4 text-sm leading-6 text-slate-600 ring-1 ring-black/5">
+                      {call.transcript}
+                    </pre>
+                  </details>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+          No calls in this 7-day window yet. Older calls will appear here once this account has more history.
+        </p>
+      )}
+    </section>
+  );
+}
+
 function MemberCard({ member, onUpdated, showSummary = true }: { member: DashboardMember; onUpdated: (member: DashboardMember) => void; showSummary?: boolean }) {
   const [calling, setCalling] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const pastCalls = getPastCalls(member);
   const noConnectAlert = getConsecutiveNoConnectAlert(member);
 
   async function startManualCall() {
@@ -1484,39 +1768,7 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
       {message ? <p className="mt-4 rounded-2xl bg-sage/10 p-3 text-sm font-semibold text-sage">{message}</p> : null}
       {error ? <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
 
-      <section id={`call-history-${member.id}`} className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xl font-bold text-ink">Call history</p>
-            <p className="mt-1 text-sm text-slate-600">Simple summaries from recent DailyCall check-ins.</p>
-          </div>
-        </div>
-        {pastCalls.length > 0 ? (
-          <div className="mt-4 grid gap-3">
-            {pastCalls.slice(0, 8).map((call) => {
-              const outcome = getFamilyCallOutcome(call);
-
-              return (
-              <article key={call.id} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-black/5">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex min-w-0 gap-3">
-                    <span className={"mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full " + outcome.dotClassName} aria-hidden="true" />
-                    <div className="min-w-0">
-                    <p className="text-sm font-bold text-ink">{outcome.label}</p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{formatDateTime(call.scheduledFor)}</p>
-                    </div>
-                  </div>
-                  <span className={"w-fit rounded-full px-3 py-1 text-xs font-bold ring-1 " + outcome.badgeClassName}>{outcome.label}</span>
-                </div>
-                <p className="mt-3 text-base leading-7 text-slate-600 sm:text-sm sm:leading-6">{outcome.text}</p>
-              </article>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="mt-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">No past calls yet. Completed calls will appear here with the most recent at the top.</p>
-        )}
-      </section>
+      <CallHistorySection member={member} />
     </article>
   );
 }

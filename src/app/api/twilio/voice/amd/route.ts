@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
+import { formatRetryScheduledSummary, scheduleNoResponseRetry } from "@/lib/calls/retries";
 import { prisma } from "@/lib/db";
-import { sendExampleVoicemailAlertSmsToTeam } from "@/lib/sms/twilio";
+import { sendVoicemailAlertSmsToAlertContacts } from "@/lib/sms/twilio";
 import { getServerEnv } from "@/lib/env";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
 import { getCachedCallCurrentContext } from "@/lib/voice/current-info";
-import {
-  buildOpenAIRealtimeSipTwiml,
-  getVoiceProvider,
-} from "@/lib/voice/openai-realtime";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 function twiml(xml: string) {
@@ -19,17 +16,6 @@ function twiml(xml: string) {
 
 function extractConversationId(xml: string) {
   return xml.match(/name="conversation_id" value="([^"]+)"/)?.[1] ?? null;
-}
-
-function buildHybridVoiceTwiml(input: { callSid: string; baseUrl: string }) {
-  const actionUrl = `${input.baseUrl}/api/twilio/voice/hybrid?callSid=${encodeURIComponent(input.callSid)}`;
-
-  return [
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-    "<Response>",
-    `<Redirect method="POST">${actionUrl}</Redirect>`,
-    "</Response>",
-  ].join("");
 }
 
 async function registerElevenLabsTwilioCall(input: {
@@ -105,11 +91,7 @@ function isMachine(answeredBy: string | null) {
 }
 
 function getRequestedVoiceProvider(value: string | null) {
-  if (
-    value === "openai_realtime_twilio" ||
-    value === "openai_text_elevenlabs_twilio" ||
-    value === "elevenlabs_twilio"
-  ) {
+  if (value === "elevenlabs_twilio") {
     return value;
   }
 
@@ -149,14 +131,15 @@ export async function POST(request: Request) {
     const summary = "Voicemail or answering machine detected. DailyCall hung up without leaving a voicemail message.";
     const callAttempt = callAttemptWhere ? await prisma.callAttempt.findFirst({
       where: callAttemptWhere,
-      include: { member: { include: { customer: true } } },
+      include: { member: { include: { customer: { include: { alertContacts: true } } } } },
     }) : null;
     const isDemoCall = callAttempt?.member.customer.email === "demo-family@dailycall.local" || callAttempt?.member.preferredCallTime === "Landing page demo";
     let alertSentAt = callAttempt?.alertSentAt ?? null;
 
     if (callAttempt && !alertSentAt) {
       try {
-        await sendExampleVoicemailAlertSmsToTeam({
+        await sendVoicemailAlertSmsToAlertContacts({
+          alertContacts: callAttempt.member.customer.alertContacts,
           memberName: callAttempt.member.name,
           summary,
           isDemo: isDemoCall,
@@ -167,35 +150,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const retryAttempt = callAttempt?.retryAttempt ?? 0;
-    const retryLimit = isDemoCall ? 0 : callAttempt?.member.voicemailRetryCount ?? 0;
-    const retryDelayMins = callAttempt?.member.voicemailRetryDelayMins ?? 15;
-    let retryScheduledFor: Date | null = null;
-
-    if (callAttempt && retryAttempt < retryLimit) {
-      const existingRetry = await prisma.callAttempt.findFirst({
-        where: {
-          retryOfCallAttemptId: callAttempt.id,
-          status: "SCHEDULED",
-        },
-      });
-
-      if (!existingRetry) {
-        retryScheduledFor = new Date(Date.now() + retryDelayMins * 60 * 1000);
-        await prisma.callAttempt.create({
-          data: {
-            memberId: callAttempt.memberId,
-            scheduledFor: retryScheduledFor,
-            status: "SCHEDULED",
-            retryAttempt: retryAttempt + 1,
-            retryOfCallAttemptId: callAttempt.id,
-            summary: `Retry ${retryAttempt + 1} of ${retryLimit} scheduled after voicemail detection.`,
-          },
-        });
-      } else {
-        retryScheduledFor = existingRetry.scheduledFor;
-      }
-    }
+    const retry = callAttempt ? await scheduleNoResponseRetry(prisma, { callAttemptId: callAttempt.id }) : null;
 
     await prisma.callAttempt.updateMany({
       where: callAttemptWhere ?? { providerCallSid: callSid },
@@ -203,7 +158,11 @@ export async function POST(request: Request) {
         status: "NO_RESPONSE",
         providerCallSid: callSid,
         completedAt: new Date(),
-        summary: retryScheduledFor ? `${summary} Retry scheduled for ${retryScheduledFor.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: callAttempt?.member.timezone ?? "America/Los_Angeles" })}.` : summary,
+        summary: formatRetryScheduledSummary({
+          summary,
+          retryScheduledFor: retry?.retryScheduledFor ?? null,
+          timeZone: callAttempt?.member.timezone,
+        }),
         conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
         syncedAt: new Date(),
         alertSentAt,
@@ -265,57 +224,9 @@ export async function POST(request: Request) {
           topicsToRevisit: [],
           avoidRepeating: ["Do not use a generic scripted wellness survey opening."],
     };
-    const voiceProvider = getRequestedVoiceProvider(url.searchParams.get("voiceProvider")) ?? getVoiceProvider();
-
-    if (voiceProvider === "openai_text_elevenlabs_twilio") {
-      const env = getServerEnv();
-      const baseUrl = (env.PUBLIC_APP_URL ?? env.APP_URL)?.replace(/\/$/, "");
-
-      if (!baseUrl) {
-        throw new Error("PUBLIC_APP_URL or APP_URL is required for the hybrid Twilio voice loop.");
-      }
-
-      if (callSid) {
-        await prisma.callAttempt.updateMany({
-          where: { providerCallSid: callSid },
-          data: {
-            summary: "They picked up. DailyCall is chatting with them now.",
-            conversationRaw: {
-              provider: "openai_text_elevenlabs_twilio",
-              twilioAmd: Object.fromEntries(formData.entries()),
-              hybridTranscript: [],
-            } as Prisma.InputJsonValue,
-            syncedAt: new Date(),
-          },
-        });
-      }
-
-      return twiml(buildHybridVoiceTwiml({ callSid, baseUrl }));
-    }
-
-    if (voiceProvider === "openai_realtime_twilio") {
-      const openAITwiml = buildOpenAIRealtimeSipTwiml({
-        callSid,
-        callAttemptId: callAttempt?.id,
-      });
-
-      if (callSid) {
-        await prisma.callAttempt.updateMany({
-          where: callAttemptWhere ?? { providerCallSid: callSid },
-          data: {
-            summary: "They picked up. DailyCall is chatting with them now.",
-            providerCallSid: callSid,
-            conversationRaw: {
-              provider: "openai_realtime",
-              twilioAmd: Object.fromEntries(formData.entries()),
-              openAISipMode: "direct_dial",
-            } as Prisma.InputJsonValue,
-            syncedAt: new Date(),
-          },
-        });
-      }
-
-      return twiml(openAITwiml);
+    const requestedVoiceProvider = url.searchParams.get("voiceProvider");
+    if (requestedVoiceProvider && getRequestedVoiceProvider(requestedVoiceProvider) !== "elevenlabs_twilio") {
+      console.warn(`Ignoring non-ElevenLabs product voice provider request: ${requestedVoiceProvider}`);
     }
 
     const elevenLabsTwiml = await registerElevenLabsTwilioCall({
