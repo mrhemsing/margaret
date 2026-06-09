@@ -150,7 +150,19 @@ async function getAdminData() {
     const activeMembers = await prisma.member.count({ where: { active: true, customer: registeredCustomerWhere } });
     const demoMembers = await prisma.member.findMany({
       where: demoMemberWhere,
-      include: { customer: true },
+      include: {
+        customer: true,
+        callAttempts: {
+          select: {
+            id: true,
+            scheduledFor: true,
+            startedAt: true,
+            status: true,
+          },
+          orderBy: { scheduledFor: "desc" },
+          take: 3,
+        },
+      },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
@@ -195,6 +207,16 @@ const statusClassName = (status: string) => {
 const formatDate = (date: Date | string | null | undefined) => {
   if (!date) return "Not set";
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(date));
+};
+
+const formatTimestamp = (date: Date | string | null | undefined) => {
+  if (!date) return "Time not set";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(date));
 };
 
 const formatMoney = (value: number) => `$${value.toFixed(2)}`;
@@ -426,12 +448,32 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
             <div className="mt-5 space-y-4">
               {data.demoMembers.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">No demo users yet.</div>
-              ) : data.demoMembers.map((member) => (
-                <div key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="font-semibold text-ink">{member.name}</p>
-                  <p className="mt-1 text-sm text-slate-500">{member.phoneNumber}</p>
-                </div>
-              ))}
+              ) : data.demoMembers.map((member) => {
+                const demoCalls = "callAttempts" in member ? member.callAttempts : [];
+
+                return (
+                  <div key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="font-semibold text-ink">{member.name}</p>
+                        <p className="mt-1 text-sm text-slate-500">{member.phoneNumber}</p>
+                      </div>
+                      {demoCalls.length > 0 ? (
+                        <div className="grid gap-1 text-left text-xs text-slate-500 sm:text-right">
+                          {demoCalls.map((call) => (
+                            <p key={call.id}>
+                              <span className="font-semibold text-slate-700">{formatTimestamp(call.startedAt ?? call.scheduledFor)}</span>
+                              <span className="ml-2 uppercase tracking-wide">{formatStatusLabel(call.status)}</span>
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">No calls yet</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </article>
 
