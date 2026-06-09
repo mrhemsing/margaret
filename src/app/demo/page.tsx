@@ -41,7 +41,8 @@ export default function DemoLandingPage() {
 
         <section className="border-t border-slate-200 py-3 text-center sm:py-6">
           <p className="mx-auto max-w-sm text-sm leading-5 text-slate-600 sm:text-base sm:leading-7">
-            Hear the tone, pacing, and warmth before deciding if it&apos;s right for your parent.
+            Hear the tone, pacing, and warmth <br />
+            before deciding if it&apos;s right for your parent.
           </p>
         </section>
 
