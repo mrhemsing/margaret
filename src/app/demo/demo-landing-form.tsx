@@ -207,7 +207,8 @@ export function DemoLandingForm() {
         )}
       </button>
       <p id="demo-phone-help" className="text-center text-sm leading-5 text-slate-500 sm:leading-6">
-        We&apos;ll call within 30 seconds. We don&apos;t save your number for marketing.
+        We&apos;ll call within 30 seconds.{" "}
+        <span className="block sm:inline">We don&apos;t save your number for marketing.</span>
       </p>
     </form>
   );
