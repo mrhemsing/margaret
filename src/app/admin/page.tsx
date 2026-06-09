@@ -216,6 +216,8 @@ const formatTimestamp = (date: Date | string | null | undefined) => {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "America/Los_Angeles",
+    timeZoneName: "short",
   }).format(new Date(date));
 };
 

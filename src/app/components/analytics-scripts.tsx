@@ -3,7 +3,7 @@ import Script from "next/script";
 const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 const googleAnalyticsId = "G-6S03SVZEJD";
 const googleAdsId = "AW-18222060091";
-const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "2050095425943449";
 const clarityProjectId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
 
 export function AnalyticsScripts() {
