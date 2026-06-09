@@ -50,6 +50,73 @@ export function parsePreferredCallTimes(preferredCallTime: string) {
     .filter((time) => /^\d{2}:\d{2}$/.test(time));
 }
 
+function scheduledCallSummary(callTime: string) {
+  return `Scheduled daily call for ${callTime}.`;
+}
+
+function callTimeFromSummary(summary?: string | null) {
+  return summary?.match(/^Scheduled daily call for (\d{2}:\d{2})\.$/)?.[1] ?? null;
+}
+
+function callTimeInZone(date: Date, timeZone: string) {
+  const parts = timeZoneParts(date, timeZone);
+
+  return `${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}`;
+}
+
+async function cancelStaleScheduledCalls(
+  prisma: PrismaClient,
+  member: { id: string; preferredCallTime: string; timezone: string },
+  callTimes: string[],
+  now: Date,
+) {
+  const validCallTimes = new Set(callTimes);
+  const scheduledCalls = await prisma.callAttempt.findMany({
+    where: {
+      memberId: member.id,
+      status: "SCHEDULED",
+      scheduledFor: { gte: now },
+    },
+    select: {
+      id: true,
+      scheduledFor: true,
+      summary: true,
+      retryOfCallAttemptId: true,
+    },
+  });
+  let cancelledCount = 0;
+
+  for (const call of scheduledCalls) {
+    let sourceCallTime = callTimeFromSummary(call.summary) ?? callTimeInZone(call.scheduledFor, member.timezone);
+
+    if (call.retryOfCallAttemptId) {
+      const parentCall = await prisma.callAttempt.findUnique({
+        where: { id: call.retryOfCallAttemptId },
+        select: { scheduledFor: true, summary: true },
+      });
+
+      if (parentCall) {
+        sourceCallTime = callTimeFromSummary(parentCall.summary) ?? callTimeInZone(parentCall.scheduledFor, member.timezone);
+      }
+    }
+
+    if (validCallTimes.has(sourceCallTime)) continue;
+
+    await prisma.callAttempt.update({
+      where: { id: call.id },
+      data: {
+        status: "FAILED",
+        completedAt: now,
+        summary: `Canceled stale scheduled call after preferred time changed to ${member.preferredCallTime}.`,
+        syncedAt: now,
+      },
+    });
+    cancelledCount += 1;
+  }
+
+  return cancelledCount;
+}
+
 export function nextScheduledCallAt(preferredCallTime: string, timeZone: string, now = new Date()) {
   const [hourText, minuteText] = preferredCallTime.split(":");
   const hour = Number(hourText);
@@ -70,15 +137,17 @@ export async function ensureUpcomingScheduledCalls(
   members: Array<{ id: string; active: boolean; preferredCallTime: string; timezone: string }>,
 ) {
   const now = new Date();
+  let cancelledStaleCalls = 0;
 
   for (const member of members) {
     if (!member.active) continue;
 
     const callTimes = parsePreferredCallTimes(member.preferredCallTime);
+    cancelledStaleCalls += await cancelStaleScheduledCalls(prisma, member, callTimes, now);
 
     for (const callTime of callTimes) {
       const scheduledFor = nextScheduledCallAt(callTime, member.timezone, now);
-      const summary = `Scheduled daily call for ${callTime}.`;
+      const summary = scheduledCallSummary(callTime);
       const existing = await prisma.callAttempt.findFirst({
         where: {
           memberId: member.id,
@@ -101,4 +170,6 @@ export async function ensureUpcomingScheduledCalls(
       });
     }
   }
+
+  return { cancelledStaleCalls };
 }
