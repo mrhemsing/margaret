@@ -182,7 +182,7 @@ export function DemoLandingForm() {
           name="firstName"
           type="text"
           autoComplete="given-name"
-          placeholder="Matt"
+          placeholder="Mary"
           maxLength={40}
           onChange={() => {
             if (status.state === "error") setStatus({ state: "idle" });
@@ -208,8 +208,8 @@ export function DemoLandingForm() {
           className="min-h-[52px] rounded-2xl border border-slate-200 bg-white px-4 text-[17px] font-semibold text-ink shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20 sm:min-h-14"
         />
       </label>
-      <fieldset className="grid gap-2">
-        <legend className="text-sm font-bold text-ink">Choose a demo voice</legend>
+      <fieldset>
+        <legend className="mb-3 text-sm font-bold text-ink">Choose a demo voice</legend>
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {voiceOptions.map((voice) => (
             <label
@@ -246,7 +246,7 @@ export function DemoLandingForm() {
       <button
         type="submit"
         disabled={!canSubmit}
-        className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-brandButtonBlue px-5 py-3 text-base font-bold text-white shadow-sm transition hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-300 sm:min-h-14"
+        className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-brandButtonBlue px-5 py-3 text-base font-bold text-white shadow-sm transition hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-300 sm:mt-2 sm:min-h-14"
       >
         {status.state === "loading" ? (
           <span className="inline-flex items-center gap-2">
