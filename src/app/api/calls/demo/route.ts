@@ -9,6 +9,15 @@ const requestSchema = z.object({
   phoneNumber: z.string().min(8).max(30),
   firstName: z.string().trim().max(40).optional(),
   preferredVoiceId: z.string().optional().default(defaultVoiceId),
+  source: z.string().trim().max(60).optional(),
+  utm: z
+    .object({
+      utm_source: z.string().trim().max(120).optional(),
+      utm_medium: z.string().trim().max(120).optional(),
+      utm_campaign: z.string().trim().max(180).optional(),
+      utm_content: z.string().trim().max(180).optional(),
+    })
+    .optional(),
   company: z.string().optional(),
 });
 
@@ -111,6 +120,8 @@ export async function POST(request: Request) {
         conversationRaw: {
           demoCurrentContext: DEMO_CURRENT_CONTEXT,
           demoMaxDurationSeconds: DEMO_MAX_DURATION_SECONDS,
+          source: parsed.data.source ?? "main_site",
+          utm: parsed.data.utm ?? null,
           firstMessage: `Hi ${memberName}, this is DailyCall. I am an AI companion calling with a quick demo, just so you can hear what the service feels like. How are you doing today?`,
         },
       },

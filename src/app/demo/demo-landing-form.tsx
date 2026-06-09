@@ -1,0 +1,214 @@
+"use client";
+
+import Link from "next/link";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+
+import { formatNorthAmericanPhoneInput } from "@/lib/phone";
+
+type DemoFormStatus =
+  | { state: "idle" }
+  | { state: "loading" }
+  | { state: "success" }
+  | { state: "error"; message: string };
+
+type UtmParams = Partial<Record<"utm_source" | "utm_medium" | "utm_campaign" | "utm_content", string>>;
+
+declare global {
+  interface Window {
+    fbq?: (...args: unknown[]) => void;
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content"] as const;
+const storageKey = "dailycall_demo_utm";
+const demoCompletionDelayMs = 75_000;
+
+function getDigits(value: string) {
+  return value.replace(/\D/g, "").replace(/^1(?=\d{10})/, "").slice(0, 10);
+}
+
+function readStoredUtms() {
+  if (typeof window === "undefined") return {};
+
+  try {
+    return JSON.parse(window.sessionStorage.getItem(storageKey) ?? "{}") as UtmParams;
+  } catch {
+    return {};
+  }
+}
+
+function trackEvent(name: string, params?: Record<string, unknown>) {
+  window.fbq?.("track", name, params);
+
+  if (name === "Lead") {
+    window.gtag?.("event", "demo_submitted", params);
+  }
+
+  if (name === "CompleteRegistration") {
+    window.gtag?.("event", "demo_completed", params);
+  }
+}
+
+export function DemoLandingForm() {
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [status, setStatus] = useState<DemoFormStatus>({ state: "idle" });
+  const [utms, setUtms] = useState<UtmParams>({});
+  const [showPostDemoCta, setShowPostDemoCta] = useState(false);
+
+  const phoneDigits = useMemo(() => getDigits(phoneNumber), [phoneNumber]);
+  const canSubmit = phoneDigits.length === 10 && status.state !== "loading" && status.state !== "success";
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextUtms: UtmParams = {};
+
+    for (const key of utmKeys) {
+      const value = params.get(key);
+      if (value) nextUtms[key] = value;
+    }
+
+    const storedUtms = readStoredUtms();
+    const mergedUtms = { ...storedUtms, ...nextUtms };
+
+    if (Object.keys(mergedUtms).length > 0) {
+      window.sessionStorage.setItem(storageKey, JSON.stringify(mergedUtms));
+    }
+
+    setUtms(mergedUtms);
+  }, []);
+
+  useEffect(() => {
+    if (status.state !== "success") return;
+
+    const timeout = window.setTimeout(() => {
+      trackEvent("CompleteRegistration", { value: 1, source: "ad_landing" });
+      setShowPostDemoCta(true);
+    }, demoCompletionDelayMs);
+
+    return () => window.clearTimeout(timeout);
+  }, [status.state]);
+
+  async function submitDemoCall(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (phoneDigits.length !== 10) {
+      setStatus({ state: "error", message: "Please enter a 10-digit phone number" });
+      return;
+    }
+
+    setStatus({ state: "loading" });
+    setShowPostDemoCta(false);
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const response = await fetch("/api/calls/demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phoneNumber,
+          company: formData.get("company"),
+          source: "ad_landing",
+          utm: utms,
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error ?? "We could not start the demo call. Please try again.");
+      }
+
+      trackEvent("Lead", { value: 1, source: "ad_landing" });
+      setStatus({ state: "success" });
+    } catch (error) {
+      setStatus({
+        state: "error",
+        message: error instanceof Error ? error.message : "We could not start the demo call. Please try again.",
+      });
+    }
+  }
+
+  if (status.state === "success") {
+    return (
+      <div className="grid gap-5">
+        <div className="rounded-2xl border border-brandBlue/20 bg-white p-5 shadow-sm">
+          <p className="text-xl font-bold text-ink">Calling you now</p>
+          <p className="mt-3 text-base leading-7 text-slate-600">
+            Your phone should ring within 30 seconds. If you don&apos;t see a call, check that your phone isn&apos;t on silent.
+          </p>
+        </div>
+        {showPostDemoCta ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-lg font-bold text-ink">Want to set this up for your parent?</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/signup"
+                onClick={() => window.gtag?.("event", "cta_clicked_post_demo", { cta: "trial", source: "ad_landing" })}
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-brandButtonBlue px-5 py-3 text-center text-sm font-bold text-white shadow-sm transition hover:bg-brandButtonBlueHover"
+              >
+                Start your 14-day free trial
+              </Link>
+              <Link
+                href="/"
+                onClick={() => window.gtag?.("event", "cta_clicked_post_demo", { cta: "learn_more", source: "ad_landing" })}
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-center text-sm font-bold text-brandButtonBlue transition hover:border-brandBlue/50 hover:text-ink"
+              >
+                Learn more about DailyCall
+              </Link>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submitDemoCall} className="grid gap-3" noValidate>
+      <div className="hidden">
+        <label htmlFor="demo-company">Company</label>
+        <input id="demo-company" name="company" tabIndex={-1} autoComplete="off" />
+      </div>
+      <label className="grid gap-2 text-sm font-bold text-ink">
+        <span className="sr-only">Phone number</span>
+        <input
+          name="phoneNumber"
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel"
+          value={phoneNumber}
+          onChange={(event) => {
+            setPhoneNumber(formatNorthAmericanPhoneInput(event.currentTarget.value));
+            if (status.state === "error") setStatus({ state: "idle" });
+          }}
+          aria-invalid={status.state === "error"}
+          aria-describedby="demo-phone-help"
+          placeholder="(555) 555-0123"
+          className="min-h-14 rounded-2xl border border-slate-200 bg-white px-4 text-[17px] font-semibold text-ink shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20"
+        />
+      </label>
+      {status.state === "error" ? <p className="text-sm font-semibold text-red-700">{status.message}</p> : null}
+      <button
+        type="submit"
+        disabled={!canSubmit}
+        className="inline-flex min-h-14 w-full items-center justify-center rounded-full bg-brandButtonBlue px-5 py-3 text-base font-bold text-white shadow-sm transition hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-300"
+      >
+        {status.state === "loading" ? (
+          <span className="inline-flex items-center gap-2">
+            Calling you now
+            <span className="loading-dots" aria-hidden="true">
+              <span>.</span>
+              <span>.</span>
+              <span>.</span>
+            </span>
+          </span>
+        ) : (
+          "Call me now"
+        )}
+      </button>
+      <p id="demo-phone-help" className="text-center text-sm leading-6 text-slate-500">
+        We&apos;ll call within 30 seconds. We don&apos;t save your number for marketing.
+      </p>
+    </form>
+  );
+}

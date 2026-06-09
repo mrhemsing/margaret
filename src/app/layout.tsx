@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { AnalyticsScripts } from "@/app/components/analytics-scripts";
-import { SiteFooter } from "@/app/components/site-footer";
+import { RouteChrome } from "@/app/components/route-chrome";
 import { siteUrl } from "@/lib/site-url";
 import "flag-icons/css/flag-icons.min.css";
 import "./globals.css";
@@ -61,12 +61,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         <AnalyticsScripts />
-        <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-56 bg-gradient-to-b from-white via-white/85 to-transparent" />
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-0 h-64 bg-gradient-to-t from-white via-white/90 to-transparent" />
-        <div className="relative z-10">
-          {children}
-          <SiteFooter />
-        </div>
+        <RouteChrome>{children}</RouteChrome>
       </body>
     </html>
   );
