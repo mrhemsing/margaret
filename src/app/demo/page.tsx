@@ -29,7 +29,8 @@ export default function DemoLandingPage() {
             <div className="grid gap-2 sm:gap-3">
               <h1 className="text-[1.85rem] font-bold tracking-normal text-ink sm:text-[3rem]" style={{ lineHeight: 1.22 }}>
                 Hear what a <br />
-                daily call sounds like.
+                daily call <br />
+                sounds like.
               </h1>
               <p className="text-base leading-6 text-slate-600 sm:text-lg sm:leading-8">A one-minute sample call. Free, no signup.</p>
             </div>
