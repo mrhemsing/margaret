@@ -146,7 +146,7 @@ export function DemoLandingForm() {
         {showPostDemoCta ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-lg font-bold text-ink">Want to set this up for your parent?</p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-3">
               <Link
                 href="/signup"
                 onClick={() => window.gtag?.("event", "cta_clicked_post_demo", { cta: "trial", source: "ad_landing" })}
@@ -154,12 +154,15 @@ export function DemoLandingForm() {
               >
                 Start your 14-day free trial
               </Link>
+              <p className="text-center text-sm font-medium leading-5 text-slate-500">
+                Free for 14 days. No credit card needed. <span className="block">Cancel anytime.</span>
+              </p>
               <Link
                 href="/"
                 onClick={() => window.gtag?.("event", "cta_clicked_post_demo", { cta: "learn_more", source: "ad_landing" })}
                 className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-center text-sm font-bold text-brandButtonBlue transition hover:border-brandBlue/50 hover:text-ink"
               >
-                Learn more about DailyCall
+                See how it works and pricing
               </Link>
             </div>
           </div>
