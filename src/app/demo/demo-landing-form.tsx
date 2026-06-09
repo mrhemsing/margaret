@@ -60,7 +60,7 @@ export function DemoLandingForm() {
   const [showPostDemoCta, setShowPostDemoCta] = useState(false);
 
   const phoneDigits = useMemo(() => getDigits(phoneNumber), [phoneNumber]);
-  const canSubmit = phoneDigits.length === 10 && status.state !== "loading" && status.state !== "success";
+  const isSubmitting = status.state === "loading" || status.state === "success";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -187,7 +187,7 @@ export function DemoLandingForm() {
           onChange={() => {
             if (status.state === "error") setStatus({ state: "idle" });
           }}
-          className="min-h-[52px] rounded-2xl border border-slate-200 bg-white px-4 text-[17px] font-semibold text-ink shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20 sm:min-h-14"
+          className="min-h-[52px] rounded-2xl border border-slate-200 bg-white px-4 text-[17px] font-semibold text-ink shadow-sm outline-none transition placeholder:text-slate-300 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20 sm:min-h-14"
         />
       </label>
       <label className="grid gap-2 text-sm font-bold text-ink">
@@ -205,9 +205,13 @@ export function DemoLandingForm() {
           aria-invalid={status.state === "error"}
           aria-describedby="demo-phone-help"
           placeholder="(555) 555-0123"
-          className="min-h-[52px] rounded-2xl border border-slate-200 bg-white px-4 text-[17px] font-semibold text-ink shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20 sm:min-h-14"
+          className="min-h-[52px] rounded-2xl border border-slate-200 bg-white px-4 text-[17px] font-semibold text-ink shadow-sm outline-none transition placeholder:text-slate-300 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20 sm:min-h-14"
         />
+        <span id="demo-phone-help" className="text-sm font-medium leading-5 text-slate-500 sm:leading-6">
+          We don&apos;t save your number for marketing.
+        </span>
       </label>
+      {status.state === "error" ? <p className="text-sm font-semibold text-red-700">{status.message}</p> : null}
       <fieldset>
         <legend className="mb-3 text-sm font-bold text-ink">Choose a demo voice</legend>
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
@@ -215,7 +219,7 @@ export function DemoLandingForm() {
             <label
               key={voice.id}
               className={
-                "flex min-w-0 cursor-pointer items-center gap-2 rounded-2xl border bg-white p-2.5 shadow-sm transition sm:gap-3 sm:p-3 " +
+                "flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-2xl border bg-white p-2.5 shadow-sm transition sm:gap-3 sm:p-3 " +
                 (selectedVoiceId === voice.id ? "border-brandButtonBlue ring-4 ring-brandBlue/20" : "border-slate-200")
               }
             >
@@ -242,10 +246,9 @@ export function DemoLandingForm() {
           ))}
         </div>
       </fieldset>
-      {status.state === "error" ? <p className="text-sm font-semibold text-red-700">{status.message}</p> : null}
       <button
         type="submit"
-        disabled={!canSubmit}
+        disabled={isSubmitting}
         className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-brandButtonBlue px-5 py-3 text-base font-bold text-white shadow-sm transition hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-300 sm:mt-2 sm:min-h-14"
       >
         {status.state === "loading" ? (
@@ -261,9 +264,8 @@ export function DemoLandingForm() {
           "Call me now"
         )}
       </button>
-      <p id="demo-phone-help" className="text-center text-sm leading-5 text-slate-500 sm:leading-6">
-        We&apos;ll call within 30 seconds.{" "}
-        <span className="block sm:inline">We don&apos;t save your number for marketing.</span>
+      <p className="text-center text-sm leading-5 text-slate-500 sm:leading-6">
+        We&apos;ll call within 30 seconds.
       </p>
     </form>
   );

@@ -21,15 +21,16 @@ export default function DemoLandingPage() {
     <main className="min-h-[100dvh] bg-[#f7fbfd] text-ink">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-[540px] flex-col px-5 py-4 sm:px-6 sm:py-6 md:justify-center md:py-10">
         <header>
-          <Image src="/dailycall-logo.svg" alt="DailyCall" width={176} height={48} priority className="h-auto w-32 sm:w-36" />
+          <Link href="https://dailycall.care/" aria-label="DailyCall home">
+            <Image src="/dailycall-logo.svg" alt="DailyCall" width={176} height={48} priority className="h-auto w-32 sm:w-36" />
+          </Link>
         </header>
 
         <section className="flex flex-1 flex-col justify-center py-5 sm:py-8 md:flex-none md:py-10">
           <div className="grid gap-4 sm:gap-5">
             <div className="grid gap-2 sm:gap-3">
-              <h1 className="text-[1.85rem] font-bold tracking-normal text-ink sm:text-[3rem]" style={{ lineHeight: 1.22 }}>
-                Hear what a <br />
-                daily call <br />
+              <h1 className="text-balance text-[2.15rem] font-bold tracking-normal text-ink sm:text-[3rem]" style={{ lineHeight: 1.12 }}>
+                Hear what a daily call <br className="hidden md:inline" />
                 sounds like.
               </h1>
               <p className="text-base leading-6 text-slate-600 sm:text-lg sm:leading-8">A one-minute sample call. Free, no signup.</p>
