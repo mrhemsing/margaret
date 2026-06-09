@@ -164,7 +164,7 @@ export function DemoLandingForm() {
   }
 
   return (
-    <form onSubmit={submitDemoCall} className="grid gap-3" noValidate>
+    <form onSubmit={submitDemoCall} className="grid gap-2.5 sm:gap-3" noValidate>
       <div className="hidden">
         <label htmlFor="demo-company">Company</label>
         <input id="demo-company" name="company" tabIndex={-1} autoComplete="off" />
@@ -184,14 +184,14 @@ export function DemoLandingForm() {
           aria-invalid={status.state === "error"}
           aria-describedby="demo-phone-help"
           placeholder="(555) 555-0123"
-          className="min-h-14 rounded-2xl border border-slate-200 bg-white px-4 text-[17px] font-semibold text-ink shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20"
+          className="min-h-[52px] rounded-2xl border border-slate-200 bg-white px-4 text-[17px] font-semibold text-ink shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20 sm:min-h-14"
         />
       </label>
       {status.state === "error" ? <p className="text-sm font-semibold text-red-700">{status.message}</p> : null}
       <button
         type="submit"
         disabled={!canSubmit}
-        className="inline-flex min-h-14 w-full items-center justify-center rounded-full bg-brandButtonBlue px-5 py-3 text-base font-bold text-white shadow-sm transition hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-brandButtonBlue px-5 py-3 text-base font-bold text-white shadow-sm transition hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-300 sm:min-h-14"
       >
         {status.state === "loading" ? (
           <span className="inline-flex items-center gap-2">
@@ -206,7 +206,7 @@ export function DemoLandingForm() {
           "Call me now"
         )}
       </button>
-      <p id="demo-phone-help" className="text-center text-sm leading-6 text-slate-500">
+      <p id="demo-phone-help" className="text-center text-sm leading-5 text-slate-500 sm:leading-6">
         We&apos;ll call within 30 seconds. We don&apos;t save your number for marketing.
       </p>
     </form>
