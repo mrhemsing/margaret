@@ -176,7 +176,7 @@ export function DemoLandingForm() {
       </div>
       <label className="grid gap-2 text-sm font-bold text-ink">
         <span>
-          First name <span className="font-semibold text-slate-500">(so the call can greet you)</span>
+          First name <span className="font-normal text-slate-400">(so the call can greet you)</span>
         </span>
         <input
           name="firstName"
