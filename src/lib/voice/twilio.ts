@@ -5,6 +5,7 @@ type StartAmdProtectedCallInput = {
   caregiverName?: string;
   voiceProvider?: "elevenlabs_twilio";
   machineDetection?: boolean;
+  /** @deprecated Current-info refresh is disabled for live calls to avoid pickup lag. */
   refreshCurrentContext?: boolean;
 };
 
@@ -21,31 +22,12 @@ function getPublicBaseUrl() {
   return baseUrl === "https://dailycall.care" ? "https://www.dailycall.care" : baseUrl;
 }
 
-async function refreshCurrentContextBeforeCall() {
-  try {
-    const [{ prisma }, { refreshCallCurrentInfoSnapshots }] = await Promise.all([
-      import("@/lib/db"),
-      import("@/lib/voice/current-info"),
-    ]);
-    await Promise.race([
-      refreshCallCurrentInfoSnapshots(prisma),
-      new Promise((resolve) => setTimeout(resolve, 2500)),
-    ]);
-  } catch (error) {
-    console.error("Pre-call current context refresh failed", error);
-  }
-}
-
 export async function startAmdProtectedCheckInCall(input: StartAmdProtectedCallInput) {
   const { getDailyCallOutboundFromNumber, getServerEnv } = await import("@/lib/env");
   const env = getServerEnv();
 
   if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN) {
     throw new Error("Twilio credentials are not configured.");
-  }
-
-  if (input.refreshCurrentContext !== false) {
-    await refreshCurrentContextBeforeCall();
   }
 
   const baseUrl = getPublicBaseUrl();

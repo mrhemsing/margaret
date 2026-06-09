@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { formatNorthAmericanPhoneInput } from "@/lib/phone";
+import { defaultVoiceId, voiceOptions } from "@/lib/voice/voice-options";
 
 type DemoFormStatus =
   | { state: "idle" }
@@ -52,6 +54,7 @@ function trackEvent(name: string, params?: Record<string, unknown>) {
 
 export function DemoLandingForm() {
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [selectedVoiceId, setSelectedVoiceId] = useState(defaultVoiceId);
   const [status, setStatus] = useState<DemoFormStatus>({ state: "idle" });
   const [utms, setUtms] = useState<UtmParams>({});
   const [showPostDemoCta, setShowPostDemoCta] = useState(false);
@@ -108,6 +111,8 @@ export function DemoLandingForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phoneNumber,
+          firstName: formData.get("firstName"),
+          preferredVoiceId: formData.get("preferredVoiceId"),
           company: formData.get("company"),
           source: "ad_landing",
           utm: utms,
@@ -170,7 +175,23 @@ export function DemoLandingForm() {
         <input id="demo-company" name="company" tabIndex={-1} autoComplete="off" />
       </div>
       <label className="grid gap-2 text-sm font-bold text-ink">
-        <span className="sr-only">Phone number</span>
+        <span>
+          First name <span className="font-semibold text-slate-500">(so the call can greet you)</span>
+        </span>
+        <input
+          name="firstName"
+          type="text"
+          autoComplete="given-name"
+          placeholder="Matt"
+          maxLength={40}
+          onChange={() => {
+            if (status.state === "error") setStatus({ state: "idle" });
+          }}
+          className="min-h-[52px] rounded-2xl border border-slate-200 bg-white px-4 text-[17px] font-semibold text-ink shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20 sm:min-h-14"
+        />
+      </label>
+      <label className="grid gap-2 text-sm font-bold text-ink">
+        Phone number
         <input
           name="phoneNumber"
           type="tel"
@@ -187,6 +208,40 @@ export function DemoLandingForm() {
           className="min-h-[52px] rounded-2xl border border-slate-200 bg-white px-4 text-[17px] font-semibold text-ink shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20 sm:min-h-14"
         />
       </label>
+      <fieldset className="grid gap-2">
+        <legend className="text-sm font-bold text-ink">Choose a demo voice</legend>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          {voiceOptions.map((voice) => (
+            <label
+              key={voice.id}
+              className={
+                "flex min-w-0 cursor-pointer items-center gap-2 rounded-2xl border bg-white p-2.5 shadow-sm transition sm:gap-3 sm:p-3 " +
+                (selectedVoiceId === voice.id ? "border-brandButtonBlue ring-4 ring-brandBlue/20" : "border-slate-200")
+              }
+            >
+              <Image
+                src={voice.imagePath}
+                alt=""
+                width={48}
+                height={48}
+                className="h-10 w-10 shrink-0 rounded-xl bg-white object-cover sm:h-12 sm:w-12"
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-ink">{voice.gender}</span>
+                <span className="mt-0.5 hidden text-xs font-semibold leading-5 text-slate-500 sm:block">{voice.name}</span>
+              </span>
+              <input
+                name="preferredVoiceId"
+                type="radio"
+                value={voice.id}
+                checked={selectedVoiceId === voice.id}
+                onChange={() => setSelectedVoiceId(voice.id)}
+                className="sr-only"
+              />
+            </label>
+          ))}
+        </div>
+      </fieldset>
       {status.state === "error" ? <p className="text-sm font-semibold text-red-700">{status.message}</p> : null}
       <button
         type="submit"

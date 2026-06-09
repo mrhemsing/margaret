@@ -5,7 +5,6 @@ import { prisma } from "@/lib/db";
 import { sendVoicemailAlertSmsToAlertContacts } from "@/lib/sms/twilio";
 import { getServerEnv } from "@/lib/env";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
-import { getCachedCallCurrentContext } from "@/lib/voice/current-info";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 function twiml(xml: string) {
@@ -204,22 +203,22 @@ export async function POST(request: Request) {
           take: 5,
         })
       : [];
-    const cachedCurrentContext = await getCachedCallCurrentContext(prisma);
     const callRaw = getCallRawObject(callAttempt?.conversationRaw ?? null);
+    const currentContext = getRawString(callRaw, "demoCurrentContext") ?? buildCurrentConversationContext();
     const companionContext = callAttempt
       ? buildCompanionContext({
           memberName: callAttempt.member.name,
           memory: callAttempt.member.memory,
           recentCalls,
-          currentContext: getRawString(callRaw, "demoCurrentContext") ?? cachedCurrentContext,
+          currentContext,
         })
       : {
           companionContext: [
             "You are calling " + memberName + ". Sound like a familiar, warm daily companion, not a clinical checklist.",
-            cachedCurrentContext || buildCurrentConversationContext(),
+            currentContext,
             "Open with warmth and variety. Ask one easy, human question.",
           ].join("\n"),
-          currentContext: cachedCurrentContext || buildCurrentConversationContext(),
+          currentContext,
           recentTopics: [],
           topicsToRevisit: [],
           avoidRepeating: ["Do not use a generic scripted wellness survey opening."],

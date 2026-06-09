@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
+import { getCachedCallCurrentContext, refreshCallCurrentInfoSnapshots } from "@/lib/voice/current-info";
 import { scheduleTwilioCallEnd } from "@/lib/voice/elevenlabs";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
@@ -17,6 +18,7 @@ const requestSchema = z.object({
   caregiverName: z.string().min(1).optional(),
   preferredVoiceId: z.string().optional().default(defaultVoiceId),
   firstMessage: z.string().trim().min(1).max(500).optional(),
+  currentContextMode: z.enum(["none", "snapshot"]).optional().default("none"),
 });
 
 export async function POST(request: Request) {
@@ -35,6 +37,10 @@ export async function POST(request: Request) {
   try {
     const normalizedPhone = parsed.data.toNumber.replace(/\s+/g, "");
     const preferredVoiceId = isAllowedVoiceId(parsed.data.preferredVoiceId) ? parsed.data.preferredVoiceId : defaultVoiceId;
+    const currentContext =
+      parsed.data.currentContextMode === "snapshot"
+        ? await buildSnapshotCurrentContext()
+        : "Internal ElevenLabs voice test. Do not perform or wait on live current-events, news, weather, or sports lookup. Keep responses short, warm, and immediate.";
     const customer = await prisma.customer.upsert({
       where: { email: "elevenlabs-test@dailycall.local" },
       update: { fullName: "ElevenLabs Test", phoneNumber: "+16043138398" },
@@ -71,8 +77,8 @@ export async function POST(request: Request) {
         status: "IN_PROGRESS",
         summary: `ElevenLabs Twilio test call is being placed for ${member.name}.`,
         conversationRaw: {
-          demoCurrentContext:
-            "Internal ElevenLabs voice test. Do not perform or wait on live current-events, news, weather, or sports lookup. Keep responses short, warm, and immediate.",
+          currentContextMode: parsed.data.currentContextMode,
+          demoCurrentContext: currentContext,
           demoMaxDurationSeconds: TEST_CALL_MAX_DURATION_SECONDS,
           firstMessage:
             parsed.data.firstMessage ??
@@ -131,4 +137,13 @@ export async function POST(request: Request) {
       { status: 502 },
     );
   }
+}
+
+async function buildSnapshotCurrentContext() {
+  await Promise.race([
+    refreshCallCurrentInfoSnapshots(prisma),
+    new Promise((resolve) => setTimeout(resolve, 2500)),
+  ]);
+
+  return getCachedCallCurrentContext(prisma);
 }
