@@ -22,7 +22,7 @@ declare global {
 
 const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content"] as const;
 const storageKey = "dailycall_demo_utm";
-const demoCompletionDelayMs = 75_000;
+const demoCompletionDelayMs = 3_000;
 
 function getDigits(value: string) {
   return value.replace(/\D/g, "").replace(/^1(?=\d{10})/, "").slice(0, 10);
