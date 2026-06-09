@@ -6,6 +6,7 @@ import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 const PROCESSING_WINDOW_MS = 30 * 60 * 1000;
 const ACTIVE_CALL_WITH_SID_WINDOW_MS = 2 * 60 * 60 * 1000;
 const ACTIVE_CALL_WITHOUT_SID_WINDOW_MS = 10 * 60 * 1000;
+const STALE_DEMO_CALL_WINDOW_MS = 10 * 60 * 1000;
 const DEMO_CRON_CUSTOMER_EMAIL = "demo-family@dailycall.local";
 const EXCLUDED_CRON_CUSTOMER_EMAILS = [DEMO_CRON_CUSTOMER_EMAIL, "example-family@dailycall.local"];
 const EXCLUDED_CRON_PREFERRED_CALL_TIMES = ["Landing page demo", "On demand test", "OpenAI realtime phone test"];
@@ -32,7 +33,27 @@ async function processScheduledCalls() {
     select: { id: true, active: true, preferredCallTime: true, timezone: true },
   });
 
-  await ensureUpcomingScheduledCalls(prisma, activeMembers);
+  const scheduledMaintenance = await ensureUpcomingScheduledCalls(prisma, activeMembers);
+  const staleDemoCallWindowStart = new Date(now.getTime() - STALE_DEMO_CALL_WINDOW_MS);
+
+  const staleDemoCalls = await prisma.callAttempt.updateMany({
+    where: {
+      status: "IN_PROGRESS",
+      startedAt: { lt: staleDemoCallWindowStart },
+      member: {
+        OR: [
+          { preferredCallTime: "Landing page demo" },
+          { customer: { email: DEMO_CRON_CUSTOMER_EMAIL } },
+        ],
+      },
+    },
+    data: {
+      status: "NO_RESPONSE",
+      completedAt: now,
+      summary: "Demo call was not answered or did not complete within the expected window.",
+      syncedAt: now,
+    },
+  });
 
   const expiredCalls = await prisma.callAttempt.updateMany({
     where: {
@@ -183,7 +204,14 @@ async function processScheduledCalls() {
     }
   }
 
-  return NextResponse.json({ ok: true, expired: expiredCalls.count, processed: results.length, results });
+  return NextResponse.json({
+    ok: true,
+    expired: expiredCalls.count,
+    staleDemoCalls: staleDemoCalls.count,
+    cancelledStale: scheduledMaintenance.cancelledStaleCalls,
+    processed: results.length,
+    results,
+  });
 }
 
 export async function GET() {
