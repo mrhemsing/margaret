@@ -8,6 +8,7 @@ import { CallTestPanel } from "@/app/components/call-test-panel";
 import { SiteHeader } from "@/app/components/site-header";
 import { ADMIN_AUTH_COOKIE, hashAdminPassword, isAdminAuthenticated } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
+import { getNorthAmericanAreaRegion } from "@/lib/phone-area-region";
 import { sampleCallAttempts, sampleMembers } from "@/lib/sample-data";
 
 export const dynamic = "force-dynamic";
@@ -478,13 +479,19 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">No demo users yet.</div>
               ) : data.demoMembers.map((member) => {
                 const demoCalls = "callAttempts" in member ? member.callAttempts : [];
+                const phoneRegion = getNorthAmericanAreaRegion(member.phoneNumber);
 
                 return (
                   <div key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <p className="font-semibold text-ink">{member.name}</p>
-                        <p className="mt-1 text-sm text-slate-500">{member.phoneNumber}</p>
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                          <span>{member.phoneNumber}</span>
+                          {phoneRegion ? (
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-slate-600">{phoneRegion}</span>
+                          ) : null}
+                        </p>
                       </div>
                       {demoCalls.length > 0 ? (
                         <div className="grid gap-1 text-left text-xs text-slate-500 sm:text-right">
