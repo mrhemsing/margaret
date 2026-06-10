@@ -20,15 +20,33 @@ function hasUserAudio(details: Record<string, unknown>) {
 }
 
 export async function syncTranscripts() {
-  const pendingCalls = await prisma.callAttempt.findMany({
+  const inProgressCalls = await prisma.callAttempt.findMany({
     where: {
       providerConversationId: { not: null },
-      OR: [{ transcript: null }, { status: "IN_PROGRESS" }, { reportSentAt: null }, { mood: null }],
+      status: "IN_PROGRESS",
     },
     orderBy: { createdAt: "asc" },
     take: 20,
   });
+  const remainingLimit = Math.max(20 - inProgressCalls.length, 0);
+  const followUpCalls = remainingLimit
+    ? await prisma.callAttempt.findMany({
+        where: {
+          providerConversationId: { not: null },
+          id: { notIn: inProgressCalls.map((call) => call.id) },
+          OR: [{ transcript: null }, { reportSentAt: null }, { mood: null }],
+        },
+        orderBy: { createdAt: "asc" },
+        take: remainingLimit,
+      })
+    : [];
+  const pendingCalls = [...inProgressCalls, ...followUpCalls];
 
+  /*
+   * In-progress provider conversations are user-visible as "still happening",
+   * so they get first claim on each sync run. Older report/SMS follow-ups
+   * should not block recent completed demos from settling.
+   */
   const results = [];
 
   for (const call of pendingCalls) {
