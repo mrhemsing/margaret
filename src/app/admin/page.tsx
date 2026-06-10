@@ -23,6 +23,8 @@ const TELEPHONY_COST_PER_MINUTE_USD = 0.02;
 const ESTIMATED_COST_PER_MINUTE_USD = VOICE_AI_COST_PER_MINUTE_USD + TELEPHONY_COST_PER_MINUTE_USD;
 const RECENT_CHECK_IN_REPORT_LIMIT = 25;
 const RECENT_DEMO_CALL_LIMIT = 50;
+const DEFAULT_VISIBLE_DEMO_CALLS = 10;
+const DEMO_CALL_PAGE_SIZE = 10;
 
 function getSafeAdminRedirect(value: FormDataEntryValue | string | null | undefined) {
   const path = typeof value === "string" ? value : "";
@@ -30,6 +32,12 @@ function getSafeAdminRedirect(value: FormDataEntryValue | string | null | undefi
   if (!path.startsWith("/") || path.startsWith("//")) return "/admin";
 
   return path;
+}
+
+function parseVisibleDemoCalls(value?: string) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed)) return DEFAULT_VISIBLE_DEMO_CALLS;
+  return Math.max(DEFAULT_VISIBLE_DEMO_CALLS, Math.min(RECENT_DEMO_CALL_LIMIT, parsed));
 }
 
 async function unlockAdminDashboard(formData: FormData) {
@@ -342,10 +350,11 @@ function MetricCard({ label, value, dark = false }: { label: string; value: stri
   );
 }
 
-export default async function AdminPage({ searchParams }: { searchParams?: Promise<{ auth?: string; next?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams?: Promise<{ auth?: string; next?: string; demoCalls?: string }> }) {
   const authenticated = await isAdminAuthenticated();
   const params = await searchParams;
   const nextPath = getSafeAdminRedirect(params?.next);
+  const visibleDemoCallCount = parseVisibleDemoCalls(params?.demoCalls);
 
   if (!authenticated) {
     return <AdminPasswordGate failed={params?.auth === "failed"} nextPath={nextPath} />;
@@ -388,6 +397,9 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
         status: attempt.status,
       }))
     : [];
+  const visibleDemoReportRows = demoReportRows.slice(0, visibleDemoCallCount);
+  const hasMoreDemoReports = demoReportRows.length > visibleDemoReportRows.length;
+  const nextVisibleDemoCallCount = Math.min(RECENT_DEMO_CALL_LIMIT, visibleDemoCallCount + DEMO_CALL_PAGE_SIZE);
 
   return (
     <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 pb-5 pt-0 md:px-10">
@@ -512,15 +524,20 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
             </div>
           </article>
 
-          <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
+          <article id="recent-demo-calls" className="scroll-mt-8 rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xl font-bold text-ink">Recent demo calls</h2>
+              <div>
+                <h2 className="text-xl font-bold text-ink">Recent demo calls</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Showing {visibleDemoReportRows.length} of {demoReportRows.length} recent demo summaries.
+                </p>
+              </div>
               <span className="rounded-full bg-brandBlue/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brandButtonBlue">demo</span>
             </div>
             <div className="mt-5 space-y-4">
               {demoReportRows.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">No demo calls yet.</div>
-              ) : demoReportRows.map((attempt) => (
+              ) : visibleDemoReportRows.map((attempt) => (
                 <div key={attempt.id} className="rounded-2xl border border-slate-200 bg-white p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
@@ -532,6 +549,21 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                 </div>
               ))}
             </div>
+            {hasMoreDemoReports ? (
+              <Link
+                href={`/admin?demoCalls=${nextVisibleDemoCallCount}#recent-demo-calls`}
+                className="mt-5 inline-flex rounded-full bg-brandButtonBlue px-4 py-2.5 text-sm font-semibold text-cream shadow-sm hover:bg-brandButtonBlueHover"
+              >
+                Show 10 more
+              </Link>
+            ) : visibleDemoReportRows.length > DEFAULT_VISIBLE_DEMO_CALLS ? (
+              <Link
+                href="/admin#recent-demo-calls"
+                className="mt-5 inline-flex rounded-full bg-cream px-4 py-2.5 text-sm font-semibold text-ink shadow-sm hover:bg-white"
+              >
+                Show fewer
+              </Link>
+            ) : null}
           </article>
         </div>
 
