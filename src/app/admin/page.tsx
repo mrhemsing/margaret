@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 
 import { AdminTopNav } from "@/app/components/admin-top-nav";
 import { CallTestPanel } from "@/app/components/call-test-panel";
+import { CountryFlag } from "@/app/components/country-flag";
 import { SiteHeader } from "@/app/components/site-header";
 import { ADMIN_AUTH_COOKIE, hashAdminPassword, isAdminAuthenticated } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
-import { getNorthAmericanAreaRegion } from "@/lib/phone-area-region";
+import { getNorthAmericanAreaRegionDetails } from "@/lib/phone-area-region";
 import { sampleCallAttempts, sampleMembers } from "@/lib/sample-data";
 
 export const dynamic = "force-dynamic";
@@ -479,7 +480,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">No demo users yet.</div>
               ) : data.demoMembers.map((member) => {
                 const demoCalls = "callAttempts" in member ? member.callAttempts : [];
-                const phoneRegion = getNorthAmericanAreaRegion(member.phoneNumber);
+                const phoneRegion = getNorthAmericanAreaRegionDetails(member.phoneNumber);
 
                 return (
                   <div key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -489,7 +490,10 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                         <p className="mt-1 text-sm text-slate-500">
                           <span className="block">{member.phoneNumber}</span>
                           {phoneRegion ? (
-                            <span className="mt-0.5 block text-[11px] font-bold uppercase tracking-wide text-slate-500">{phoneRegion}</span>
+                            <span className="mt-1 flex items-center gap-1.5">
+                              {phoneRegion.country ? <CountryFlag country={phoneRegion.country} /> : null}
+                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-slate-600">{phoneRegion.region}</span>
+                            </span>
                           ) : null}
                         </p>
                       </div>

@@ -385,11 +385,89 @@ const northAmericanAreaRegions: Record<string, string> = {
   "989": "MI",
 };
 
+const canadianAreaRegions = new Set(["AB", "BC", "MB", "NB", "NL", "NS", "NS/PE", "ON", "QC", "SK", "YT/NT/NU"]);
+const unitedStatesAreaRegions = new Set([
+  "AK",
+  "AL",
+  "AR",
+  "AS",
+  "AZ",
+  "CA",
+  "CO",
+  "CT",
+  "DC",
+  "DE",
+  "FL",
+  "GA",
+  "GU",
+  "HI",
+  "IA",
+  "ID",
+  "IL",
+  "IN",
+  "KS",
+  "KY",
+  "LA",
+  "MA",
+  "MD",
+  "ME",
+  "MI",
+  "MN",
+  "MO",
+  "MP",
+  "MS",
+  "MT",
+  "NC",
+  "ND",
+  "NE",
+  "NH",
+  "NJ",
+  "NM",
+  "NV",
+  "NY",
+  "OH",
+  "OK",
+  "OR",
+  "PA",
+  "PR",
+  "RI",
+  "SC",
+  "SD",
+  "TN",
+  "TX",
+  "UT",
+  "VA",
+  "VI",
+  "VT",
+  "WA",
+  "WI",
+  "WV",
+  "WY",
+]);
+
+export type NorthAmericanAreaRegion = {
+  region: string;
+  country: "CA" | "US" | null;
+};
+
 export function getNorthAmericanAreaRegion(phoneNumber: string) {
+  return getNorthAmericanAreaRegionDetails(phoneNumber)?.region ?? null;
+}
+
+export function getNorthAmericanAreaRegionDetails(phoneNumber: string): NorthAmericanAreaRegion | null {
   const digits = phoneNumber.replace(/\D/g, "").replace(/^1(?=\d{10})/, "");
   const areaCode = digits.slice(0, 3);
 
   if (areaCode.length !== 3) return null;
 
-  return northAmericanAreaRegions[areaCode] ?? null;
+  const region = northAmericanAreaRegions[areaCode] ?? null;
+  if (!region) return null;
+
+  const country = canadianAreaRegions.has(region)
+    ? "CA"
+    : unitedStatesAreaRegions.has(region)
+      ? "US"
+      : null;
+
+  return { region, country };
 }
