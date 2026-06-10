@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
+import { syncTranscripts } from "@/lib/calls/transcript-sync";
 
 const PROCESSING_WINDOW_MS = 30 * 60 * 1000;
 const ACTIVE_CALL_WITH_SID_WINDOW_MS = 2 * 60 * 60 * 1000;
@@ -24,6 +25,8 @@ const cronEligibleMemberWhere = {
 
 async function processScheduledCalls() {
   const now = new Date();
+  const transcriptSyncResponse = await syncTranscripts();
+  const transcriptSyncResult = await transcriptSyncResponse.json().catch(() => null);
   const processingWindowStart = new Date(now.getTime() - PROCESSING_WINDOW_MS);
   const activeMembers = await prisma.member.findMany({
     where: {
@@ -40,6 +43,7 @@ async function processScheduledCalls() {
     where: {
       status: "IN_PROGRESS",
       startedAt: { lt: staleDemoCallWindowStart },
+      providerConversationId: null,
       member: {
         OR: [
           { preferredCallTime: "Landing page demo" },
@@ -206,6 +210,7 @@ async function processScheduledCalls() {
 
   return NextResponse.json({
     ok: true,
+    transcriptSync: transcriptSyncResult,
     expired: expiredCalls.count,
     staleDemoCalls: staleDemoCalls.count,
     cancelledStale: scheduledMaintenance.cancelledStaleCalls,

@@ -14,6 +14,17 @@ function isTerminalStatus(status: string | null | undefined) {
   return status === "ANSWERED_OK" || status === "HELP_REQUESTED" || status === "FOLLOW_UP_NEEDED" || status === "NO_RESPONSE" || status === "FAILED";
 }
 
+function getCallRawObject(value: Prisma.JsonValue | null) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function mergeCallRaw(value: Prisma.JsonValue | null, formData: FormData) {
+  return {
+    ...getCallRawObject(value),
+    twilioStatus: Object.fromEntries(formData.entries()),
+  } as Prisma.InputJsonValue;
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const callSid = String(formData.get("CallSid") ?? "");
@@ -23,7 +34,7 @@ export async function POST(request: Request) {
   if (callSid && (mappedStatus || callStatus === "completed")) {
     const existingCall = await prisma.callAttempt.findFirst({
       where: { providerCallSid: callSid },
-      select: { id: true, providerConversationId: true, status: true, summary: true },
+      select: { id: true, providerConversationId: true, status: true, summary: true, conversationRaw: true },
     });
     const openAISipBridgeDidNotConnect =
       callStatus === "completed" &&
@@ -62,7 +73,7 @@ export async function POST(request: Request) {
                 timeZone: retry?.callAttempt?.member.timezone,
               })
             : undefined,
-        conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
+        conversationRaw: mergeCallRaw(existingCall?.conversationRaw ?? null, formData),
         syncedAt: new Date(),
       },
     });
