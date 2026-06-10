@@ -101,6 +101,13 @@ function getCallRawObject(value: Prisma.JsonValue | null) {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
+function mergeCallRaw(value: Prisma.JsonValue | null, formData: FormData) {
+  return {
+    ...getCallRawObject(value),
+    twilio: Object.fromEntries(formData.entries()),
+  } as Prisma.InputJsonValue;
+}
+
 function getRawString(raw: Record<string, unknown>, key: string) {
   return typeof raw[key] === "string" ? raw[key] : null;
 }
@@ -162,7 +169,7 @@ export async function POST(request: Request) {
           retryScheduledFor: retry?.retryScheduledFor ?? null,
           timeZone: callAttempt?.member.timezone,
         }),
-        conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
+        conversationRaw: mergeCallRaw(callAttempt?.conversationRaw ?? null, formData),
         syncedAt: new Date(),
         alertSentAt,
       },
@@ -172,6 +179,13 @@ export async function POST(request: Request) {
   }
 
   if (callSid) {
+    const existingCall = callAttemptWhere
+      ? await prisma.callAttempt.findFirst({
+          where: callAttemptWhere,
+          select: { conversationRaw: true },
+        })
+      : null;
+
     await prisma.callAttempt.updateMany({
       where: callAttemptWhere ?? { providerCallSid: callSid },
       data: {
@@ -179,7 +193,7 @@ export async function POST(request: Request) {
         providerCallSid: callSid,
         startedAt: new Date(),
         summary: "They picked up. DailyCall is chatting with them now.",
-        conversationRaw: Object.fromEntries(formData.entries()) as Prisma.InputJsonValue,
+        conversationRaw: mergeCallRaw(existingCall?.conversationRaw ?? null, formData),
         syncedAt: new Date(),
       },
     });

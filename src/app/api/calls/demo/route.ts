@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { normalizeDemoFirstName } from "@/lib/content-safety";
 import { prisma } from "@/lib/db";
 import { scheduleTwilioCallEnd } from "@/lib/voice/elevenlabs";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
 
   demoCallAttempts.set(phoneNumber, now);
 
-  const memberName = parsed.data.firstName?.trim() || "there";
+  const memberName = normalizeDemoFirstName(parsed.data.firstName);
   const preferredVoiceId = isAllowedVoiceId(parsed.data.preferredVoiceId) ? parsed.data.preferredVoiceId : defaultVoiceId;
   let callAttemptId: string | null = null;
 
@@ -109,6 +110,12 @@ export async function POST(request: Request) {
             preferredVoiceId,
           },
         });
+
+    await prisma.seniorMemory.upsert({
+      where: { memberId: member.id },
+      update: { preferredName: memberName },
+      create: { memberId: member.id, preferredName: memberName },
+    });
 
     const callAttempt = await prisma.callAttempt.create({
       data: {
