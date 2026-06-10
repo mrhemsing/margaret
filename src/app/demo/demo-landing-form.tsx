@@ -30,6 +30,11 @@ function getDigits(value: string) {
   return value.replace(/\D/g, "").replace(/^1(?=\d{10})/, "").slice(0, 10);
 }
 
+function isValidOptionalFirstName(value: FormDataEntryValue | null) {
+  const name = String(value ?? "").trim();
+  return !name || /^[A-Za-z][A-Za-z'-]{0,39}$/.test(name);
+}
+
 function readStoredUtms() {
   if (typeof window === "undefined") return {};
 
@@ -100,10 +105,15 @@ export function DemoLandingForm() {
       return;
     }
 
+    const formData = new FormData(event.currentTarget);
+
+    if (!isValidOptionalFirstName(formData.get("firstName"))) {
+      setStatus({ state: "error", message: "Please enter a real first name only: one word, letters only." });
+      return;
+    }
+
     setStatus({ state: "loading" });
     setShowPostDemoCta(false);
-
-    const formData = new FormData(event.currentTarget);
 
     try {
       const response = await fetch("/api/calls/demo", {
@@ -187,6 +197,8 @@ export function DemoLandingForm() {
           autoComplete="given-name"
           placeholder="Mary"
           maxLength={40}
+          pattern="[A-Za-z][A-Za-z'-]{0,39}"
+          title="Use a first name only: one word, letters only."
           onChange={() => {
             if (status.state === "error") setStatus({ state: "idle" });
           }}

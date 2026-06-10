@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { normalizeDemoFirstName } from "@/lib/content-safety";
+import { validateDemoFirstName } from "@/lib/content-safety";
 import { prisma } from "@/lib/db";
 import { scheduleTwilioCallEnd } from "@/lib/voice/elevenlabs";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
@@ -65,6 +65,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Enter a valid US or Canadian phone number." }, { status: 400 });
   }
 
+  const memberNameResult = validateDemoFirstName(parsed.data.firstName);
+
+  if (!memberNameResult.ok) {
+    return NextResponse.json({ ok: false, error: memberNameResult.error }, { status: 400 });
+  }
+
   const now = Date.now();
   const lastAttempt = demoCallAttempts.get(phoneNumber) ?? 0;
 
@@ -77,7 +83,7 @@ export async function POST(request: Request) {
 
   demoCallAttempts.set(phoneNumber, now);
 
-  const memberName = normalizeDemoFirstName(parsed.data.firstName);
+  const memberName = memberNameResult.name;
   const preferredVoiceId = isAllowedVoiceId(parsed.data.preferredVoiceId) ? parsed.data.preferredVoiceId : defaultVoiceId;
   let callAttemptId: string | null = null;
 

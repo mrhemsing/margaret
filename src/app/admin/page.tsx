@@ -8,6 +8,7 @@ import { CallTestPanel } from "@/app/components/call-test-panel";
 import { CountryFlag } from "@/app/components/country-flag";
 import { SiteHeader } from "@/app/components/site-header";
 import { ADMIN_AUTH_COOKIE, hashAdminPassword, isAdminAuthenticated } from "@/lib/admin-auth";
+import { safeAdminDisplayName, safeAdminSummary } from "@/lib/content-safety";
 import { prisma } from "@/lib/db";
 import { getNorthAmericanAreaRegionDetails } from "@/lib/phone-area-region";
 import { sampleCallAttempts, sampleMembers } from "@/lib/sample-data";
@@ -441,7 +442,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                   <div key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4">
                     <div className="grid gap-4 md:grid-cols-2 md:items-start">
                       <div className="min-w-0">
-                        <p className="font-semibold text-ink">{member.name}</p>
+                        <p className="font-semibold text-ink">{safeAdminDisplayName(member.name, "Member")}</p>
                         <p className="mt-1 text-sm font-medium text-slate-600">{member.customerEmail ?? "No email"}</p>
                         <p className="mt-1 text-sm text-slate-500">Daily call at {member.preferredCallTime} · {member.timezone}</p>
                         <span className="mt-2 inline-flex rounded-full bg-sage/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sage">active</span>
@@ -486,7 +487,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                   <div key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="font-semibold text-ink">{member.name}</p>
+                        <p className="font-semibold text-ink">{safeAdminDisplayName(member.name)}</p>
                         <p className="mt-1 text-sm text-slate-500">
                           <span className="block">{member.phoneNumber}</span>
                           {phoneRegion ? (
@@ -525,8 +526,8 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                 <div key={attempt.id} className="rounded-2xl border border-slate-200 bg-white p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <p className="font-semibold text-ink">{attempt.memberName}</p>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">{attempt.summary}</p>
+                      <p className="font-semibold text-ink">{safeAdminDisplayName(attempt.memberName, "Member")}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">{safeAdminSummary(attempt.summary)}</p>
                     </div>
                     <span className={statusClassName(attempt.status)}>{attempt.status.replaceAll("_", " ")}</span>
                   </div>
@@ -552,8 +553,8 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                 <div key={attempt.id} className="rounded-2xl border border-slate-200 bg-white p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <p className="font-semibold text-ink">{attempt.memberName}</p>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">{attempt.summary}</p>
+                      <p className="font-semibold text-ink">{safeAdminDisplayName(attempt.memberName)}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">{safeAdminSummary(attempt.summary)}</p>
                     </div>
                     <span className={statusClassName(attempt.status)}>{attempt.status.replaceAll("_", " ")}</span>
                   </div>

@@ -1,4 +1,5 @@
 import { SiteHeader } from "@/app/components/site-header";
+import { safeAdminDisplayName, safeAdminSummary } from "@/lib/content-safety";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -110,13 +111,13 @@ export default async function DemoLogsDashboardPage() {
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-bold text-ink">{call.memberName}</p>
+                      <p className="font-bold text-ink">{safeAdminDisplayName(call.memberName)}</p>
                       <p className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">{call.memberPhone}</p>
                     </div>
                     <p className="mt-2 text-sm text-slate-500">
                       Started {formatDate(call.startedAt ?? call.scheduledFor)} · Completed {formatDate(call.completedAt)}
                     </p>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{call.summary || "No summary yet. Sync transcripts after the demo finishes."}</p>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">{call.summary ? safeAdminSummary(call.summary) : "No summary yet. Sync transcripts after the demo finishes."}</p>
                     {call.transcript ? (
                       <details className="mt-3 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
                         <summary className="cursor-pointer font-semibold text-ink">Transcript</summary>
