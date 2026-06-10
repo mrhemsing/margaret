@@ -21,6 +21,8 @@ type AdminData = Awaited<ReturnType<typeof getAdminData>>;
 const VOICE_AI_COST_PER_MINUTE_USD = 0.08;
 const TELEPHONY_COST_PER_MINUTE_USD = 0.02;
 const ESTIMATED_COST_PER_MINUTE_USD = VOICE_AI_COST_PER_MINUTE_USD + TELEPHONY_COST_PER_MINUTE_USD;
+const RECENT_CHECK_IN_REPORT_LIMIT = 25;
+const RECENT_DEMO_CALL_LIMIT = 50;
 
 function getSafeAdminRedirect(value: FormDataEntryValue | string | null | undefined) {
   const path = typeof value === "string" ? value : "";
@@ -169,12 +171,19 @@ async function getAdminData() {
     const callsDueToday = await prisma.callAttempt.count({ where: { scheduledFor: { gte: startOfDay, lte: endOfDay } } });
     const textsMade = await prisma.callAttempt.count({ where: { reportSentAt: { not: null } } });
     const recentCalls = await prisma.callAttempt.findMany({
+      where: { NOT: { member: demoMemberWhere } },
       include: { member: { include: { customer: true } } },
       orderBy: { scheduledFor: "desc" },
-      take: 16,
+      take: RECENT_CHECK_IN_REPORT_LIMIT,
+    });
+    const recentDemoCalls = await prisma.callAttempt.findMany({
+      where: { member: demoMemberWhere },
+      include: { member: { include: { customer: true } } },
+      orderBy: { scheduledFor: "desc" },
+      take: RECENT_DEMO_CALL_LIMIT,
     });
 
-    return { ok: true as const, customers, subscriptions, activeMembers, demoMembers, callsDueToday, textsMade, recentCalls, error: null };
+    return { ok: true as const, customers, subscriptions, activeMembers, demoMembers, callsDueToday, textsMade, recentCalls, recentDemoCalls, error: null };
   } catch (error) {
     return {
       ok: false as const,
@@ -185,6 +194,7 @@ async function getAdminData() {
       callsDueToday: 3,
       textsMade: 3,
       recentCalls: [],
+      recentDemoCalls: [],
       error: error instanceof Error ? error.message : "Unable to load admin data.",
     };
   }
@@ -362,18 +372,22 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
     { label: "Trialing users", value: data.subscriptions.filter((subscription) => subscription.status === SubscriptionStatus.TRIALING).length.toString() },
   ];
 
-  const allReportRows = data.ok && data.recentCalls.length > 0
+  const reportRows = data.ok && data.recentCalls.length > 0
     ? data.recentCalls.map((attempt) => ({
         id: attempt.id,
         memberName: attempt.member.name,
         summary: attempt.summary || "No summary yet.",
         status: attempt.status,
-        isDemo: attempt.member.customer.email === "demo-family@dailycall.local" || attempt.member.preferredCallTime === "Landing page demo",
       }))
-    : sampleCallAttempts.map((attempt) => ({ ...attempt, isDemo: false }));
-
-  const reportRows = allReportRows.filter((attempt) => !attempt.isDemo).slice(0, 8);
-  const demoReportRows = allReportRows.filter((attempt) => attempt.isDemo).slice(0, 8);
+    : sampleCallAttempts;
+  const demoReportRows = data.ok && data.recentDemoCalls.length > 0
+    ? data.recentDemoCalls.map((attempt) => ({
+        id: attempt.id,
+        memberName: attempt.member.name,
+        summary: attempt.summary || "No summary yet.",
+        status: attempt.status,
+      }))
+    : [];
 
   return (
     <main className="relative isolate mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 pb-5 pt-0 md:px-10">
