@@ -6,14 +6,36 @@ const blockedTermPatterns = [
   /\bb+\W*u+\W*t+\W*t+\W*c+\W*h+\W*e+\W*e+\W*k+\W*s?\b/gi,
 ];
 
+const blockedCompactTerms = [
+  "assnigga",
+  "buttcheek",
+  "faggot",
+  "gayass",
+  "gayboy",
+  "nigga",
+  "nigger",
+  "retard",
+  "stretchnut",
+];
+
 const firstNamePattern = /^[A-Za-z][A-Za-z'-]{0,39}$/;
 
 function cleanText(value: string) {
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function compactText(value: string) {
+  return cleanText(value).toLowerCase().replace(/[^a-z]/g, "");
+}
+
 export function containsBlockedTerms(value: string | null | undefined) {
   if (!value) return false;
+  const compacted = compactText(value);
+
+  if (blockedCompactTerms.some((term) => compacted.includes(term))) {
+    return true;
+  }
+
   return blockedTermPatterns.some((pattern) => {
     pattern.lastIndex = 0;
     return pattern.test(value);
@@ -55,6 +77,10 @@ export function safeAdminSummary(value: string | null | undefined) {
   const cleaned = cleanText(value ?? "");
 
   if (!cleaned) return "No summary available.";
+
+  if (containsBlockedTerms(cleaned)) {
+    return "Summary hidden because it contained blocked demo content.";
+  }
 
   return blockedTermPatterns.reduce((summary, pattern) => summary.replace(pattern, "[removed]"), cleaned);
 }
