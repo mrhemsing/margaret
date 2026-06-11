@@ -19,11 +19,6 @@ function isValidPhoneNumber(value: string) {
   return digits.length >= 10 && digits.length <= 15 && /^[+]?[-().\s\d]+$/.test(trimmed);
 }
 
-function isValidOptionalFirstName(value: FormDataEntryValue | null) {
-  const name = String(value ?? "").trim();
-  return !name || /^[A-Za-z][A-Za-z'-]{0,39}$/.test(name);
-}
-
 export function DemoCallForm() {
   const [status, setStatus] = useState<DemoStatus>({ state: "idle" });
   const [selectedVoiceId, setSelectedVoiceId] = useState(defaultVoiceId);
@@ -36,11 +31,6 @@ export function DemoCallForm() {
 
     if (!isValidPhoneNumber(phoneNumber)) {
       setStatus({ state: "error", message: "Please enter a valid phone number with area code." });
-      return;
-    }
-
-    if (!isValidOptionalFirstName(formData.get("firstName"))) {
-      setStatus({ state: "error", message: "Please enter a real first name only: one word, letters only." });
       return;
     }
 
@@ -76,7 +66,7 @@ export function DemoCallForm() {
   }
 
   return (
-    <form onSubmit={submitDemoCall} className="grid gap-3 rounded-[2rem] bg-white p-4 shadow-sm ring-1 ring-black/5 sm:p-5 md:h-full md:min-h-[360px] md:content-center">
+    <form onSubmit={submitDemoCall} noValidate className="grid gap-3 rounded-[2rem] bg-white p-4 shadow-sm ring-1 ring-black/5 sm:p-5 md:h-full md:min-h-[360px] md:content-center">
       <div className="hidden">
         <label htmlFor="company">Company</label>
         <input id="company" name="company" tabIndex={-1} autoComplete="off" />
@@ -89,8 +79,6 @@ export function DemoCallForm() {
           autoComplete="given-name"
           placeholder="Name"
           maxLength={40}
-          pattern="[A-Za-z][A-Za-z'-]{0,39}"
-          title="Use a first name only: one word, letters only."
           className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-medium text-ink outline-none transition placeholder:text-slate-400 focus:border-brandButtonBlue focus:ring-4 focus:ring-brandBlue/20"
         />
       </label>

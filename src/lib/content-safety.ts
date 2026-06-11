@@ -50,6 +50,15 @@ export function normalizeDemoFirstName(value: string | null | undefined, fallbac
   return cleaned;
 }
 
+export function cleanDemoText(value: string | null | undefined) {
+  return cleanText(value ?? "");
+}
+
+export function isDemoFirstNameShape(value: string | null | undefined) {
+  const cleaned = cleanText(value ?? "");
+  return Boolean(cleaned) && cleaned.length <= 40 && firstNamePattern.test(cleaned);
+}
+
 export function validateDemoFirstName(value: string | null | undefined, fallback = "there") {
   const cleaned = cleanText(value ?? "");
 
