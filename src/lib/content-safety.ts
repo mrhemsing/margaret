@@ -19,6 +19,7 @@ const blockedCompactTerms = [
 ];
 
 const firstNamePattern = /^[A-Za-z][A-Za-z'-]{0,39}$/;
+const legacyHiddenDemoSummaryPattern = /^summary hidden because it contained blocked demo content\.?$/i;
 
 function cleanText(value: string) {
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
@@ -87,9 +88,26 @@ export function safeAdminSummary(value: string | null | undefined) {
 
   if (!cleaned) return "No summary available.";
 
-  if (containsBlockedTerms(cleaned)) {
-    return "Summary hidden because it contained blocked demo content.";
+  return cleaned;
+}
+
+export function rawAdminDemoSummary(value: string | null | undefined) {
+  return safeAdminSummary(value);
+}
+
+export function adminDemoSummary(value: string | null | undefined, transcript?: string | null) {
+  const cleaned = cleanText(value ?? "");
+
+  if (!legacyHiddenDemoSummaryPattern.test(cleaned)) {
+    return rawAdminDemoSummary(value);
   }
 
-  return blockedTermPatterns.reduce((summary, pattern) => summary.replace(pattern, "[removed]"), cleaned);
+  const cleanedTranscript = cleanText(transcript ?? "");
+
+  if (cleanedTranscript) {
+    const clippedTranscript = cleanedTranscript.length > 500 ? `${cleanedTranscript.slice(0, 497).trim()}...` : cleanedTranscript;
+    return clippedTranscript;
+  }
+
+  return "No uncensored summary was stored for this demo yet.";
 }

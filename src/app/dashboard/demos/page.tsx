@@ -1,5 +1,5 @@
 import { SiteHeader } from "@/app/components/site-header";
-import { safeAdminDisplayName, safeAdminSummary } from "@/lib/content-safety";
+import { adminDemoSummary, safeAdminDisplayName } from "@/lib/content-safety";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -117,7 +117,7 @@ export default async function DemoLogsDashboardPage() {
                     <p className="mt-2 text-sm text-slate-500">
                       Started {formatDate(call.startedAt ?? call.scheduledFor)} · Completed {formatDate(call.completedAt)}
                     </p>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{call.summary ? safeAdminSummary(call.summary) : "No summary yet. Sync transcripts after the demo finishes."}</p>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">{call.summary ? adminDemoSummary(call.summary, call.transcript) : "No summary yet. Sync transcripts after the demo finishes."}</p>
                     {call.transcript ? (
                       <details className="mt-3 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
                         <summary className="cursor-pointer font-semibold text-ink">Transcript</summary>

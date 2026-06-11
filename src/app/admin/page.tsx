@@ -8,7 +8,7 @@ import { CallTestPanel } from "@/app/components/call-test-panel";
 import { CountryFlag } from "@/app/components/country-flag";
 import { SiteHeader } from "@/app/components/site-header";
 import { ADMIN_AUTH_COOKIE, hashAdminPassword, isAdminAuthenticated } from "@/lib/admin-auth";
-import { safeAdminDisplayName, safeAdminSummary } from "@/lib/content-safety";
+import { adminDemoSummary, safeAdminDisplayName, safeAdminSummary } from "@/lib/content-safety";
 import { prisma } from "@/lib/db";
 import { getNorthAmericanAreaRegionDetails } from "@/lib/phone-area-region";
 import { sampleCallAttempts, sampleMembers } from "@/lib/sample-data";
@@ -397,6 +397,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
         id: attempt.id,
         memberName: attempt.member.name,
         summary: attempt.summary || "No summary yet.",
+        transcript: attempt.transcript,
         status: attempt.status,
       }))
     : [];
@@ -554,7 +555,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="font-semibold text-ink">{safeAdminDisplayName(attempt.memberName)}</p>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">{safeAdminSummary(attempt.summary)}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">{adminDemoSummary(attempt.summary, attempt.transcript)}</p>
                     </div>
                     <span className={statusClassName(attempt.status)}>{attempt.status.replaceAll("_", " ")}</span>
                   </div>
