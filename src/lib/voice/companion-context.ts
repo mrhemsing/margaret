@@ -13,7 +13,7 @@ function list(items?: string[] | null, fallback = "none yet") {
 }
 
 const STOCK_ACKNOWLEDGEMENT_GUARD =
-  "Do not start replies with tone labels, coaching words, or canned positivity like \"Slow...\", \"Happy...\", \"Glad...\", \"Great...\", \"Warm...\", or \"Gentle...\". Those words are instructions for you, not words to say aloud.";
+  "Do not start replies with tone labels, coaching words, canned positivity, bracketed audio tags, emotion tags, or stage directions like \"Slow...\", \"Happy...\", \"Glad...\", \"Great...\", \"[happy]\", \"[excited]\", \"[slow]\", or \"[warm]\". Every character you output may be spoken on the phone.";
 const CONVERSATION_CONTINUATION_GUARD =
   "Do not steer the call toward ending. Keep individual replies short, but let the person talk as long as they want. Only close when they clearly say they need to go, do not want to talk, stop responding after the no-response checks, or the call is a time-boxed demo.";
 
