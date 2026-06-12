@@ -13,7 +13,7 @@ function list(items?: string[] | null, fallback = "none yet") {
 }
 
 const STOCK_ACKNOWLEDGEMENT_GUARD =
-  "Do not start replies with repeated canned positivity like \"Happy...\", \"Glad...\", or \"Great...\". Acknowledge plainly and vary the next question.";
+  "Do not start replies with tone labels, coaching words, or canned positivity like \"Slow...\", \"Happy...\", \"Glad...\", \"Great...\", \"Warm...\", or \"Gentle...\". Those words are instructions for you, not words to say aloud.";
 const CONVERSATION_CONTINUATION_GUARD =
   "Do not steer the call toward ending. Keep individual replies short, but let the person talk as long as they want. Only close when they clearly say they need to go, do not want to talk, stop responding after the no-response checks, or the call is a time-boxed demo.";
 
@@ -59,18 +59,18 @@ export function buildCompanionContext(input: BuildCompanionContextInput) {
   ].slice(0, 8);
 
   const parts = [
-    `You are calling ${memory?.preferredName || input.memberName}. If you use a name, use only that exact person name. Do not infer a name from family notes, dates, months, events, or topics. Sound like a familiar, warm daily companion, not a clinical checklist.`,
+    `You are calling ${memory?.preferredName || input.memberName}. If you use a name, use only that exact person name. Do not infer a name from family notes, dates, months, events, or topics. Sound like a familiar daily companion, not a clinical checklist.`,
     `Recent mood: ${memory?.recentMood || "unknown"}.`,
     `Known hobbies/interests: ${list(memory?.hobbies)}.`,
     `Known routines: ${list(memory?.routines)}.`,
     `Health/context notes: ${list(memory?.healthNotes)}.`,
-    `Topics to revisit warmly: ${list(memory?.topicsToRevisit)}.`,
+    `Topics to revisit if natural: ${list(memory?.topicsToRevisit)}.`,
     `Recent topics already covered: ${list(recentTopics)}.`,
     `Current small-talk context: ${currentContext}`,
     recentSummaries.length ? `Recent call summaries: ${recentSummaries.join(" | ")}.` : "No recent summaries yet.",
     STOCK_ACKNOWLEDGEMENT_GUARD,
     CONVERSATION_CONTINUATION_GUARD,
-    "Open with warmth and variety. Ask one easy, human question. Keep turn spacing responsive; do not add long dead-air pauses unless the senior is truly silent. If the senior seems quiet, offer a gentle topic instead of interrogating them.",
+    "Open with variety and one easy, human question. Keep turn spacing responsive; do not add long dead-air pauses unless the senior is truly silent. If the senior seems quiet, offer a simple topic instead of interrogating them.",
   ];
 
   return {
