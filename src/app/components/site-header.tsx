@@ -81,7 +81,6 @@ function CountryTrustBadge({ country }: { country: "CA" | "US" }) {
 export function SiteHeader({ showLoginLink = true, showTrialButton = true, showAccountControls = true, initialAuthenticated = false, visitorCountry = "CA", links = [] }: SiteHeaderProps) {
   const pathname = usePathname();
   const [accountEmail, setAccountEmail] = useState<string | null | undefined>(initialAuthenticated ? "" : undefined);
-  const [dashboardLoading, setDashboardLoading] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const isDashboardPage = pathname?.startsWith("/dashboard") ?? false;
   const isDashboardSettingsPage = pathname?.startsWith("/dashboard/settings") ?? false;
@@ -121,27 +120,6 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
       data.subscription.unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    if (!isDashboardPage) {
-      setDashboardLoading(false);
-      return;
-    }
-
-    setDashboardLoading(document.body.dataset.dailycallDashboardLoading !== "false");
-
-    function handleDashboardLoading(event: Event) {
-      const loading = Boolean((event as CustomEvent<{ loading?: boolean }>).detail?.loading);
-      document.body.dataset.dailycallDashboardLoading = loading ? "true" : "false";
-      setDashboardLoading(loading);
-    }
-
-    window.addEventListener("dailycall:dashboard-loading", handleDashboardLoading);
-
-    return () => {
-      window.removeEventListener("dailycall:dashboard-loading", handleDashboardLoading);
-    };
-  }, [isDashboardPage]);
 
   async function signOut() {
     if (signingOut) return;
@@ -266,11 +244,6 @@ export function SiteHeader({ showLoginLink = true, showTrialButton = true, showA
                 </Link>
               ))}
               <span className="h-6 w-px bg-slate-300" aria-hidden="true" />
-              {isDashboardPage && dashboardLoading ? (
-                <span className="inline-flex w-20 items-center justify-end whitespace-nowrap text-sm font-bold text-ink" aria-live="polite">
-                  Loading<span className="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
-                </span>
-              ) : null}
               <AutoCloseDetails className="group relative z-50">
                 <summary
                   className="cursor-pointer list-none rounded-full transition hover:scale-[1.02] [&::-webkit-details-marker]:hidden"
