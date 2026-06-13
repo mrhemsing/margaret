@@ -25,15 +25,19 @@ const cronEligibleMemberWhere = {
 
 async function processScheduledCalls() {
   const now = new Date();
+  const callableMemberWhere = {
+    active: true,
+    AND: [
+      { OR: [{ callPausedUntil: null }, { callPausedUntil: { lte: now } }] },
+      cronEligibleMemberWhere,
+    ],
+  };
   const transcriptSyncResponse = await syncTranscripts();
   const transcriptSyncResult = await transcriptSyncResponse.json().catch(() => null);
   const processingWindowStart = new Date(now.getTime() - PROCESSING_WINDOW_MS);
   const activeMembers = await prisma.member.findMany({
-    where: {
-      active: true,
-      ...cronEligibleMemberWhere,
-    },
-    select: { id: true, active: true, preferredCallTime: true, timezone: true },
+    where: callableMemberWhere,
+    select: { id: true, active: true, callPausedUntil: true, preferredCallTime: true, timezone: true },
   });
 
   const scheduledMaintenance = await ensureUpcomingScheduledCalls(prisma, activeMembers);
@@ -63,9 +67,7 @@ async function processScheduledCalls() {
     where: {
       status: "SCHEDULED",
       scheduledFor: { lt: processingWindowStart },
-      member: {
-        ...cronEligibleMemberWhere,
-      },
+      member: callableMemberWhere,
     },
     data: {
       status: "FAILED",
@@ -78,9 +80,7 @@ async function processScheduledCalls() {
   const dueCalls = await prisma.callAttempt.findMany({
     where: {
       status: "SCHEDULED",
-      member: {
-        ...cronEligibleMemberWhere,
-      },
+      member: callableMemberWhere,
       scheduledFor: {
         gte: processingWindowStart,
         lte: now,

@@ -23,6 +23,7 @@ type DashboardCustomer = {
     voicemailRetryCount: number;
     voicemailRetryDelayMins: number;
     active: boolean;
+    callPausedUntil: string | null;
     memory: {
       topicsToRevisit: string[];
     } | null;
@@ -56,7 +57,7 @@ type DashboardState =
 
 type DashboardMember = DashboardCustomer["members"][number];
 
-type EditPanel = "profile" | "questions" | "voice" | "retries" | null;
+type EditPanel = "profile" | "questions" | "voice" | "retries" | "schedule" | null;
 
 const LIVE_CALL_WINDOW_MS = 30 * 60 * 1000;
 const CALL_HISTORY_WINDOW_DAYS = 7;
@@ -193,6 +194,43 @@ function formatRetrySettings(member: DashboardMember) {
   if (member.voicemailRetryCount <= 0) return "No retry after missed calls";
 
   return `${member.voicemailRetryCount} ${member.voicemailRetryCount === 1 ? "retry" : "retries"} (${member.voicemailRetryDelayMins} min delay)`;
+}
+
+function getCallPauseUntil(member: DashboardMember) {
+  if (!member.callPausedUntil) return null;
+
+  const pauseUntil = new Date(member.callPausedUntil);
+  return Number.isFinite(pauseUntil.getTime()) ? pauseUntil : null;
+}
+
+function isTemporarilyPaused(member: DashboardMember) {
+  const pauseUntil = getCallPauseUntil(member);
+  return Boolean(member.active && pauseUntil && pauseUntil.getTime() > Date.now());
+}
+
+function isCallingEnabled(member: DashboardMember) {
+  return member.active && !isTemporarilyPaused(member);
+}
+
+function formatCallStatus(member: DashboardMember) {
+  if (!member.active) return "Paused indefinitely";
+
+  const pauseUntil = getCallPauseUntil(member);
+  if (pauseUntil && pauseUntil.getTime() > Date.now()) {
+    return `Paused until ${formatShortDate(pauseUntil)}`;
+  }
+
+  return "Daily calls active";
+}
+
+function formatCallActivityLine(member: DashboardMember) {
+  return isCallingEnabled(member) ? "Receiving daily calls" : formatCallStatus(member);
+}
+
+function defaultPauseUntilDate() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().slice(0, 10);
 }
 
 function prepareMemberPhotoPreview(file: File) {
@@ -971,9 +1009,9 @@ function MemberSummaryCard({ member, onUpdated }: { member: DashboardMember; onU
         <div className="flex min-w-0 gap-4">
           <MemberPhoto member={member} className="h-14 w-14 shrink-0 rounded-full" />
           <div className="min-w-0">
-            <span className={"inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-bold " + (member.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600")}>
-              <span className={"h-2 w-2 rounded-full " + (member.active ? "dashboard-status-dot bg-emerald-500" : "bg-slate-400")} />
-              {member.active ? "Daily calls active" : "Calls paused"}
+            <span className={"inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-bold " + (isCallingEnabled(member) ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600")}>
+              <span className={"h-2 w-2 rounded-full " + (isCallingEnabled(member) ? "dashboard-status-dot bg-emerald-500" : "bg-slate-400")} />
+              {formatCallStatus(member)}
             </span>
             <h1 className="mt-2 break-words text-2xl font-bold text-ink">{member.name}</h1>
             <p className="mt-2 break-words text-sm leading-6 text-slate-600">{member.phoneNumber}</p>
@@ -983,7 +1021,7 @@ function MemberSummaryCard({ member, onUpdated }: { member: DashboardMember; onU
           <button
             type="button"
             onClick={() => void startManualCall()}
-            disabled={calling || !member.active}
+            disabled={calling || !isCallingEnabled(member)}
             className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-white px-4 py-3 text-center text-sm font-bold text-ink shadow-sm ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto md:px-5"
           >
             {calling ? "Calling..." : "Call Now"}
@@ -1085,6 +1123,10 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
     voicemailRetryCount: member.voicemailRetryCount,
     voicemailRetryDelayMins: member.voicemailRetryDelayMins,
   });
+  const [pauseUntilDate, setPauseUntilDate] = useState(() => {
+    const pauseUntil = getCallPauseUntil(member);
+    return pauseUntil && pauseUntil.getTime() > Date.now() ? pauseUntil.toISOString().slice(0, 10) : defaultPauseUntilDate();
+  });
   const [saving, setSaving] = useState<EditPanel>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1112,6 +1154,11 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
       voicemailRetryDelayMins: member.voicemailRetryDelayMins,
     });
   }, [member.voicemailRetryCount, member.voicemailRetryDelayMins]);
+
+  useEffect(() => {
+    const pauseUntil = getCallPauseUntil(member);
+    setPauseUntilDate(pauseUntil && pauseUntil.getTime() > Date.now() ? pauseUntil.toISOString().slice(0, 10) : defaultPauseUntilDate());
+  }, [member.callPausedUntil]);
 
   const lastCompletedCall = getLastCompletedCall(member);
   const selectedVoice = getVoiceOption(member.preferredVoiceId);
@@ -1204,7 +1251,12 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
   }
 
   async function saveMember(
-    payload: { profile?: Partial<typeof profileForm>; retrySettings?: Partial<typeof retryForm>; questionsToAsk?: string[] },
+    payload: {
+      profile?: Partial<typeof profileForm>;
+      callStatus?: { mode: "active" | "pause_until" | "pause_indefinitely"; pauseUntil?: string };
+      retrySettings?: Partial<typeof retryForm>;
+      questionsToAsk?: string[];
+    },
     panel: Exclude<EditPanel, null>,
   ) {
     setSaving(panel);
@@ -1237,7 +1289,17 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
         const storedQuestions = normalizeQuestions(result.member.memory?.topicsToRevisit ?? []);
         setQuestions(storedQuestions.length > 0 ? storedQuestions : [""]);
       }
-      setMessage(panel === "profile" ? "Profile updated." : panel === "voice" ? "Voice updated." : panel === "retries" ? "Retry settings updated." : "Questions updated.");
+      setMessage(
+        panel === "profile"
+          ? "Profile updated."
+          : panel === "voice"
+            ? "Voice updated."
+            : panel === "retries"
+              ? "Retry settings updated."
+              : panel === "schedule"
+                ? "Call schedule updated."
+                : "Questions updated.",
+      );
       setEditPanel(null);
     } catch (saveError) {
       setError(saveError instanceof Error ? translateCallError(saveError.message) : "Could not save changes.");
@@ -1255,15 +1317,15 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className={"inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-bold " + (member.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600")}>
-                <span className={"h-2 w-2 rounded-full " + (member.active ? "dashboard-status-dot bg-emerald-500" : "bg-slate-400")} />
-                {member.active ? "Active" : "Paused"}
+              <span className={"inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-bold " + (isCallingEnabled(member) ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600")}>
+                <span className={"h-2 w-2 rounded-full " + (isCallingEnabled(member) ? "dashboard-status-dot bg-emerald-500" : "bg-slate-400")} />
+                {isCallingEnabled(member) ? "Active" : "Paused"}
               </span>
             </div>
             <h2 className="mt-2 break-words text-2xl font-bold text-ink">{member.name}</h2>
             <p className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
               <span className="dashboard-activity-dot h-1.5 w-1.5 rounded-full bg-brandPink/70" aria-hidden="true" />
-              Receiving daily calls
+              {formatCallActivityLine(member)}
             </p>
             <p className="mt-2 break-words text-sm leading-6 text-slate-600">{member.phoneNumber}</p>
           </div>
@@ -1287,6 +1349,7 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
         </div>
         <div className="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-black/5">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Preferences</p>
+          <p className="mt-2 text-base font-bold text-ink">Status: {formatCallStatus(member)}</p>
           <p className="mt-2 text-base font-bold text-ink">Preferred time: {formatPreferredCallTime(member.preferredCallTime)}</p>
           <p className="mt-1 break-words text-sm leading-6 text-slate-600">{selectedVoice.name} voice ({selectedVoice.gender})</p>
           <p className="mt-1 break-words text-sm leading-6 text-slate-600">{formatRetrySettings(member)}</p>
@@ -1311,6 +1374,13 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
               className="w-full rounded-full bg-white px-4 py-3 text-sm font-bold text-ink shadow-[0_4px_12px_rgba(18,53,79,0.08)] ring-1 ring-brandBlue/20 hover:bg-slate-50 active:translate-y-px md:py-2"
             >
               Change voice
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditPanel(editPanel === "schedule" ? null : "schedule")}
+              className="w-full rounded-full bg-white px-4 py-3 text-sm font-bold text-ink shadow-[0_4px_12px_rgba(18,53,79,0.08)] ring-1 ring-brandBlue/20 hover:bg-slate-50 active:translate-y-px md:py-2"
+            >
+              Call schedule
             </button>
             <button
               type="button"
@@ -1447,6 +1517,67 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
           <div className="flex gap-2 lg:col-span-2">
             <button type="submit" disabled={saving === "voice"} className="rounded-full bg-brandButtonBlue px-5 py-2 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:opacity-60">
               {saving === "voice" ? "Saving..." : "Save voice"}
+            </button>
+            <button type="button" onClick={() => setEditPanel(null)} className="rounded-full bg-white px-5 py-2 text-sm font-bold text-slate-600 ring-1 ring-black/10 hover:text-ink">
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : null}
+
+      {editPanel === "schedule" ? (
+        <form
+          className="mt-5 grid gap-4 rounded-2xl bg-slate-50 p-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void saveMember({ callStatus: { mode: "pause_until", pauseUntil: pauseUntilDate } }, "schedule");
+          }}
+        >
+          <div>
+            <p className="text-sm font-semibold text-slate-700">Upcoming daily calls</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Pause calls during a short break, turn them off indefinitely, or resume the normal daily schedule.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => void saveMember({ callStatus: { mode: "active" } }, "schedule")}
+              disabled={saving === "schedule" || isCallingEnabled(member)}
+              className="rounded-2xl bg-white p-4 text-left ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="block text-sm font-bold text-ink">Resume daily calls</span>
+              <span className="mt-2 block text-sm leading-6 text-slate-600">Calls continue at {formatPreferredCallTime(member.preferredCallTime)}.</span>
+            </button>
+            <button
+              type="submit"
+              disabled={saving === "schedule"}
+              className="rounded-2xl bg-white p-4 text-left ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="block text-sm font-bold text-ink">Pause until a date</span>
+              <span className="mt-2 block text-sm leading-6 text-slate-600">No scheduled calls until the end of the selected day.</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void saveMember({ callStatus: { mode: "pause_indefinitely" } }, "schedule")}
+              disabled={saving === "schedule" || !member.active}
+              className="rounded-2xl bg-white p-4 text-left ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="block text-sm font-bold text-ink">Pause indefinitely</span>
+              <span className="mt-2 block text-sm leading-6 text-slate-600">DailyCall will not place future daily calls until resumed.</span>
+            </button>
+          </div>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700 md:max-w-xs">
+            Resume after
+            <input
+              type="date"
+              min={defaultPauseUntilDate()}
+              value={pauseUntilDate}
+              onChange={(event) => setPauseUntilDate(event.target.value)}
+              className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 font-normal text-ink outline-none focus:border-brandPink"
+            />
+          </label>
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving === "schedule"} className="rounded-full bg-brandButtonBlue px-5 py-2 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:opacity-60">
+              {saving === "schedule" ? "Saving..." : "Pause until date"}
             </button>
             <button type="button" onClick={() => setEditPanel(null)} className="rounded-full bg-white px-5 py-2 text-sm font-bold text-slate-600 ring-1 ring-black/10 hover:text-ink">
               Cancel
@@ -1737,9 +1868,9 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
         <div className="flex min-w-0 gap-4">
           <MemberPhoto member={member} className="h-14 w-14 shrink-0 rounded-full" />
           <div className="min-w-0">
-            <span className={"inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-bold " + (member.active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600")}>
-              <span className={"h-2 w-2 rounded-full " + (member.active ? "dashboard-status-dot bg-emerald-500" : "bg-slate-400")} />
-              {member.active ? "Active" : "Paused"}
+            <span className={"inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-bold " + (isCallingEnabled(member) ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600")}>
+              <span className={"h-2 w-2 rounded-full " + (isCallingEnabled(member) ? "dashboard-status-dot bg-emerald-500" : "bg-slate-400")} />
+              {formatCallStatus(member)}
             </span>
             <h2 className="mt-2 break-words text-2xl font-bold text-ink">{member.name}</h2>
             <p className="mt-2 break-words text-sm leading-6 text-slate-600">{member.phoneNumber}</p>
@@ -1749,7 +1880,7 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
           <button
             type="button"
             onClick={() => void startManualCall()}
-            disabled={calling || !member.active}
+            disabled={calling || !isCallingEnabled(member)}
             className="inline-flex w-full max-w-full items-center justify-center rounded-full bg-brandButtonBlue px-4 py-3 text-center text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:opacity-60 md:w-auto md:px-5"
           >
             {calling ? "Calling..." : "Call Now"}

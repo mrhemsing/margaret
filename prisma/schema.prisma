@@ -57,6 +57,7 @@ model Member {
   preferredCallTime   String
   preferredVoiceId    String        @default("hpp4J3VqNfWAUOO0d1Us")
   active              Boolean       @default(true)
+  callPausedUntil     DateTime?
   noResponseAlertMins     Int           @default(15)
   voicemailRetryCount     Int           @default(1)
   voicemailRetryDelayMins Int           @default(15)

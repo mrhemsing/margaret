@@ -57,6 +57,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ mem
     return NextResponse.json({ ok: false, error: "This loved one is paused. Reactivate them before starting a call." }, { status: 409 });
   }
 
+  if (member.callPausedUntil && member.callPausedUntil.getTime() > Date.now()) {
+    return NextResponse.json({ ok: false, error: "Daily calls are paused until the selected resume date." }, { status: 409 });
+  }
+
   const recentInProgressCall = await prisma.callAttempt.findFirst({
     where: {
       status: "IN_PROGRESS",

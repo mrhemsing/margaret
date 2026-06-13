@@ -16,6 +16,12 @@ const updateMemberSchema = z.object({
       preferredVoiceId: z.string().trim().optional().refine((value) => !value || isAllowedVoiceId(value), "Voice not available."),
     })
     .optional(),
+  callStatus: z
+    .object({
+      mode: z.enum(["active", "pause_until", "pause_indefinitely"]),
+      pauseUntil: z.string().trim().optional(),
+    })
+    .optional(),
   retrySettings: z
     .object({
       voicemailRetryCount: z.number().int().min(0).max(3).optional(),
@@ -82,13 +88,41 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
     if (parsed.data.profile.preferredCallTime) {
       const scheduledMember = await prisma.member.findUnique({
         where: { id: memberId },
-        select: { id: true, active: true, preferredCallTime: true, timezone: true },
+        select: { id: true, active: true, callPausedUntil: true, preferredCallTime: true, timezone: true },
       });
 
       if (scheduledMember) {
         await ensureUpcomingScheduledCalls(prisma, [scheduledMember]);
       }
     }
+  }
+
+  if (parsed.data.callStatus) {
+    const { mode, pauseUntil } = parsed.data.callStatus;
+    let callPausedUntil: Date | null = null;
+
+    if (mode === "pause_until") {
+      if (!pauseUntil) {
+        return NextResponse.json({ ok: false, error: "Choose when calls should resume." }, { status: 400 });
+      }
+
+      callPausedUntil = new Date(`${pauseUntil}T23:59:59.999`);
+
+      if (!Number.isFinite(callPausedUntil.getTime()) || callPausedUntil.getTime() <= Date.now()) {
+        return NextResponse.json({ ok: false, error: "Choose a future resume date." }, { status: 400 });
+      }
+    }
+
+    const scheduledMember = await prisma.member.update({
+      where: { id: memberId },
+      data: {
+        active: mode !== "pause_indefinitely",
+        callPausedUntil: mode === "pause_until" ? callPausedUntil : null,
+      },
+      select: { id: true, active: true, callPausedUntil: true, preferredCallTime: true, timezone: true },
+    });
+
+    await ensureUpcomingScheduledCalls(prisma, [scheduledMember]);
   }
 
   if (parsed.data.retrySettings) {
