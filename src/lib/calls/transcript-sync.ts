@@ -19,6 +19,30 @@ function hasUserAudio(details: Record<string, unknown>) {
   return details.has_user_audio === true;
 }
 
+function isTerminalCompletedStatus(status: string | null | undefined) {
+  return status === "ANSWERED_OK" || status === "HELP_REQUESTED" || status === "FOLLOW_UP_NEEDED";
+}
+
+function hasConversationTranscript(transcript: string | null | undefined) {
+  if (!transcript?.trim()) return false;
+
+  const speakerLines = transcript
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.match(/^([^:]{1,80}):\s*(.+)$/))
+    .filter((match): match is RegExpMatchArray => Boolean(match?.[1] && match?.[2]));
+
+  const hasDailyCallTurn = speakerLines.some((line) => /^DailyCall$/i.test(line[1].trim()));
+  const hasMemberTurn = speakerLines.some((line) => !/^DailyCall$/i.test(line[1].trim()) && line[2].trim().length > 0);
+
+  return hasDailyCallTurn && hasMemberTurn;
+}
+
+function shouldUseTranscriptSummary(summary: string | null | undefined) {
+  return !summary || /could not be connected|couldn't connect|carrier issue|did not capture a live response|voicemail|no answer|failed|timed out|being placed|started|chatting with them now/i.test(summary);
+}
+
 export async function syncTranscripts() {
   const inProgressCalls = await prisma.callAttempt.findMany({
     where: {
@@ -58,6 +82,7 @@ export async function syncTranscripts() {
         });
         const isDemoCall = member?.customer.email === "demo-family@dailycall.local" || member?.preferredCallTime === "Landing page demo";
         const transcript = call.transcript ?? "";
+        const hasConversation = hasConversationTranscript(transcript);
         const finalSummary = transcript
           ? summarizeConversationForFamily({
               memberName: member?.name ?? "the call recipient",
@@ -72,7 +97,11 @@ export async function syncTranscripts() {
           priorRecentTopics: member?.memory?.recentTopics ?? [],
         });
         const isStuckInProgress = call.status === "IN_PROGRESS" && Boolean(call.startedAt) && Date.now() - call.startedAt!.getTime() > 15 * 60 * 1000;
-        const finalStatus = isStuckInProgress ? "FAILED" : call.status === "IN_PROGRESS" ? "IN_PROGRESS" : call.status;
+        const finalStatus = hasConversation
+          ? isTerminalCompletedStatus(call.status)
+            ? call.status
+            : "ANSWERED_OK"
+          : isStuckInProgress ? "FAILED" : call.status === "IN_PROGRESS" ? "IN_PROGRESS" : call.status;
         const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE"].includes(finalStatus) ? call.completedAt ?? new Date() : call.completedAt;
         let smsResults: Awaited<ReturnType<typeof sendCallReportSmsToAlertContacts>> | null = null;
         let smsError: string | null = null;
@@ -167,20 +196,34 @@ export async function syncTranscripts() {
       });
       const isDemoCall = member?.customer.email === "demo-family@dailycall.local" || member?.preferredCallTime === "Landing page demo";
       const transcript = formatConversationTranscript(details.transcript, member?.name ?? "Member");
+      const hasConversation = Boolean(hasUserResponse && hasConversationTranscript(transcript));
+      const transcriptSummary = transcript && (hasConversation || shouldUseTranscriptSummary(summary))
+        ? summarizeConversationForFamily({
+            memberName: member?.name ?? "the call recipient",
+            summary,
+            transcript,
+          })
+        : summary;
       const insights = deriveConversationInsights({
         memberName: member?.name ?? "the call recipient",
-        summary,
+        summary: transcriptSummary,
         transcript,
         priorRecentTopics: member?.memory?.recentTopics ?? [],
       });
       const isStuckInProgress = status === "IN_PROGRESS" && Boolean(call.startedAt) && Date.now() - call.startedAt!.getTime() > 15 * 60 * 1000;
       const isCompletedWithoutUserResponse = status === "ANSWERED_OK" && !hasUserResponse;
-      const finalStatus = isStuckInProgress ? "FAILED" : isCompletedWithoutUserResponse ? "NO_RESPONSE" : status;
+      const finalStatus = hasConversation
+        ? isTerminalCompletedStatus(status)
+          ? status
+          : "ANSWERED_OK"
+        : isStuckInProgress ? "FAILED" : isCompletedWithoutUserResponse ? "NO_RESPONSE" : status;
       const finalSummary = isStuckInProgress
-        ? "Call processing timed out after 15 minutes. DailyCall marked this attempt as failed so it does not linger in progress."
+        ? hasConversation
+          ? transcriptSummary
+          : "Call processing timed out after 15 minutes. DailyCall marked this attempt as failed so it does not linger in progress."
         : isCompletedWithoutUserResponse
           ? "DailyCall reached voicemail or did not capture a live response. No check-in conversation was completed."
-        : summary;
+        : transcriptSummary;
       const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE"].includes(finalStatus) ? timing.completedAt ?? call.completedAt ?? new Date() : call.completedAt;
       let smsResults: Awaited<ReturnType<typeof sendCallReportSmsToAlertContacts>> | null = null;
       let smsError: string | null = null;

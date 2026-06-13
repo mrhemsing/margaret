@@ -370,7 +370,7 @@ function getLoadedHistoryRange(member: DashboardMember) {
 }
 
 function getLastCompletedCall(member: DashboardMember) {
-  return getPastCalls(member).find((call) => ["ANSWERED_OK", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(call.status)) ?? null;
+  return getPastCalls(member).find((call) => isCompletedCall(call)) ?? null;
 }
 
 function formatFriendlyStatus(value: string) {
@@ -410,7 +410,29 @@ function isCompletedStatus(value: string) {
   return ["ANSWERED_OK", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(value);
 }
 
+function hasConversationTranscript(transcript: string | null | undefined) {
+  if (!transcript?.trim()) return false;
+
+  const speakerLines = transcript
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.match(/^([^:]{1,80}):\s*(.+)$/))
+    .filter((match): match is RegExpMatchArray => Boolean(match?.[1] && match?.[2]));
+
+  const hasDailyCallTurn = speakerLines.some((line) => /^DailyCall$/i.test(line[1].trim()));
+  const hasMemberTurn = speakerLines.some((line) => !/^DailyCall$/i.test(line[1].trim()) && line[2].trim().length > 0);
+
+  return hasDailyCallTurn && hasMemberTurn;
+}
+
+function isCompletedCall(call: DashboardMember["callAttempts"][number]) {
+  return isCompletedStatus(call.status) || hasConversationTranscript(call.transcript);
+}
+
 function isNoConnectCall(call: DashboardMember["callAttempts"][number]) {
+  if (hasConversationTranscript(call.transcript)) return false;
+
   const summary = call.summary ?? "";
   return call.status === "FAILED" || call.status === "NO_RESPONSE" || /could not be connected|couldn't connect|carrier issue|failed/i.test(summary);
 }
@@ -508,12 +530,12 @@ function getFamilyCallOutcome(call: DashboardMember["callAttempts"][number]) {
     };
   }
 
-  if (isCompletedStatus(call.status)) {
+  if (isCompletedCall(call)) {
     const summary = call.summary && !isBackendErrorText(call.summary) ? warmFamilySummary(call.summary) : "";
     return {
       dotClassName: "bg-emerald-500",
       badgeClassName: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-      label: formatFriendlyStatus(call.status),
+      label: isCompletedStatus(call.status) ? formatFriendlyStatus(call.status) : "Completed",
       text: summary ? `Connected · ${summary}` : "Connected · Brief check-in completed successfully.",
     };
   }
@@ -546,7 +568,7 @@ function getDashboardHeroSummary(call: DashboardMember["callAttempts"][number] |
   if (summary) return summary;
 
   const name = memberName ?? "your loved one";
-  if (isCompletedStatus(call.status)) {
+  if (isCompletedCall(call)) {
     return `${name} completed the check-in. DailyCall did not capture a detailed narrative yet, but the call connected and the latest status is available below.`;
   }
 
@@ -555,20 +577,20 @@ function getDashboardHeroSummary(call: DashboardMember["callAttempts"][number] |
 
 function getMemberStats(member: DashboardMember) {
   const pastCalls = getPastCalls(member);
-  const completedCalls = pastCalls.filter((call) => isCompletedStatus(call.status));
+  const completedCalls = pastCalls.filter((call) => isCompletedCall(call));
   const now = new Date();
   const month = now.getMonth();
   const year = now.getFullYear();
   const todayKey = now.toDateString();
   const callsThisMonth = pastCalls.filter((call) => {
     const scheduled = new Date(call.scheduledFor);
-    return scheduled.getMonth() === month && scheduled.getFullYear() === year && isCompletedStatus(call.status);
+    return scheduled.getMonth() === month && scheduled.getFullYear() === year && isCompletedCall(call);
   }).length;
   const missedToday = pastCalls.filter((call) => new Date(call.scheduledFor).toDateString() === todayKey && isNoConnectCall(call)).length;
   let streak = 0;
 
   for (const call of pastCalls) {
-    if (isCompletedStatus(call.status)) {
+    if (isCompletedCall(call)) {
       streak += 1;
       continue;
     }
@@ -666,7 +688,7 @@ function getMoodTrendText(calls: DashboardMember["callAttempts"]) {
 }
 
 function getCallHistoryStats(calls: DashboardMember["callAttempts"]) {
-  const completedCalls = calls.filter((call) => isCompletedStatus(call.status));
+  const completedCalls = calls.filter((call) => isCompletedCall(call));
   const missedCalls = calls.filter((call) => isNoConnectCall(call));
   const followUps = calls.filter((call) => call.followUpSuggested || call.status === "FOLLOW_UP_NEEDED" || call.status === "HELP_REQUESTED");
   const completedMinutes = completedCalls.reduce((total, call) => {
@@ -700,21 +722,21 @@ function getFrequentHistoryTopics(calls: DashboardMember["callAttempts"]) {
 
 function getMoodSparklineCalls(member: DashboardMember) {
   return getPastCalls(member)
-    .filter((call) => isCompletedStatus(call.status) || isNoConnectCall(call))
+    .filter((call) => isCompletedCall(call) || isNoConnectCall(call))
     .slice(0, 7)
     .reverse();
 }
 
 function getCheckInPattern(member: DashboardMember) {
   const calls = getPastCalls(member)
-    .filter((call) => isCompletedStatus(call.status) || isNoConnectCall(call))
+    .filter((call) => isCompletedCall(call) || isNoConnectCall(call))
     .slice(0, 7)
     .reverse();
 
   return calls.map((call) => ({
     id: call.id,
-    label: isCompletedStatus(call.status) ? "Completed" : "Missed",
-    className: isCompletedStatus(call.status) ? "bg-emerald-500" : "bg-red-400",
+    label: isCompletedCall(call) ? "Completed" : "Missed",
+    className: isCompletedCall(call) ? "bg-emerald-500" : "bg-red-400",
   }));
 }
 
