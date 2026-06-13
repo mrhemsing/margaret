@@ -1926,6 +1926,80 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
   );
 }
 
+function AccountDeletionPanel({ customer }: { customer: DashboardCustomer }) {
+  const router = useRouter();
+  const [confirmation, setConfirmation] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const canDelete = confirmation === "DELETE" && !deleting;
+
+  async function deleteAccount() {
+    if (!canDelete) return;
+
+    setDeleting(true);
+    setError(null);
+
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const session = await supabase.auth.getSession();
+      const accessToken = session.data.session?.access_token;
+
+      if (!accessToken) throw new Error("Please log in again.");
+
+      const response = await fetch("/api/dashboard/account", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ confirmation }),
+      });
+      const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+
+      if (!response.ok || !result?.ok) {
+        throw new Error(result?.error ?? "Could not delete this account.");
+      }
+
+      await supabase.auth.signOut();
+      router.replace("/");
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Could not delete this account.");
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <section className="rounded-[1.5rem] border border-red-100 bg-white/80 p-5 shadow-sm ring-1 ring-black/5 md:p-6">
+      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-red-700">Account</p>
+      <h2 className="mt-3 text-2xl font-bold text-ink">Delete account</h2>
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+        Delete {customer.fullName}&apos;s DailyCall account, loved ones, scheduled calls, call history, transcripts, summaries, and saved settings. Any active Stripe subscription will be canceled first.
+      </p>
+      <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <label className="block min-w-0">
+          <span className="text-sm font-bold text-ink">Type DELETE to confirm</span>
+          <input
+            value={confirmation}
+            onChange={(event) => setConfirmation(event.target.value)}
+            autoComplete="off"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-ink outline-none ring-brandBlue/20 focus:border-brandButtonBlue focus:ring-4"
+            placeholder="DELETE"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={() => void deleteAccount()}
+          disabled={!canDelete}
+          className="inline-flex w-full items-center justify-center rounded-full bg-red-700 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+        >
+          {deleting ? "Deleting..." : "Delete account"}
+        </button>
+      </div>
+      {error ? <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
+    </section>
+  );
+}
+
 export function DashboardHome({ view = "dashboard" }: { view?: "dashboard" | "settings" | "billing" }) {
   const router = useRouter();
   const [state, setState] = useState<DashboardState>({ status: "loading" });
@@ -2053,6 +2127,8 @@ export function DashboardHome({ view = "dashboard" }: { view?: "dashboard" | "se
               <SettingsMemberCard key={member.id} member={member} onUpdated={updateMember} />
             ))}
           </section>
+
+          <AccountDeletionPanel customer={state.customer} />
         </>
       ) : (
         <>
