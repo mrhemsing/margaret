@@ -275,17 +275,17 @@ export function SignupForm() {
   async function startCheckout(formData: FormData) {
     setCheckoutState({ status: "loading", message: "Creating your free trial..." });
 
-    let supabaseUserId: string | undefined;
+    let accessToken: string | undefined;
     const accountPassword = String(formData.get("accountPassword") ?? "");
     const customerEmail = String(formData.get("customerEmail") ?? accountEmail ?? "");
     const customerName = String(formData.get("customerName") ?? "");
 
     try {
       const supabase = createBrowserSupabaseClient();
-      const currentUser = await supabase.auth.getUser();
-      supabaseUserId = currentUser.data.user?.id;
+      const session = await supabase.auth.getSession();
+      accessToken = session.data.session?.access_token;
 
-      if (!supabaseUserId) {
+      if (!accessToken) {
         if (!accountPassword) {
           setCheckoutState({
             status: "error",
@@ -293,29 +293,11 @@ export function SignupForm() {
           });
           return;
         }
-
-        const signup = await supabase.auth.signUp({
-          email: customerEmail,
-          password: accountPassword,
-          options: { data: { full_name: customerName } },
-        });
-
-        if (signup.error) throw signup.error;
-
-        if (!signup.data.session) {
-          setCheckoutState({
-            status: "error",
-            message: "Check your email to confirm your account, then log in to finish starting the trial.",
-          });
-          return;
-        }
-
-        supabaseUserId = signup.data.user?.id;
       }
     } catch (error) {
       setCheckoutState({
         status: "error",
-        message: error instanceof Error ? error.message : "Could not create account.",
+        message: error instanceof Error ? error.message : "Could not check account status.",
       });
       return;
     }
@@ -328,9 +310,9 @@ export function SignupForm() {
     const customerCountry = String(formData.get("customerCountry") ?? "CA");
 
     const payload = {
-      supabaseUserId,
       customerName,
       customerEmail,
+      accountPassword: accessToken ? undefined : accountPassword,
       customerPhone: normalizeNorthAmericanPhone(String(formData.get("customerPhone") ?? "")),
       customerCountry,
       parentName: String(formData.get("parentName") ?? ""),
@@ -358,16 +340,13 @@ export function SignupForm() {
 
     try {
       const supabase = createBrowserSupabaseClient();
-      const session = await supabase.auth.getSession();
-      const accessToken = session.data.session?.access_token;
-
-      if (!accessToken) {
-        throw new Error("Please log in again before starting the trial.");
-      }
 
       const response = await fetch("/api/signup/trial", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify(payload),
       });
 
@@ -375,6 +354,17 @@ export function SignupForm() {
 
       if (!response.ok || !result?.ok || !result.dashboardUrl) {
         throw new Error(result?.error ?? "Could not start trial.");
+      }
+
+      if (!accessToken && accountPassword) {
+        const login = await supabase.auth.signInWithPassword({
+          email: customerEmail,
+          password: accountPassword,
+        });
+
+        if (login.error) {
+          throw new Error("Your trial was created, but automatic login failed. Please log in to view your dashboard.");
+        }
       }
 
       window.location.href = result.dashboardUrl;

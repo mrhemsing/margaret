@@ -19,6 +19,7 @@ function splitList(value: string) {
 const trialSchema = z.object({
   customerName: z.string().min(1),
   customerEmail: z.string().email(),
+  accountPassword: z.string().min(8).optional(),
   customerPhone: z.string().min(8),
   customerCountry: z.enum(supportedBillingCountries),
   parentName: z.string().min(1),
@@ -142,25 +143,49 @@ export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : null;
 
-  if (!token) {
-    return NextResponse.json({ ok: false, error: "Please create or log in to your account first." }, { status: 401 });
-  }
-
   const parsed = trialSchema.safeParse(await request.json().catch(() => null));
 
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: "Invalid trial signup request." }, { status: 400 });
   }
 
+  const input = parsed.data;
   const supabase = createSupabaseAdminClient();
-  const { data: authData, error: authError } = await supabase.auth.getUser(token);
+  let authUserId: string;
+  let authEmail: string | undefined;
 
-  if (authError || !authData.user) {
-    return NextResponse.json({ ok: false, error: "Your login session expired. Please log in again." }, { status: 401 });
+  if (token) {
+    const { data: authData, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !authData.user) {
+      return NextResponse.json({ ok: false, error: "Your login session expired. Please log in again." }, { status: 401 });
+    }
+
+    authUserId = authData.user.id;
+    authEmail = authData.user.email?.toLowerCase();
+  } else {
+    if (!input.accountPassword) {
+      return NextResponse.json({ ok: false, error: "Create a password or log in before starting the trial." }, { status: 401 });
+    }
+
+    const { data: createdUser, error: createUserError } = await supabase.auth.admin.createUser({
+      email: input.customerEmail.toLowerCase(),
+      password: input.accountPassword,
+      email_confirm: true,
+      user_metadata: { full_name: input.customerName },
+    });
+
+    if (createUserError || !createdUser.user) {
+      return NextResponse.json(
+        { ok: false, error: "That email may already have an account. Please log in, then finish starting the trial." },
+        { status: 409 },
+      );
+    }
+
+    authUserId = createdUser.user.id;
+    authEmail = createdUser.user.email?.toLowerCase();
   }
 
-  const input = parsed.data;
-  const authEmail = authData.user.email?.toLowerCase();
   const customerEmail = (authEmail ?? input.customerEmail).toLowerCase();
   const callTimes = (input.preferredCallTimes.length > 0 ? input.preferredCallTimes : input.preferredCallTime ? [input.preferredCallTime] : [])
     .filter(Boolean)
@@ -179,7 +204,7 @@ export async function POST(request: Request) {
     const { customer, member } = await prisma.$transaction(async (tx) => {
       const existingCustomer = await tx.customer.findFirst({
         where: {
-          OR: [{ supabaseUserId: authData.user.id }, { email: customerEmail }],
+          OR: [{ supabaseUserId: authUserId }, { email: customerEmail }],
         },
         select: { id: true },
       });
@@ -191,7 +216,7 @@ export async function POST(request: Request) {
               fullName: input.customerName,
               email: customerEmail,
               phoneNumber: input.customerPhone,
-              supabaseUserId: authData.user.id,
+              supabaseUserId: authUserId,
             },
           })
         : await tx.customer.create({
@@ -199,7 +224,7 @@ export async function POST(request: Request) {
               fullName: input.customerName,
               email: customerEmail,
               phoneNumber: input.customerPhone,
-              supabaseUserId: authData.user.id,
+              supabaseUserId: authUserId,
             },
           });
 
