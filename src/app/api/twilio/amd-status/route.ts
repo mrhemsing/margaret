@@ -7,7 +7,7 @@ import { getServerEnv } from "@/lib/env";
 
 function isMachine(answeredBy: string) {
   const value = answeredBy.toLowerCase();
-  return value.startsWith("machine") || value === "fax";
+  return value === "machine_end_beep" || value === "machine_end_silence" || value === "machine_end_other" || value === "fax";
 }
 
 async function endCall(callSid: string) {

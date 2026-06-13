@@ -49,8 +49,8 @@ export async function startAmdProtectedCheckInCall(input: StartAmdProtectedCallI
   });
 
   if (input.machineDetection !== false) {
-    body.set("MachineDetection", "Enable");
-    body.set("MachineDetectionTimeout", "5");
+    body.set("MachineDetection", "DetectMessageEnd");
+    body.set("MachineDetectionTimeout", "20");
     body.set("AsyncAmd", "true");
     body.set("AsyncAmdStatusCallback", `${baseUrl}/api/twilio/amd-status`);
     body.set("AsyncAmdStatusCallbackMethod", "POST");

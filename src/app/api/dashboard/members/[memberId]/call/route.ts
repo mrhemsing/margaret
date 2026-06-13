@@ -89,11 +89,35 @@ export async function POST(request: Request, { params }: { params: Promise<{ mem
   let callAttemptId: string | null = null;
 
   try {
+    const now = new Date();
+    const pendingRetryWindowEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+    await prisma.callAttempt.updateMany({
+      where: {
+        memberId: member.id,
+        status: "SCHEDULED",
+        scheduledFor: {
+          gte: now,
+          lte: pendingRetryWindowEnd,
+        },
+        OR: [
+          { retryAttempt: { gt: 0 } },
+          { retryOfCallAttemptId: { not: null } },
+        ],
+      },
+      data: {
+        status: "FAILED",
+        completedAt: now,
+        summary: "Canceled pending retry because a manual dashboard call was started.",
+        syncedAt: now,
+      },
+    });
+
     const callAttempt = await prisma.callAttempt.create({
       data: {
         memberId: member.id,
-        scheduledFor: new Date(),
-        startedAt: new Date(),
+        scheduledFor: now,
+        startedAt: now,
         status: "IN_PROGRESS",
         summary: `Manual dashboard call is being placed for ${member.name}.`,
       },
