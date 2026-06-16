@@ -21,7 +21,7 @@ export const metadata: Metadata = {
       {
         url: "/founder-margaret-family-real-photo-99-eyes.png",
         width: 2192,
-        height: 1968,
+        height: 1982,
         alt: "DailyCall founder Matt Hemsing with his grandmother Margaret and family",
       },
     ],
@@ -109,7 +109,7 @@ export default function AboutPage() {
           src="/founder-margaret-family-real-photo-99-eyes.png"
           alt="Matt Hemsing with his grandmother Margaret and family"
           width={2192}
-          height={1968}
+          height={1982}
           priority
           className="w-full object-cover md:w-4/5 md:justify-self-center"
         />
