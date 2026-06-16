@@ -142,13 +142,13 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-[9rem_minmax(0,1fr)] items-center gap-4 border-t border-slate-200 pt-8 sm:grid-cols-[11rem_1fr] sm:gap-6 md:grid-cols-[13rem_1fr]">
+          <div className="mt-8 grid grid-cols-[6.75rem_minmax(0,1fr)] items-center gap-4 border-t border-slate-200 pt-8 sm:grid-cols-[8.25rem_1fr] sm:gap-6 md:grid-cols-[9.75rem_1fr]">
             <Image
               src="/founder-matt-hemsing.jpg"
               alt="DailyCall founder Matt Hemsing"
               width={1087}
               height={1457}
-              className="h-36 w-36 rounded-2xl object-cover object-top sm:h-44 sm:w-44 md:h-52 md:w-52"
+              className="h-[6.75rem] w-[6.75rem] rounded-2xl object-cover object-top sm:h-[8.25rem] sm:w-[8.25rem] md:h-[9.75rem] md:w-[9.75rem]"
             />
             <div className="flex min-w-0 items-start gap-2">
               <span className="text-lg font-bold text-ink sm:text-xl" aria-hidden="true">-</span>
