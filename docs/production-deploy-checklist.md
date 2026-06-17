@@ -19,6 +19,9 @@ npx prisma migrate deploy
 ## Current call-context launch checks
 
 - ElevenLabs saved agent first message is exactly `{{opener}}`.
+- ElevenLabs turn-taking is patient/balanced, speculative turn is off or actively being A/B tested, and `turn_timeout` is about 7s.
+- ElevenLabs default `tts.speed` is about `0.95`, and `conversation_config_override.tts.speed` is enabled before using member speech-speed overrides.
+- ElevenLabs production TTS model matches `productionElevenLabsTtsModel` in `src/lib/voice/voice-options.ts`.
 - Run the current-info refresh once after deploying briefing changes.
 - Backfill existing member `SeniorMemory.interestTags` after deploying interest matching changes.
 - Smoke-test the admin test call buttons against production after migrations finish.

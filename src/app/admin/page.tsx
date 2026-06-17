@@ -353,6 +353,73 @@ function MetricCard({ label, value, dark = false }: { label: string; value: stri
   );
 }
 
+type AdminQualityScores = {
+  seniorComfort: number;
+  voiceNaturalness: number;
+  turnTaking: number;
+  personalization: number;
+  safetyHandling: number;
+  familySummaryUsefulness: number;
+  overall: number;
+  lowScoreReason: string | null;
+};
+
+function getNumberScore(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? Math.min(5, Math.max(1, value)) : null;
+}
+
+function getQualityScores(value: unknown): AdminQualityScores | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+
+  const raw = value as Record<string, unknown>;
+  const seniorComfort = getNumberScore(raw.seniorComfort);
+  const voiceNaturalness = getNumberScore(raw.voiceNaturalness);
+  const turnTaking = getNumberScore(raw.turnTaking);
+  const personalization = getNumberScore(raw.personalization);
+  const safetyHandling = getNumberScore(raw.safetyHandling);
+  const familySummaryUsefulness = getNumberScore(raw.familySummaryUsefulness);
+  if (!seniorComfort || !voiceNaturalness || !turnTaking || !personalization || !safetyHandling || !familySummaryUsefulness) return null;
+
+  const overall = getNumberScore(raw.overall) ?? Number(((seniorComfort + voiceNaturalness + turnTaking + personalization + safetyHandling + familySummaryUsefulness) / 6).toFixed(1));
+  const lowScoreReason = typeof raw.lowScoreReason === "string" && raw.lowScoreReason.trim() ? raw.lowScoreReason.trim() : null;
+
+  return { seniorComfort, voiceNaturalness, turnTaking, personalization, safetyHandling, familySummaryUsefulness, overall, lowScoreReason };
+}
+
+function isLowQualityCall(value: unknown) {
+  const scores = getQualityScores(value);
+  if (!scores) return false;
+  return scores.overall < 4 || Object.values(scores).some((score) => typeof score === "number" && score < 3);
+}
+
+function QualityScoreBadges({ qualityScores }: { qualityScores?: unknown }) {
+  const scores = getQualityScores(qualityScores);
+  if (!scores) return null;
+
+  const labels = [
+    ["comfort", scores.seniorComfort],
+    ["voice", scores.voiceNaturalness],
+    ["turn", scores.turnTaking],
+    ["personal", scores.personalization],
+    ["safety", scores.safetyHandling],
+    ["family", scores.familySummaryUsefulness],
+  ] as const;
+
+  return (
+    <div className="mt-3 grid gap-2">
+      <div className="flex flex-wrap gap-1.5">
+        <span className={"rounded-full px-2.5 py-1 text-xs font-bold " + (scores.overall < 4 ? "bg-amber-100 text-amber-800" : "bg-sage/15 text-sage")}>quality {scores.overall.toFixed(1)}/5</span>
+        {labels.map(([label, score]) => (
+          <span key={label} className={"rounded-full px-2.5 py-1 text-xs font-semibold " + (score < 3 ? "bg-red-100 text-red-700" : score < 4 ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600")}>
+            {label} {score}/5
+          </span>
+        ))}
+      </div>
+      {scores.lowScoreReason ? <p className="text-xs leading-5 text-slate-500">{scores.lowScoreReason}</p> : null}
+    </div>
+  );
+}
+
 function TranscriptDetails({ transcript }: { transcript?: string | null }) {
   if (!transcript?.trim()) return null;
 
@@ -364,11 +431,12 @@ function TranscriptDetails({ transcript }: { transcript?: string | null }) {
   );
 }
 
-export default async function AdminPage({ searchParams }: { searchParams?: Promise<{ auth?: string; next?: string; demoCalls?: string }> }) {
+export default async function AdminPage({ searchParams }: { searchParams?: Promise<{ auth?: string; next?: string; demoCalls?: string; quality?: string }> }) {
   const authenticated = await isAdminAuthenticated();
   const params = await searchParams;
   const nextPath = getSafeAdminRedirect(params?.next);
   const visibleDemoCallCount = parseVisibleDemoCalls(params?.demoCalls);
+  const showLowQualityOnly = params?.quality === "low";
 
   if (!authenticated) {
     return <AdminPasswordGate failed={params?.auth === "failed"} nextPath={nextPath} />;
@@ -402,8 +470,12 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
         summary: attempt.summary || "No summary yet.",
         transcript: attempt.transcript,
         status: attempt.status,
+        qualityScores: attempt.qualityScores,
+        openerKey: attempt.openerKey,
+        briefingItemIds: attempt.briefingItemIds,
       }))
     : sampleCallAttempts;
+  const visibleReportRows = showLowQualityOnly ? reportRows.filter((attempt) => isLowQualityCall("qualityScores" in attempt ? attempt.qualityScores : null)) : reportRows;
   const demoReportRows = data.ok && data.recentDemoCalls.length > 0
     ? data.recentDemoCalls.map((attempt) => ({
         id: attempt.id,
@@ -531,16 +603,27 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
           </article>
 
           <article className="rounded-3xl bg-white/80 p-6 shadow-sm ring-1 ring-black/5">
-            <h2 className="text-xl font-bold text-ink">Recent check-in reports</h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-ink">Recent check-in reports</h2>
+                <p className="mt-1 text-sm text-slate-500">{showLowQualityOnly ? "Showing scored calls below the rollout bar." : "Newest non-demo calls with transcript QA scores when available."}</p>
+              </div>
+              <Link href={showLowQualityOnly ? "/admin" : "/admin?quality=low"} className="w-fit rounded-full bg-white px-4 py-2 text-sm font-bold text-ink ring-1 ring-black/10 hover:bg-slate-50">
+                {showLowQualityOnly ? "Show all" : "Low-score review"}
+              </Link>
+            </div>
             <div className="mt-5 space-y-4">
-              {reportRows.length === 0 ? (
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">No non-demo check-in reports yet.</div>
-              ) : reportRows.map((attempt) => (
+              {visibleReportRows.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">{showLowQualityOnly ? "No low-scoring check-in reports yet." : "No non-demo check-in reports yet."}</div>
+              ) : visibleReportRows.map((attempt) => (
                 <div key={attempt.id} className="rounded-2xl border border-slate-200 bg-white p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="font-semibold text-ink">{safeAdminDisplayName(attempt.memberName, "Member")}</p>
                       <p className="mt-1 text-sm leading-6 text-slate-600">{safeAdminSummary(attempt.summary)}</p>
+                      <QualityScoreBadges qualityScores={"qualityScores" in attempt ? attempt.qualityScores : null} />
+                      {"openerKey" in attempt && attempt.openerKey ? <p className="mt-2 text-xs text-slate-400">Opener: {attempt.openerKey}</p> : null}
+                      {"briefingItemIds" in attempt && attempt.briefingItemIds?.length ? <p className="mt-1 text-xs text-slate-400">Briefing items: {attempt.briefingItemIds.length}</p> : null}
                       <TranscriptDetails transcript={"transcript" in attempt ? attempt.transcript : null} />
                     </div>
                     <span className={statusClassName(attempt.status)}>{attempt.status.replaceAll("_", " ")}</span>

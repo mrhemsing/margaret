@@ -7,7 +7,7 @@ import { getServerEnv } from "@/lib/env";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
 import { getCallBriefingDetails } from "@/lib/voice/current-info";
 import { selectOpener } from "@/lib/voice/openers";
-import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
+import { defaultVoiceId, isAllowedVoiceId, normalizeSpeechSpeed } from "@/lib/voice/voice-options";
 
 function twiml(xml: string) {
   return new NextResponse(xml, {
@@ -30,6 +30,7 @@ async function registerElevenLabsTwilioCall(input: {
   topicsToRevisit: string[];
   avoidRepeating: string[];
   preferredVoiceId?: string | null;
+  speechSpeed?: number | null;
   opener?: string | null;
   firstMessage?: string | null;
   demoMaxDurationSeconds?: number | null;
@@ -73,6 +74,7 @@ async function registerElevenLabsTwilioCall(input: {
             : {}),
           tts: {
             voice_id: isAllowedVoiceId(input.preferredVoiceId ?? "") ? input.preferredVoiceId : defaultVoiceId,
+            ...(normalizeSpeechSpeed(input.speechSpeed) ? { speed: normalizeSpeechSpeed(input.speechSpeed) } : {}),
           },
         },
       },
@@ -263,6 +265,7 @@ export async function POST(request: Request) {
       memberName: callAttempt?.member.name ?? memberName,
       caregiverName,
       preferredVoiceId: callAttempt?.member.preferredVoiceId,
+      speechSpeed: callAttempt?.member.speechSpeed,
       opener: selectedOpener?.text,
       firstMessage: getRawString(callRaw, "firstMessage"),
       demoMaxDurationSeconds: getRawNumber(callRaw, "demoMaxDurationSeconds"),
@@ -277,6 +280,8 @@ export async function POST(request: Request) {
           data: {
             providerCallSid: callSid,
             providerConversationId: conversationId,
+            briefingItemIds: briefingDetails.itemIds,
+            openerKey: selectedOpener?.key ?? null,
             conversationRaw: {
               ...callRaw,
               briefingItemIds: briefingDetails.itemIds,

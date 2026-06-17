@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerEnv } from "@/lib/env";
-import { getVoiceOption, isAllowedVoiceId } from "@/lib/voice/voice-options";
+import { defaultElevenLabsTtsSpeed, getVoiceOption, isAllowedVoiceId, productionElevenLabsTtsModel } from "@/lib/voice/voice-options";
 
 export const dynamic = "force-dynamic";
 
@@ -29,11 +29,11 @@ export async function GET(request: Request) {
     },
     body: JSON.stringify({
       text: sampleText,
-      model_id: "eleven_flash_v2_5",
+      model_id: productionElevenLabsTtsModel,
       voice_settings: {
         stability: 0.55,
         similarity_boost: 0.8,
-        speed: 1,
+        speed: defaultElevenLabsTtsSpeed,
       },
     }),
   });

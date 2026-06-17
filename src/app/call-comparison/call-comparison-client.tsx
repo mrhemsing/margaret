@@ -1,7 +1,7 @@
 "use client";
 
 import { TestCallButtons, type TestCallTarget } from "@/app/components/test-call-buttons";
-import { defaultVoiceId } from "@/lib/voice/voice-options";
+import { defaultVoiceId, evaluationElevenLabsTtsModel, productionElevenLabsTtsModel } from "@/lib/voice/voice-options";
 
 const comparisonIntroTemplate =
   "Hi {name}, it is DailyCall. How are you doing today?";
@@ -35,27 +35,27 @@ const comparisonRows = [
     badge: "Custom Bridge",
     production: false,
     subtitle: "Low-latency ElevenLabs Flash TTS lane for checking whether a chained bridge can beat native agents on speed.",
-    stack: "Twilio Media Stream, OpenAI realtime STT or gpt-4o-transcribe-latest, OpenAI text, ElevenLabs TTS model eleven_flash_v2_5",
+    stack: `Twilio Media Stream, OpenAI realtime STT or gpt-4o-transcribe-latest, OpenAI text, ElevenLabs TTS model ${productionElevenLabsTtsModel}`,
     bestPractice: "Use as the fast TTS bridge baseline: measure first audio, barge-in recovery, phone-band clarity, and whether the chained STT -> text -> TTS loop loses emotional nuance.",
     observability: "Capture Twilio CallSid, media stream start/stop, transcript deltas, OpenAI response timing, ElevenLabs synthesis timing, hangup reason, and summary handoff.",
     endpoint: "/api/bridge-test/call",
     caregiverName: "DailyCall ElevenLabs Flash v2.5 comparison reviewer",
-    modelLabel: "eleven_flash_v2_5",
+    modelLabel: productionElevenLabsTtsModel,
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
     }),
   },
   {
-    title: "ElevenLabs V3 Conversational (no snapshot)",
+    title: "ElevenLabs production agent (no snapshot)",
     badge: "Native Agent",
     production: true,
     subtitle: "Current production DailyCall lane, optimized for fast connection with no weather/news/sports snapshot.",
-    stack: "Twilio, ElevenLabs Conversational AI, ElevenLabs ASR/turn-taking, TTS model eleven_v3_conversational, LLM gemini-3.5-flash",
+    stack: `Twilio, ElevenLabs Conversational AI, ElevenLabs ASR/turn-taking, TTS model ${productionElevenLabsTtsModel}, LLM gemini-3.5-flash`,
     bestPractice: "Keep this as the production comfort baseline: judge warmth, expressive voice quality, interruption handling, senior patience, and whether agent settings remain easy to operate.",
     observability: "Capture Twilio CallSid, ElevenLabs conversation ID, transcript text-only availability, agent version, SIP/trunk logs when available, turn timing, disconnect details, hangup reason, and summary handoff.",
     endpoint: "/api/elevenlabs-test/call",
-    caregiverName: "DailyCall ElevenLabs V3 comparison reviewer",
-    modelLabel: "eleven_v3_conversational + gemini-3.5-flash",
+    caregiverName: "DailyCall ElevenLabs production comparison reviewer",
+    modelLabel: `${productionElevenLabsTtsModel} + gemini-3.5-flash`,
     buildPayload: (target: TestCallTarget) => ({
       preferredVoiceId: defaultVoiceId,
       firstMessage: buildIntro(target.label),
@@ -63,16 +63,16 @@ const comparisonRows = [
     }),
   },
   {
-    title: "ElevenLabs V3 Conversational (with snapshot)",
+    title: "ElevenLabs production agent (with snapshot)",
     badge: "Native Agent",
     production: false,
     subtitle: "Same current ElevenLabs/Gemini lane, but preloads weather, light news, and NHL context for this test call.",
-    stack: "Twilio, ElevenLabs Conversational AI, ElevenLabs ASR/turn-taking, TTS model eleven_v3_conversational, LLM gemini-3.5-flash, pre-call current-context snapshot",
+    stack: `Twilio, ElevenLabs Conversational AI, ElevenLabs ASR/turn-taking, TTS model ${productionElevenLabsTtsModel}, LLM gemini-3.5-flash, pre-call current-context snapshot`,
     bestPractice: "Use only for A/B testing: compare connection lag against whether current-event follow-ups improve enough to justify any delay.",
     observability: "Capture request-to-ring delay, Twilio CallSid, ElevenLabs conversation ID, whether current facts are used correctly, SIP/trunk logs when available, turn timing, disconnect details, and summary handoff.",
     endpoint: "/api/elevenlabs-test/call",
-    caregiverName: "DailyCall ElevenLabs V3 snapshot comparison reviewer",
-    modelLabel: "eleven_v3_conversational + gemini-3.5-flash + current-context snapshot",
+    caregiverName: "DailyCall ElevenLabs production snapshot comparison reviewer",
+    modelLabel: `${productionElevenLabsTtsModel} + gemini-3.5-flash + current-context snapshot`,
     buildPayload: (target: TestCallTarget) => ({
       preferredVoiceId: defaultVoiceId,
       firstMessage: buildIntro(target.label),
@@ -180,7 +180,7 @@ const latestRealtimeChecks = [
   "Compare gpt-realtime and GPT-Realtime-2 separately before changing default traffic.",
   "Use Realtime voice-session transcripts for the speech-to-speech lane; test GPT-Realtime-Whisper only in transcription sessions where turn detection is omitted or null.",
   "Evaluate GPT-Realtime-Translate for multilingual families before adding translation to production call flows.",
-  "Compare ElevenLabs Flash v2.5 bridge and V3 Conversational native agent separately before judging the ElevenLabs lane.",
+  `Compare ElevenLabs Flash v2.5 bridge and ${evaluationElevenLabsTtsModel} separately before judging the ElevenLabs lane.`,
   "Use low reasoning for normal check-ins; reserve medium/high/xhigh for harder safety, tool, or caregiver workflows.",
   "Score VAD on long pauses, soft speech, corrections, background TV, false 'are you still there?' moments, and interruption recovery.",
   "Verify the spoken AI disclosure feels warm but clear.",

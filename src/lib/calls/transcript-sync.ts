@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import type { CallAttemptStatus, Prisma } from "@prisma/client";
+import { Prisma, type CallAttemptStatus } from "@prisma/client";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
 import { sendCallReportSmsToAlertContacts, sendCareAlertSmsToAlertContacts } from "@/lib/sms/twilio";
+import { scoreCallQuality } from "@/lib/voice/call-quality-scorer";
 import type { CareAssessment } from "@/lib/voice/care-classifier";
 import { assessCallConcern } from "@/lib/voice/care-classifier";
 import { deriveInterestTags } from "@/lib/voice/current-info";
@@ -132,7 +133,7 @@ export async function syncTranscripts() {
         where: {
           providerConversationId: { not: null },
           id: { notIn: inProgressCalls.map((call) => call.id) },
-          OR: [{ transcript: null }, { reportSentAt: null }, { mood: null }],
+          OR: [{ transcript: null }, { reportSentAt: null }, { mood: null }, { qualityScores: { equals: Prisma.DbNull } }],
         },
         orderBy: { createdAt: "asc" },
         take: remainingLimit,
@@ -275,9 +276,18 @@ export async function syncTranscripts() {
           });
         }
 
-        if (member && completedAt && !isDemoCall) {
-          await ensureUpcomingScheduledCalls(prisma, [member]);
-        }
+      if (member && completedAt && !isDemoCall) {
+        await ensureUpcomingScheduledCalls(prisma, [member]);
+      }
+
+        const qualityScores = member && completedAt && transcript && hasConversation
+          ? await scoreCallQuality({
+              memberName: member.name,
+              status: finalStatus,
+              summary: reportSummary,
+              transcript,
+            })
+          : null;
 
         const updated = await prisma.callAttempt.update({
           where: { id: call.id },
@@ -293,9 +303,11 @@ export async function syncTranscripts() {
               ? getCareFollowUpReason(careAssessment, concernEscalates)
               : transcript ? insights.followUpReason : call.followUpReason,
             memoryUpdates: transcript ? (insights.memoryUpdates as Prisma.InputJsonValue) : call.memoryUpdates ?? undefined,
+            qualityScores: qualityScores ? qualityScores as Prisma.InputJsonValue : call.qualityScores ?? undefined,
             conversationRaw: {
               ...getRawObject(call.conversationRaw),
               careAssessment,
+              qualityScores,
               careAlertSent: Boolean(careAlertResults?.length),
               careAlertResults,
               careAlertError,
@@ -464,9 +476,18 @@ export async function syncTranscripts() {
         });
       }
 
-      if (member && completedAt && !isDemoCall) {
-        await ensureUpcomingScheduledCalls(prisma, [member]);
-      }
+        if (member && completedAt && !isDemoCall) {
+          await ensureUpcomingScheduledCalls(prisma, [member]);
+        }
+
+      const qualityScores = member && completedAt && transcript && hasConversation
+        ? await scoreCallQuality({
+            memberName: member.name,
+            status: finalStatus,
+            summary: finalSummary,
+            transcript,
+          })
+        : null;
 
       const updated = await prisma.callAttempt.update({
         where: { id: call.id },
@@ -484,10 +505,12 @@ export async function syncTranscripts() {
             ? getCareFollowUpReason(careAssessment, concernEscalates)
             : insights.followUpReason,
           memoryUpdates: insights.memoryUpdates as Prisma.InputJsonValue,
+          qualityScores: qualityScores ? qualityScores as Prisma.InputJsonValue : call.qualityScores ?? undefined,
           conversationRaw: {
             ...getRawObject(call.conversationRaw),
             providerDetails: details,
             careAssessment,
+            qualityScores,
             careAlertSent: Boolean(careAlertResults?.length),
             careAlertResults,
             careAlertError,

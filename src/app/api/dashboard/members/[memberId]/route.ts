@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { withMemberPhotoDisplayUrl } from "@/lib/member-photos";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { isAllowedVoiceId } from "@/lib/voice/voice-options";
+import { isAllowedVoiceId, maxMemberSpeechSpeed, minMemberSpeechSpeed } from "@/lib/voice/voice-options";
 
 const updateMemberSchema = z.object({
   profile: z
@@ -15,6 +15,7 @@ const updateMemberSchema = z.object({
       weatherLocation: z.string().trim().min(2).max(120).nullable().optional(),
       preferredCallTime: z.string().trim().min(1).max(20).optional(),
       preferredVoiceId: z.string().trim().optional().refine((value) => !value || isAllowedVoiceId(value), "Voice not available."),
+      speechSpeed: z.number().min(minMemberSpeechSpeed).max(maxMemberSpeechSpeed).nullable().optional(),
     })
     .optional(),
   callStatus: z

@@ -57,6 +57,7 @@ model Member {
   weatherLocation     String?
   preferredCallTime   String
   preferredVoiceId    String        @default("hpp4J3VqNfWAUOO0d1Us")
+  speechSpeed         Float?
   active              Boolean       @default(true)
   callPausedUntil     DateTime?
   noResponseAlertMins     Int           @default(15)
@@ -113,6 +114,9 @@ model CallAttempt {
   followUpReason         String?
   memoryUpdates          Json?
   conversationRaw        Json?
+  qualityScores          Json?
+  openerKey              String?
+  briefingItemIds        String[]          @default([])
   syncedAt               DateTime?
   reportSentAt           DateTime?
   alertSentAt            DateTime?

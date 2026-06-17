@@ -34,11 +34,20 @@ Failure signs:
 
 The call should feel snappy and natural.
 
-Default settings:
+Production ElevenLabs settings to keep aligned in the dashboard:
+
+- `turn_eagerness`: balanced/patient, not eager for slow senior speakers
+- `speculative_turn`: off unless A/B testing proves it helps
+- `turn_timeout`: about 7 seconds
+- default `tts.speed`: about `0.95`
+- `conversation_config_override.tts.speed`: enabled, so per-member accessibility speed can work
+- TTS model: `eleven_flash_v2_5` until a measured v3 test beats it without hurting first-audio latency
+- saved first message: literal `{{opener}}`
+
+OpenAI Realtime comparison defaults:
 
 - `OPENAI_REALTIME_REASONING_EFFORT=low`
-- `OPENAI_REALTIME_VAD_EAGERNESS=low`
-- `semantic_vad`
+- low VAD eagerness / patient turn detection
 - short replies by default
 
 Failure signs:
@@ -50,8 +59,8 @@ Failure signs:
 
 Adjustment rule:
 
-- If calls feel delayed, preserve `high` VAD and shorten prompt/response length before increasing model reasoning.
-- If calls interrupt slower seniors, lower VAD eagerness to `medium` for that member/profile instead of changing everyone.
+- If calls feel delayed, shorten prompt/response length before increasing model reasoning or choosing a more expressive TTS model.
+- If calls interrupt slower seniors, reduce ElevenLabs turn eagerness and keep speculative turns off before changing broader conversation behavior.
 
 ### 3. Personalization
 
@@ -124,6 +133,8 @@ The minimum bar before wider rollout:
 - no repeated awkward pauses longer than two seconds after the senior clearly finishes speaking;
 - no invented current facts;
 - no survey-like opening.
+
+The transcript sync job stores automated rubric scores on `CallAttempt.qualityScores`. The admin page has a low-score review filter for calls below the rollout bar.
 
 ## Weekly innovation watch
 

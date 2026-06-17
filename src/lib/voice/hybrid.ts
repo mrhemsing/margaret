@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 
 import { getServerEnv } from "@/lib/env";
 import { buildOpenAIRealtimeInstructions } from "@/lib/voice/openai-realtime";
+import { defaultElevenLabsTtsSpeed, productionElevenLabsTtsModel } from "@/lib/voice/voice-options";
 
 export type HybridTranscriptTurn = {
   speaker: "DailyCall" | string;
@@ -130,11 +131,11 @@ export async function synthesizeElevenLabsSpeech(input: { text: string; voiceId:
       },
       body: JSON.stringify({
         text: input.text,
-        model_id: "eleven_flash_v2_5",
+        model_id: productionElevenLabsTtsModel,
         voice_settings: {
           stability: 0.6,
           similarity_boost: 0.82,
-          speed: 1,
+          speed: defaultElevenLabsTtsSpeed,
         },
       }),
     },
