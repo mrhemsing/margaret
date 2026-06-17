@@ -1,6 +1,8 @@
-import type { CurrentInfoSnapshot, Prisma, PrismaClient } from "@prisma/client";
+import type { BriefingItem, CurrentInfoSnapshot, Prisma, PrismaClient } from "@prisma/client";
 
-const REQUEST_TIMEOUT_MS = 1000;
+import { matchesBriefingAvoids, refreshBriefingItemsFromSnapshots } from "@/lib/voice/briefing-digest";
+
+const REQUEST_TIMEOUT_MS = 4000;
 const NHL_CACHE_KEY = "sports:nhl:league";
 const WEATHER_CACHE_KEY = "weather:blaine-wa";
 const NEWS_CACHE_KEY = "news:science-light:npr";
@@ -250,7 +252,7 @@ export async function refreshNhlCurrentInfoSnapshot(prisma: PrismaClient, now = 
 
 export async function refreshWeatherCurrentInfoSnapshot(prisma: PrismaClient, now = new Date()) {
   const info = await getWeatherInfo("Blaine, Washington");
-  const fetchedAt = new Date();
+  const fetchedAt = now;
   const expiresAt = new Date(fetchedAt.getTime() + WEATHER_CACHE_TTL_MS);
 
   return prisma.currentInfoSnapshot.upsert({
@@ -279,7 +281,7 @@ export async function refreshWeatherCurrentInfoSnapshot(prisma: PrismaClient, no
 
 export async function refreshLightNewsCurrentInfoSnapshot(prisma: PrismaClient, now = new Date()) {
   const info = await buildLightNewsInfo();
-  const fetchedAt = new Date();
+  const fetchedAt = now;
   const expiresAt = new Date(fetchedAt.getTime() + NEWS_CACHE_TTL_MS);
 
   return prisma.currentInfoSnapshot.upsert({
@@ -312,13 +314,31 @@ export async function refreshCallCurrentInfoSnapshots(prisma: PrismaClient, now 
     refreshWeatherCurrentInfoSnapshot(prisma, now),
     refreshLightNewsCurrentInfoSnapshot(prisma, now),
   ]);
+  const snapshots = results
+    .filter((result): result is PromiseFulfilledResult<CurrentInfoSnapshot> => result.status === "fulfilled")
+    .map((result) => result.value);
+  const briefing = await refreshBriefingItemsFromSnapshots(prisma, snapshots, now);
 
-  return results.map((result, index) => ({
-    key: [NHL_CACHE_KEY, WEATHER_CACHE_KEY, NEWS_CACHE_KEY][index],
-    ok: result.status === "fulfilled",
-    snapshot: result.status === "fulfilled" ? result.value : null,
-    error: result.status === "rejected" ? result.reason instanceof Error ? result.reason.message : "Unknown refresh error" : null,
-  }));
+  return [
+    ...results.map((result, index) => ({
+      key: [NHL_CACHE_KEY, WEATHER_CACHE_KEY, NEWS_CACHE_KEY][index],
+      ok: result.status === "fulfilled",
+      snapshot: result.status === "fulfilled" ? result.value : null,
+      fetchedAt: result.status === "fulfilled" ? result.value.fetchedAt : null,
+      expiresAt: result.status === "fulfilled" ? result.value.expiresAt : null,
+      summary: result.status === "fulfilled" ? result.value.summary : null,
+      error: result.status === "rejected" ? result.reason instanceof Error ? result.reason.message : "Unknown refresh error" : null,
+    })),
+    {
+      key: "briefing:items",
+      ok: briefing.ok,
+      snapshot: null,
+      fetchedAt: briefing.fetchedAt,
+      expiresAt: briefing.expiresAt,
+      summary: `${briefing.count} briefing items refreshed via ${briefing.source}.`,
+      error: null,
+    },
+  ];
 }
 
 export async function getCachedNhlCurrentInfo(prisma: PrismaClient, now = new Date()) {
@@ -358,6 +378,170 @@ export async function getCachedCallCurrentContext(prisma: PrismaClient, now = ne
     "Preloaded current context for this call. Use only if it naturally fits or the person asks; never perform a live lookup during the call.",
     ...parts,
   ].join("\n");
+}
+
+type CallBriefingMemory = {
+  hobbies?: string[] | null;
+  interestTags?: string[] | null;
+  conversationAvoids?: string[] | null;
+};
+
+type CallBriefingInput = {
+  memberId?: string | null;
+  memory?: CallBriefingMemory | null;
+  now?: Date;
+  maxWords?: number;
+};
+
+function normalizedInterestText(memory?: CallBriefingMemory | null) {
+  return [...(memory?.interestTags ?? []), ...(memory?.hobbies ?? [])].map(normalizeCurrentInfoQuery).filter(Boolean).join(" ");
+}
+
+function isInterestMatch(item: Pick<BriefingItem, "interestTags" | "category">, interestText: string) {
+  if (!interestText) return false;
+  if (["weather", "dayfact", "seasonal"].includes(item.category)) return false;
+
+  return item.interestTags.some((tag) => {
+    const normalizedTag = normalizeCurrentInfoQuery(tag);
+    return normalizedTag.length > 2 && (interestText.includes(normalizedTag) || normalizedTag.includes(interestText));
+  });
+}
+
+function dedupeBriefingItems(items: BriefingItem[]) {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = normalizeCurrentInfoQuery(item.text);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function capBriefingWords(lines: string[], maxWords: number) {
+  const selected: string[] = [];
+  let count = 0;
+
+  for (const line of lines) {
+    const words = line.split(/\s+/).filter(Boolean).length;
+    if (selected.length && count + words > maxWords) break;
+    selected.push(line);
+    count += words;
+  }
+
+  return selected;
+}
+
+export async function getCallBriefing(prisma: PrismaClient, input: CallBriefingInput = {}) {
+  const now = input.now ?? new Date();
+  const memberTag = input.memberId ? `member:${input.memberId}` : null;
+  const items = await prisma.briefingItem.findMany({
+    where: { expiresAt: { gt: now } },
+    orderBy: [{ priority: "desc" }, { fetchedAt: "desc" }],
+    take: 80,
+  });
+
+  if (!items.length) {
+    return getCachedCallCurrentContext(prisma, now);
+  }
+
+  const avoids = input.memory?.conversationAvoids ?? [];
+  const safeItems = dedupeBriefingItems(items)
+    .filter((item) => !item.interestTags.some((tag) => tag.startsWith("member:") && tag !== memberTag))
+    .filter((item) => !matchesBriefingAvoids(item, avoids));
+  const interestText = normalizedInterestText(input.memory);
+  const memberScoped = memberTag ? safeItems.filter((item) => item.interestTags.includes(memberTag)).slice(0, 1) : [];
+  const general = safeItems
+    .filter((item) => !memberScoped.some((memberItem) => memberItem.id === item.id) && item.interestTags.includes("general"))
+    .slice(0, 3);
+  const matched = safeItems
+    .filter((item) =>
+      !memberScoped.some((memberItem) => memberItem.id === item.id) &&
+      !general.some((generalItem) => generalItem.id === item.id) &&
+      isInterestMatch(item, interestText),
+    )
+    .slice(0, 3);
+  const selected = [...memberScoped, ...general, ...matched];
+
+  if (!selected.length) {
+    return getCachedCallCurrentContext(prisma, now);
+  }
+
+  const lines = capBriefingWords(selected.map((item) => `- ${item.text}`), input.maxWords ?? 190);
+
+  return [
+    "Preloaded current context for this call. Use at most one item only if it naturally fits or the person asks; never perform a live lookup during the call.",
+    ...lines,
+    "If asked about something not listed here, say you have not seen that yet and ask what they heard. Do not invent current facts.",
+  ].join("\n");
+}
+
+function summarizeWeatherForBriefing(summary: string) {
+  return summary
+    .replace(/Mention naturally[\s\S]*$/i, "")
+    .replace(/Ask one gentle[\s\S]*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export async function refreshMemberWeatherBriefing(
+  prisma: PrismaClient,
+  member: { id: string; name: string; weatherLocation?: string | null; timezone?: string | null },
+  now = new Date(),
+) {
+  const location = member.weatherLocation?.trim();
+  if (!location) return { ok: false, skipped: true, reason: "missing_weather_location" };
+
+  const info = await getWeatherInfo(location);
+  const fetchedAt = now;
+  const expiresAt = new Date(fetchedAt.getTime() + WEATHER_CACHE_TTL_MS);
+  const snapshotKey = `weather:member:${member.id}`;
+  const source = `member-weather:${member.id}`;
+  const summary = info.summary;
+  const briefingText = info.ok ? summarizeWeatherForBriefing(summary) : "";
+
+  await prisma.$transaction([
+    prisma.currentInfoSnapshot.upsert({
+      where: { key: snapshotKey },
+      create: {
+        key: snapshotKey,
+        topic: "weather",
+        title: `${member.name} local weather`,
+        summary,
+        source: "open-meteo.com",
+        raw: info as Prisma.InputJsonValue,
+        fetchedAt,
+        expiresAt,
+      },
+      update: {
+        topic: "weather",
+        title: `${member.name} local weather`,
+        summary,
+        source: "open-meteo.com",
+        raw: info as Prisma.InputJsonValue,
+        fetchedAt,
+        expiresAt,
+      },
+    }),
+    prisma.briefingItem.deleteMany({ where: { source } }),
+    ...(briefingText
+      ? [
+          prisma.briefingItem.create({
+            data: {
+              category: "weather",
+              interestTags: ["general", "weather", `member:${member.id}`],
+              text: briefingText,
+              tone: "neutral",
+              priority: 10,
+              source,
+              fetchedAt,
+              expiresAt,
+            },
+          }),
+        ]
+      : []),
+  ]);
+
+  return { ok: true, skipped: false, location, fetchedAt, expiresAt };
 }
 
 function snapshotToCurrentInfo(snapshot: CurrentInfoSnapshot) {
@@ -438,7 +622,7 @@ function decodeXmlEntities(value: string) {
     .replace(/&gt;/g, ">");
 }
 
-function isSafeLightNewsTitle(title: string) {
+export function isSafeLightNewsTitle(title: string) {
   return !/\b(ebola|war|killed|dead|death|murder|shooting|abuse|disaster|hurricane|earthquake|politic|election|trump|biden|court|lawsuit|damaged|disease|lung|cancer|outbreak)\b/i.test(title);
 }
 

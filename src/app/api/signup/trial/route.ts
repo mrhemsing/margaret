@@ -24,6 +24,7 @@ const trialSchema = z.object({
   customerCountry: z.enum(supportedBillingCountries),
   parentName: z.string().min(1),
   parentPhone: z.string().min(8),
+  weatherLocation: z.string().trim().min(2).max(120),
   timezone: z.string().min(1).optional().default("America/Los_Angeles"),
   preferredCallTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   preferredCallTimes: z.array(z.string().regex(/^\d{2}:\d{2}$/)).optional().default([]),
@@ -228,15 +229,18 @@ export async function POST(request: Request) {
             },
           });
 
+      const memberCreateData = {
+        customerId: customer.id,
+        name: input.parentName,
+        phoneNumber: input.parentPhone,
+        timezone: input.timezone,
+        weatherLocation: input.weatherLocation,
+        preferredCallTime: preferredCallSchedule,
+        preferredVoiceId,
+      } as Prisma.MemberUncheckedCreateInput & { weatherLocation: string };
+
       const member = await tx.member.create({
-        data: {
-          customerId: customer.id,
-          name: input.parentName,
-          phoneNumber: input.parentPhone,
-          timezone: input.timezone,
-          preferredCallTime: preferredCallSchedule,
-          preferredVoiceId,
-        },
+        data: memberCreateData,
       });
 
       await tx.alertContact.create({

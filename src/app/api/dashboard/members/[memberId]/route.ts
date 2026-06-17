@@ -12,6 +12,7 @@ const updateMemberSchema = z.object({
     .object({
       name: z.string().trim().min(1).max(120).optional(),
       phoneNumber: z.string().trim().min(7).max(30).optional(),
+      weatherLocation: z.string().trim().min(2).max(120).nullable().optional(),
       preferredCallTime: z.string().trim().min(1).max(20).optional(),
       preferredVoiceId: z.string().trim().optional().refine((value) => !value || isAllowedVoiceId(value), "Voice not available."),
     })

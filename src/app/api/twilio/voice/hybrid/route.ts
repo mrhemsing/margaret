@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
 import { summarizeConversationForFamily } from "@/lib/voice/conversation-insights";
-import { getCachedCallCurrentContext } from "@/lib/voice/current-info";
+import { getCallBriefing } from "@/lib/voice/current-info";
 import {
   formatHybridTranscript,
   generateHybridOpenAIReply,
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
     orderBy: { createdAt: "desc" },
     take: 5,
   });
-  const cachedCurrentContext = await getCachedCallCurrentContext(prisma);
+  const cachedCurrentContext = await getCallBriefing(prisma, { memberId: callAttempt.memberId, memory: callAttempt.member.memory });
   const companionContext = buildCompanionContext({
     memberName: callAttempt.member.name,
     memory: callAttempt.member.memory,

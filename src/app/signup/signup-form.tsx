@@ -207,7 +207,7 @@ export function SignupForm() {
 
   const wizardSteps = [
     { eyebrow: "Step 1 of 4", title: "Your account", fields: accountEmail ? ["customerName", "customerPhone", "customerCountry"] : ["customerEmail", "accountPassword", "customerName", "customerPhone", "customerCountry"] },
-    { eyebrow: "Step 2 of 4", title: "Plan and schedule", fields: ["plan", "parentName", "parentPhone", "timezone", "preferredCallTimes"] },
+    { eyebrow: "Step 2 of 4", title: "Plan and schedule", fields: ["plan", "parentName", "parentPhone", "weatherLocation", "timezone", "preferredCallTimes"] },
     { eyebrow: "Step 3 of 4", title: "Make calls feel familiar", fields: ["preferredVoiceId", "preferredTone"] },
     { eyebrow: "Step 4 of 4", title: "Review and start trial", fields: [] },
   ];
@@ -317,6 +317,7 @@ export function SignupForm() {
       customerCountry,
       parentName: String(formData.get("parentName") ?? ""),
       parentPhone: normalizeNorthAmericanPhone(String(formData.get("parentPhone") ?? "")),
+      weatherLocation: String(formData.get("weatherLocation") ?? ""),
       timezone: String(formData.get("timezone") ?? selectedTimezone),
       preferredCallTime: preferredCallTimes[0] ?? "09:00",
       preferredCallTimes,
@@ -747,6 +748,16 @@ export function SignupForm() {
                 </div>
               </label>
             )}
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Loved one&apos;s city for weather
+              <input
+                name="weatherLocation"
+                type="text"
+                required
+                placeholder="Blaine, Washington"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-normal text-ink outline-none focus:border-brandPink"
+              />
+            </label>
             <label className="grid gap-2 text-sm font-semibold text-slate-700">
               Call timezone
               <select

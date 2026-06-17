@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { refreshMemberWeatherBriefing } from "@/lib/voice/current-info";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 
 const USER_SAFE_CALL_CONNECTION_ERROR = "The call was answered but could not be connected successfully.";
@@ -123,6 +124,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ mem
       },
     });
     callAttemptId = callAttempt.id;
+
+    await refreshMemberWeatherBriefing(prisma, member);
 
     const result = await startAmdProtectedCheckInCall({
       toNumber: member.phoneNumber,

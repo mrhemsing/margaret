@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { refreshMemberWeatherBriefing } from "@/lib/voice/current-info";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 
 const requestSchema = z.object({
@@ -69,6 +70,8 @@ export async function POST(request: Request) {
       },
     });
     callAttemptId = callAttempt.id;
+
+    await refreshMemberWeatherBriefing(prisma, member);
 
     const result = await startAmdProtectedCheckInCall({ ...parsed.data, callAttemptId: callAttempt.id, memberName: member.name });
 

@@ -54,6 +54,7 @@ model Member {
   photoUrl            String?
   photoStoragePath    String?
   timezone            String        @default("America/Los_Angeles")
+  weatherLocation     String?
   preferredCallTime   String
   preferredVoiceId    String        @default("hpp4J3VqNfWAUOO0d1Us")
   active              Boolean       @default(true)
@@ -132,6 +133,7 @@ model SeniorMemory {
   family             Json?
   pets               Json?
   hobbies            String[] @default([])
+  interestTags       String[] @default([])
   routines           String[] @default([])
   preferences        Json?
   healthNotes        String[] @default([])
@@ -140,10 +142,28 @@ model SeniorMemory {
   recentMood         String?
   topicsToRevisit    String[] @default([])
   recentTopics       String[] @default([])
+  recentOpenerKeys   String[] @default([])
   lastSummary        String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   member             Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model BriefingItem {
+  id           String   @id @default(cuid())
+  category     String
+  interestTags String[] @default([])
+  text         String
+  tone         String   @default("light")
+  priority     Int      @default(0)
+  source       String?
+  fetchedAt    DateTime @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([expiresAt])
+  @@index([category, expiresAt])
 }
 
 model CurrentInfoSnapshot {

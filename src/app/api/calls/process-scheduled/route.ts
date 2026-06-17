@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { syncTranscripts } from "@/lib/calls/transcript-sync";
+import { refreshMemberWeatherBriefing } from "@/lib/voice/current-info";
 
 const PROCESSING_WINDOW_MS = 30 * 60 * 1000;
 const ACTIVE_CALL_WITH_SID_WINDOW_MS = 2 * 60 * 60 * 1000;
@@ -176,6 +177,8 @@ async function processScheduledCalls() {
     processedPhoneNumbers.add(call.member.phoneNumber);
 
     try {
+      await refreshMemberWeatherBriefing(prisma, call.member);
+
       const result = await startAmdProtectedCheckInCall({
         toNumber: call.member.phoneNumber,
         callAttemptId: call.id,

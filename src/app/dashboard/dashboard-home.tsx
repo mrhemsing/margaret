@@ -18,6 +18,7 @@ type DashboardCustomer = {
     name: string;
     phoneNumber: string;
     photoUrl: string | null;
+    weatherLocation: string | null;
     preferredCallTime: string;
     preferredVoiceId: string;
     voicemailRetryCount: number;
@@ -1110,6 +1111,7 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
     name: member.name,
     phoneNumber: member.phoneNumber,
     photoUrl: member.photoUrl,
+    weatherLocation: member.weatherLocation ?? "",
     preferredCallTime: member.preferredCallTime,
     preferredVoiceId: member.preferredVoiceId,
   });
@@ -1141,12 +1143,13 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
       name: member.name,
       phoneNumber: member.phoneNumber,
       photoUrl: member.photoUrl,
+      weatherLocation: member.weatherLocation ?? "",
       preferredCallTime: member.preferredCallTime,
       preferredVoiceId: member.preferredVoiceId,
     });
     setSelectedPhotoFile(null);
     setRemovePhoto(false);
-  }, [member.name, member.phoneNumber, member.photoUrl, member.preferredCallTime, member.preferredVoiceId]);
+  }, [member.name, member.phoneNumber, member.photoUrl, member.weatherLocation, member.preferredCallTime, member.preferredVoiceId]);
 
   useEffect(() => {
     setRetryForm({
@@ -1228,6 +1231,7 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
           profile: {
             name: profileForm.name,
             phoneNumber: profileForm.phoneNumber,
+            weatherLocation: profileForm.weatherLocation,
             preferredCallTime: profileForm.preferredCallTime,
           },
         }),
@@ -1448,6 +1452,10 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Phone number
             <input value={profileForm.phoneNumber} onChange={(event) => setProfileForm((current) => ({ ...current, phoneNumber: event.target.value }))} className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 font-normal text-ink outline-none focus:border-brandPink" />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Weather city
+            <input value={profileForm.weatherLocation} onChange={(event) => setProfileForm((current) => ({ ...current, weatherLocation: event.target.value }))} placeholder="Blaine, Washington" className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 font-normal text-ink outline-none focus:border-brandPink" />
           </label>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Preferred call time

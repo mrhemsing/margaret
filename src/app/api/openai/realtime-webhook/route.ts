@@ -5,7 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getServerEnv } from "@/lib/env";
 import { buildCompanionContext } from "@/lib/voice/companion-context";
-import { getCachedCallCurrentContext } from "@/lib/voice/current-info";
+import { getCallBriefing } from "@/lib/voice/current-info";
 import {
   acceptOpenAIRealtimeCall,
   extractOpenAISipHeader,
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     orderBy: { createdAt: "desc" },
     take: 5,
   });
-  const cachedCurrentContext = await getCachedCallCurrentContext(prisma);
+  const cachedCurrentContext = await getCallBriefing(prisma, { memberId: callAttempt.memberId, memory: callAttempt.member.memory });
   const companionContext = buildCompanionContext({
     memberName: callAttempt.member.name,
     memory: callAttempt.member.memory,

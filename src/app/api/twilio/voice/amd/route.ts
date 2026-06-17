@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { sendVoicemailAlertSmsToAlertContacts } from "@/lib/sms/twilio";
 import { getServerEnv } from "@/lib/env";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
+import { getCallBriefing } from "@/lib/voice/current-info";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 function twiml(xml: string) {
@@ -218,7 +219,11 @@ export async function POST(request: Request) {
         })
       : [];
     const callRaw = getCallRawObject(callAttempt?.conversationRaw ?? null);
-    const currentContext = getRawString(callRaw, "demoCurrentContext") ?? buildCurrentConversationContext();
+    const currentContext = getRawString(callRaw, "demoCurrentContext") ?? (
+      callAttempt
+        ? await getCallBriefing(prisma, { memberId: callAttempt.memberId, memory: callAttempt.member.memory })
+        : buildCurrentConversationContext()
+    );
     const companionContext = callAttempt
       ? buildCompanionContext({
           memberName: callAttempt.member.name,

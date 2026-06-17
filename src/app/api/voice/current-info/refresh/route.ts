@@ -37,9 +37,9 @@ async function refreshCurrentInfo() {
       refreshed: results.map((result) => ({
         key: result.key,
         ok: result.ok,
-        fetchedAt: result.snapshot?.fetchedAt ?? null,
-        expiresAt: result.snapshot?.expiresAt ?? null,
-        summary: result.snapshot?.summary ?? null,
+        fetchedAt: result.snapshot?.fetchedAt ?? result.fetchedAt ?? null,
+        expiresAt: result.snapshot?.expiresAt ?? result.expiresAt ?? null,
+        summary: result.snapshot?.summary ?? result.summary ?? null,
         error: result.error,
       })),
     });
