@@ -399,6 +399,18 @@ function formatEspnEvent(event: NonNullable<EspnScoreboard["events"]>[number]) {
   return `${awayName} at ${homeName}${timeText ? `, ${timeText}` : ""}`;
 }
 
+function formatEspnScheduleEvent(event: NonNullable<EspnScoreboard["events"]>[number]) {
+  const competitors = event.competitions?.[0]?.competitors ?? [];
+  const away = competitors.find((competitor) => competitor.homeAway === "away") ?? competitors[0];
+  const home = competitors.find((competitor) => competitor.homeAway === "home") ?? competitors[1];
+  const awayName = away?.team?.shortDisplayName ?? away?.team?.displayName ?? away?.team?.abbreviation ?? "Away";
+  const homeName = home?.team?.shortDisplayName ?? home?.team?.displayName ?? home?.team?.abbreviation ?? "Home";
+  const date = event.date ? new Date(event.date) : null;
+  const timeText = date && Number.isFinite(date.getTime()) ? formatGameTime(date.toISOString()) : event.status?.type?.shortDetail ?? "";
+
+  return `${awayName} at ${homeName}${timeText ? `, ${timeText}` : ""}`;
+}
+
 async function buildEspnLeagueInfo(config: SportsLeagueConfig, now = new Date()) {
   const url = new URL(`https://site.api.espn.com/apis/site/v2/sports/${config.sport}/${config.league}/scoreboard`);
   const payload = await fetchJson<EspnScoreboard>(url);
@@ -428,6 +440,51 @@ async function buildEspnLeagueInfo(config: SportsLeagueConfig, now = new Date())
       ? `${parts.join(" ")} Keep it conversational and brief. Mention only if the person asks or the sport fits their interests.`
       : `No fresh ${config.label} scoreboard context was available. Do not guess scores or schedules.`,
   };
+}
+
+async function refreshMlbScheduleBriefingItem(prisma: PrismaClient, now = new Date()) {
+  const config = sportsLeagueConfigs.find((item) => item.league === "mlb");
+  if (!config) return { ok: false, count: 0 };
+
+  const url = new URL(`https://site.api.espn.com/apis/site/v2/sports/${config.sport}/${config.league}/scoreboard`);
+  const payload = await fetchJson<EspnScoreboard>(url);
+  const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(now);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(tomorrow);
+  const events = (payload?.events ?? [])
+    .map((event) => ({ event, date: event.date ? new Date(event.date) : null }))
+    .filter((item) => item.date && Number.isFinite(item.date.getTime()) && !item.event.status?.type?.completed)
+    .filter((item) => {
+      const eventKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(item.date as Date);
+      return eventKey === todayKey || eventKey === tomorrowKey;
+    })
+    .sort((left, right) => (left.date?.getTime() ?? 0) - (right.date?.getTime() ?? 0))
+    .slice(0, 18);
+
+  const fetchedAt = now;
+  const expiresAt = new Date(fetchedAt.getTime() + SPORTS_CACHE_TTL_MS);
+  const source = "espn:mlb:schedule";
+  await prisma.briefingItem.deleteMany({ where: { source } });
+
+  if (!events.length) return { ok: true, count: 0 };
+
+  const text = `MLB schedule answer bank for direct questions: ${events.map((item) => formatEspnScheduleEvent(item.event)).join("; ")}. Use only when asked about baseball game times.`;
+
+  await prisma.briefingItem.create({
+    data: {
+      category: "sports",
+      interestTags: ["general", "sports", "baseball", "mlb", "blue jays", "toronto blue jays"],
+      text,
+      tone: "neutral",
+      priority: 8,
+      source,
+      fetchedAt,
+      expiresAt,
+    },
+  });
+
+  return { ok: true, count: 1 };
 }
 
 export async function refreshEspnLeagueSnapshot(prisma: PrismaClient, config: SportsLeagueConfig, now = new Date()) {
@@ -563,6 +620,7 @@ export async function refreshCallCurrentInfoSnapshots(prisma: PrismaClient, now 
     .filter((result): result is PromiseFulfilledResult<CurrentInfoSnapshot> => result.status === "fulfilled")
     .map((result) => result.value);
   const briefing = await refreshBriefingItemsFromSnapshots(prisma, snapshots, now);
+  const mlbSchedule = await refreshMlbScheduleBriefingItem(prisma, now);
 
   return [
     ...results.map((result, index) => ({
@@ -581,6 +639,15 @@ export async function refreshCallCurrentInfoSnapshots(prisma: PrismaClient, now 
       fetchedAt: briefing.fetchedAt,
       expiresAt: briefing.expiresAt,
       summary: `${briefing.count} briefing items refreshed via ${briefing.source}.`,
+      error: null,
+    },
+    {
+      key: "briefing:mlb-schedule",
+      ok: mlbSchedule.ok,
+      snapshot: null,
+      fetchedAt: now,
+      expiresAt: new Date(now.getTime() + SPORTS_CACHE_TTL_MS),
+      summary: `${mlbSchedule.count} MLB schedule answer-bank item refreshed.`,
       error: null,
     },
   ];
