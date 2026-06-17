@@ -183,9 +183,12 @@ function fallbackDigest(snapshots: CurrentInfoSnapshot[], now: Date): BriefingIt
     }
 
     if (snapshot.topic === "sports") {
+      const raw = snapshot.raw && typeof snapshot.raw === "object" && !Array.isArray(snapshot.raw) ? snapshot.raw as Record<string, unknown> : {};
+      const rawTags = Array.isArray(raw.tags) ? raw.tags.filter((tag): tag is string => typeof tag === "string") : [];
+      const league = typeof raw.league === "string" ? raw.league.toLowerCase() : "";
       items.push({
         category: "sports",
-        interestTags: ["general", "sports", "hockey", "nhl", "carolina hurricanes", "vancouver canucks"],
+        interestTags: ["general", "sports", ...rawTags, league].filter(Boolean),
         text: snapshot.summary.replace(/Keep it conversational[\s\S]*$/i, "").trim(),
         tone: "light",
         priority: 3,
@@ -207,6 +210,17 @@ function fallbackDigest(snapshots: CurrentInfoSnapshot[], now: Date): BriefingIt
           source: snapshot.source,
         });
       }
+    }
+
+    if (snapshot.topic === "dayfact") {
+      items.push({
+        category: "dayfact",
+        interestTags: ["general", "calendar"],
+        text: snapshot.summary.replace(/This is safe[\s\S]*$/i, "").trim(),
+        tone: "light",
+        priority: 1,
+        source: snapshot.source,
+      });
     }
   }
 

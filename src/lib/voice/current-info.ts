@@ -6,10 +6,44 @@ const REQUEST_TIMEOUT_MS = 4000;
 const NHL_CACHE_KEY = "sports:nhl:league";
 const WEATHER_CACHE_KEY = "weather:blaine-wa";
 const NEWS_CACHE_KEY = "news:science-light:npr";
+const DAYFACT_CACHE_KEY = "dayfact:today";
 const NHL_CACHE_TTL_MS = 8 * 60 * 60 * 1000;
+const SPORTS_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 const WEATHER_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const NEWS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const DAYFACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const NPR_SCIENCE_RSS_URL = "https://feeds.npr.org/1007/rss.xml";
+const BBC_NEWS_RSS_URL = "https://feeds.bbci.co.uk/news/rss.xml";
+
+type SportsLeagueConfig = {
+  key: string;
+  label: string;
+  sport: string;
+  league: string;
+  tags: string[];
+};
+
+const sportsLeagueConfigs: SportsLeagueConfig[] = [
+  { key: "sports:mlb:league", label: "MLB", sport: "baseball", league: "mlb", tags: ["baseball", "mlb"] },
+  { key: "sports:nba:league", label: "NBA", sport: "basketball", league: "nba", tags: ["basketball", "nba"] },
+  { key: "sports:nfl:league", label: "NFL", sport: "football", league: "nfl", tags: ["football", "nfl"] },
+];
+
+type EspnScoreboard = {
+  events?: Array<{
+    name?: string;
+    shortName?: string;
+    date?: string;
+    status?: { type?: { completed?: boolean; name?: string; shortDetail?: string; detail?: string } };
+    competitions?: Array<{
+      competitors?: Array<{
+        homeAway?: "home" | "away";
+        score?: string;
+        team?: { displayName?: string; shortDisplayName?: string; abbreviation?: string };
+      }>;
+    }>;
+  }>;
+};
 
 type NhlTeam = { abbreviation: string; name: string };
 
@@ -79,6 +113,14 @@ export function normalizeCurrentInfoQuery(value: string) {
 
 function isoDate(date: Date) {
   return date.toISOString().slice(0, 10);
+}
+
+function getSeason(date: Date) {
+  const month = date.getMonth();
+  if (month >= 2 && month <= 4) return "spring";
+  if (month >= 5 && month <= 7) return "summer";
+  if (month >= 8 && month <= 10) return "fall";
+  return "winter";
 }
 
 function fetchJson<T>(url: URL) {
@@ -250,6 +292,88 @@ export async function refreshNhlCurrentInfoSnapshot(prisma: PrismaClient, now = 
   });
 }
 
+function formatEspnEvent(event: NonNullable<EspnScoreboard["events"]>[number]) {
+  const competitors = event.competitions?.[0]?.competitors ?? [];
+  const away = competitors.find((competitor) => competitor.homeAway === "away") ?? competitors[0];
+  const home = competitors.find((competitor) => competitor.homeAway === "home") ?? competitors[1];
+  const awayName = away?.team?.shortDisplayName ?? away?.team?.abbreviation ?? "Away";
+  const homeName = home?.team?.shortDisplayName ?? home?.team?.abbreviation ?? "Home";
+  const date = event.date ? new Date(event.date) : null;
+  const dateText = date && Number.isFinite(date.getTime())
+    ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)
+    : "";
+
+  if (event.status?.type?.completed) {
+    return `${awayName} ${away?.score ?? ""} at ${homeName} ${home?.score ?? ""}${dateText ? ` on ${dateText}` : ""}`;
+  }
+
+  const timeText = date && Number.isFinite(date.getTime())
+    ? new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" }).format(date)
+    : event.status?.type?.shortDetail ?? "";
+
+  return `${awayName} at ${homeName}${timeText ? `, ${timeText}` : ""}`;
+}
+
+async function buildEspnLeagueInfo(config: SportsLeagueConfig, now = new Date()) {
+  const url = new URL(`https://site.api.espn.com/apis/site/v2/sports/${config.sport}/${config.league}/scoreboard`);
+  const payload = await fetchJson<EspnScoreboard>(url);
+  const events = payload?.events ?? [];
+  const datedEvents = events
+    .map((event) => ({ event, date: event.date ? new Date(event.date) : null }))
+    .filter((item) => item.date && Number.isFinite(item.date.getTime()));
+  const completed = [...datedEvents]
+    .filter((item) => item.event.status?.type?.completed)
+    .sort((left, right) => (right.date?.getTime() ?? 0) - (left.date?.getTime() ?? 0))
+    .slice(0, 2);
+  const upcoming = datedEvents
+    .filter((item) => !item.event.status?.type?.completed && (item.date?.getTime() ?? 0) >= now.getTime() - 2 * 60 * 60 * 1000)
+    .sort((left, right) => (left.date?.getTime() ?? 0) - (right.date?.getTime() ?? 0))
+    .slice(0, 2);
+  const parts = [
+    ...upcoming.map((item) => `Upcoming ${config.label}: ${formatEspnEvent(item.event)}.`),
+    ...completed.map((item) => `Recent ${config.label}: ${formatEspnEvent(item.event)}.`),
+  ];
+
+  return {
+    ok: parts.length > 0,
+    topic: "sports",
+    league: config.label,
+    tags: config.tags,
+    summary: parts.length
+      ? `${parts.join(" ")} Keep it conversational and brief. Mention only if the person asks or the sport fits their interests.`
+      : `No fresh ${config.label} scoreboard context was available. Do not guess scores or schedules.`,
+  };
+}
+
+export async function refreshEspnLeagueSnapshot(prisma: PrismaClient, config: SportsLeagueConfig, now = new Date()) {
+  const info = await buildEspnLeagueInfo(config, now);
+  const fetchedAt = now;
+  const expiresAt = new Date(fetchedAt.getTime() + SPORTS_CACHE_TTL_MS);
+
+  return prisma.currentInfoSnapshot.upsert({
+    where: { key: config.key },
+    create: {
+      key: config.key,
+      topic: "sports",
+      title: `${config.label} current context`,
+      summary: info.summary,
+      source: "site.api.espn.com",
+      raw: info as Prisma.InputJsonValue,
+      fetchedAt,
+      expiresAt,
+    },
+    update: {
+      topic: "sports",
+      title: `${config.label} current context`,
+      summary: info.summary,
+      source: "site.api.espn.com",
+      raw: info as Prisma.InputJsonValue,
+      fetchedAt,
+      expiresAt,
+    },
+  });
+}
+
 export async function refreshWeatherCurrentInfoSnapshot(prisma: PrismaClient, now = new Date()) {
   const info = await getWeatherInfo("Blaine, Washington");
   const fetchedAt = now;
@@ -272,6 +396,38 @@ export async function refreshWeatherCurrentInfoSnapshot(prisma: PrismaClient, no
       title: "Blaine weather",
       summary: info.summary,
       source: "open-meteo.com",
+      raw: info as Prisma.InputJsonValue,
+      fetchedAt,
+      expiresAt,
+    },
+  });
+}
+
+export async function refreshDayFactCurrentInfoSnapshot(prisma: PrismaClient, now = new Date()) {
+  const fetchedAt = now;
+  const expiresAt = new Date(fetchedAt.getTime() + DAYFACT_CACHE_TTL_MS);
+  const date = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(now);
+  const season = getSeason(now);
+  const summary = `Today is ${date}. It is ${season}. This is safe, light calendar context for a brief opener or orientation if needed.`;
+  const info = { ok: true, topic: "dayfact", date, season, summary };
+
+  return prisma.currentInfoSnapshot.upsert({
+    where: { key: DAYFACT_CACHE_KEY },
+    create: {
+      key: DAYFACT_CACHE_KEY,
+      topic: "dayfact",
+      title: "Today",
+      summary,
+      source: "calendar",
+      raw: info as Prisma.InputJsonValue,
+      fetchedAt,
+      expiresAt,
+    },
+    update: {
+      topic: "dayfact",
+      title: "Today",
+      summary,
+      source: "calendar",
       raw: info as Prisma.InputJsonValue,
       fetchedAt,
       expiresAt,
@@ -309,11 +465,15 @@ export async function refreshLightNewsCurrentInfoSnapshot(prisma: PrismaClient, 
 }
 
 export async function refreshCallCurrentInfoSnapshots(prisma: PrismaClient, now = new Date()) {
-  const results = await Promise.allSettled([
+  const tasks = [
     refreshNhlCurrentInfoSnapshot(prisma, now),
+    ...sportsLeagueConfigs.map((config) => refreshEspnLeagueSnapshot(prisma, config, now)),
     refreshWeatherCurrentInfoSnapshot(prisma, now),
     refreshLightNewsCurrentInfoSnapshot(prisma, now),
-  ]);
+    refreshDayFactCurrentInfoSnapshot(prisma, now),
+  ];
+  const keys = [NHL_CACHE_KEY, ...sportsLeagueConfigs.map((config) => config.key), WEATHER_CACHE_KEY, NEWS_CACHE_KEY, DAYFACT_CACHE_KEY];
+  const results = await Promise.allSettled(tasks);
   const snapshots = results
     .filter((result): result is PromiseFulfilledResult<CurrentInfoSnapshot> => result.status === "fulfilled")
     .map((result) => result.value);
@@ -321,7 +481,7 @@ export async function refreshCallCurrentInfoSnapshots(prisma: PrismaClient, now 
 
   return [
     ...results.map((result, index) => ({
-      key: [NHL_CACHE_KEY, WEATHER_CACHE_KEY, NEWS_CACHE_KEY][index],
+      key: keys[index],
       ok: result.status === "fulfilled",
       snapshot: result.status === "fulfilled" ? result.value : null,
       fetchedAt: result.status === "fulfilled" ? result.value.fetchedAt : null,
@@ -591,13 +751,24 @@ async function getLeagueNhlInfo(now: Date, startDate: Date, endDate: Date) {
 }
 
 async function buildLightNewsInfo() {
-  const xml = await fetchText(NPR_SCIENCE_RSS_URL);
-  const titles = xml ? parseRssTitles(xml).filter(isSafeLightNewsTitle).slice(0, 3) : [];
+  const feeds = await Promise.all([
+    fetchText(NPR_SCIENCE_RSS_URL).then((xml) => ({ source: "NPR science RSS", xml })),
+    fetchText(BBC_NEWS_RSS_URL).then((xml) => ({ source: "BBC RSS", xml })),
+  ]);
+  const titles = Array.from(
+    new Set(
+      feeds
+        .flatMap((feed) => feed.xml ? parseRssTitles(feed.xml).map((title) => ({ title, source: feed.source })) : [])
+        .filter((item) => isSafeLightNewsTitle(item.title))
+        .map((item) => item.title)
+        .slice(0, 5),
+    ),
+  );
 
   return {
     ok: titles.length > 0,
     topic: "news",
-    source: "NPR science RSS",
+    source: "NPR science RSS + BBC RSS",
     summary: titles.length
       ? `Light science headlines: ${titles.join("; ")}. Mention briefly only if the senior asks about news or seems interested in light current events. Avoid politics, disasters, medical advice, or upsetting details.`
       : "No light news snapshot is available. Do not invent headlines.",

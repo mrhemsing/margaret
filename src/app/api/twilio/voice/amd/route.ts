@@ -6,6 +6,7 @@ import { sendVoicemailAlertSmsToAlertContacts } from "@/lib/sms/twilio";
 import { getServerEnv } from "@/lib/env";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
 import { getCallBriefing } from "@/lib/voice/current-info";
+import { selectOpener } from "@/lib/voice/openers";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 function twiml(xml: string) {
@@ -29,6 +30,7 @@ async function registerElevenLabsTwilioCall(input: {
   topicsToRevisit: string[];
   avoidRepeating: string[];
   preferredVoiceId?: string | null;
+  opener?: string | null;
   firstMessage?: string | null;
   demoMaxDurationSeconds?: number | null;
 }) {
@@ -55,6 +57,7 @@ async function registerElevenLabsTwilioCall(input: {
           caregiver_name: input.caregiverName,
           companion_context: input.companionContext,
           current_context: input.currentContext,
+          opener: input.opener ?? `Hi ${input.memberName}, it's your scheduled check-in from Dailycall. Is this still an okay time to talk for a minute?`,
           recent_topics: input.recentTopics.join(", ") || "none yet",
           topics_to_revisit: input.topicsToRevisit.join("; ") || "none yet",
           avoid_repeating: input.avoidRepeating.join("; ") || "Do not use a generic scripted wellness survey opening.",
@@ -242,6 +245,13 @@ export async function POST(request: Request) {
           topicsToRevisit: [],
           avoidRepeating: ["Do not use a generic scripted wellness survey opening."],
     };
+    const selectedOpener = callAttempt
+      ? selectOpener({
+          memberName: callAttempt.member.name,
+          memory: callAttempt.member.memory,
+          recentCalls,
+        })
+      : null;
     const requestedVoiceProvider = url.searchParams.get("voiceProvider");
     if (requestedVoiceProvider && getRequestedVoiceProvider(requestedVoiceProvider) !== "elevenlabs_twilio") {
       console.warn(`Ignoring non-ElevenLabs product voice provider request: ${requestedVoiceProvider}`);
@@ -253,6 +263,7 @@ export async function POST(request: Request) {
       memberName: callAttempt?.member.name ?? memberName,
       caregiverName,
       preferredVoiceId: callAttempt?.member.preferredVoiceId,
+      opener: selectedOpener?.text,
       firstMessage: getRawString(callRaw, "firstMessage"),
       demoMaxDurationSeconds: getRawNumber(callRaw, "demoMaxDurationSeconds"),
       ...companionContext,
@@ -260,14 +271,30 @@ export async function POST(request: Request) {
     const conversationId = extractConversationId(elevenLabsTwiml);
 
     if (callSid && conversationId) {
-      await prisma.callAttempt.updateMany({
-        where: callAttemptWhere ?? { providerCallSid: callSid },
-        data: {
-          providerCallSid: callSid,
-          providerConversationId: conversationId,
-          syncedAt: new Date(),
-        },
-      });
+      await prisma.$transaction([
+        prisma.callAttempt.updateMany({
+          where: callAttemptWhere ?? { providerCallSid: callSid },
+          data: {
+            providerCallSid: callSid,
+            providerConversationId: conversationId,
+            syncedAt: new Date(),
+          },
+        }),
+        ...(callAttempt && selectedOpener
+          ? [
+              prisma.seniorMemory.upsert({
+                where: { memberId: callAttempt.memberId },
+                create: {
+                  memberId: callAttempt.memberId,
+                  recentOpenerKeys: [selectedOpener.key],
+                },
+                update: {
+                  recentOpenerKeys: [selectedOpener.key, ...(callAttempt.member.memory?.recentOpenerKeys ?? []).filter((key) => key !== selectedOpener.key)].slice(0, 5),
+                },
+              }),
+            ]
+          : []),
+      ]);
     }
 
     return twiml(elevenLabsTwiml);
