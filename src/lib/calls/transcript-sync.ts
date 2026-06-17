@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import type { Prisma } from "@prisma/client";
+import type { CallAttemptStatus, Prisma } from "@prisma/client";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
-import { sendCallReportSmsToAlertContacts } from "@/lib/sms/twilio";
+import { sendCallReportSmsToAlertContacts, sendCareAlertSmsToAlertContacts } from "@/lib/sms/twilio";
+import type { CareAssessment } from "@/lib/voice/care-classifier";
+import { assessCallConcern } from "@/lib/voice/care-classifier";
 import { deriveInterestTags } from "@/lib/voice/current-info";
 import { deriveConversationInsights, summarizeConversationForFamily } from "@/lib/voice/conversation-insights";
 import { formatConversationTranscript, getConversationDetails, getConversationTiming, mapConversationStatus } from "@/lib/voice/elevenlabs";
@@ -47,6 +49,72 @@ function shouldUseTranscriptSummary(summary: string | null | undefined) {
 
 function mergeList(existing: string[] | undefined, incoming: string[], limit = 12) {
   return Array.from(new Set([...(incoming ?? []), ...(existing ?? [])].map((item) => item.trim()).filter(Boolean))).slice(0, limit);
+}
+
+function getRawObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function getCareAssessmentRaw(value: unknown) {
+  const raw = getRawObject(value);
+  return getRawObject(raw.careAssessment);
+}
+
+function getCareCategory(value: unknown) {
+  const assessment = getCareAssessmentRaw(value);
+  return typeof assessment.category === "string" ? assessment.category : null;
+}
+
+async function hasRecurringConcern(memberId: string, currentCallId: string, category: string | null) {
+  if (!category) return false;
+
+  const recentCalls = await prisma.callAttempt.findMany({
+    where: {
+      memberId,
+      id: { not: currentCallId },
+      completedAt: { not: null },
+    },
+    orderBy: { completedAt: "desc" },
+    take: 3,
+    select: { conversationRaw: true },
+  });
+
+  const priorMatches = recentCalls.filter((call) => getCareCategory(call.conversationRaw) === category).length;
+  return priorMatches >= 2;
+}
+
+function applyCareStatus(baseStatus: CallAttemptStatus, assessment: CareAssessment, concernEscalates: boolean): CallAttemptStatus {
+  if (assessment.severity === "urgent") return "HELP_REQUESTED";
+  if (assessment.severity === "concern" || concernEscalates) return "FOLLOW_UP_NEEDED";
+  return baseStatus;
+}
+
+function getCareFollowUpReason(assessment: CareAssessment, concernEscalates: boolean) {
+  if (assessment.severity === "urgent") {
+    return assessment.evidence ?? `Urgent care concern${assessment.category ? `: ${assessment.category}` : ""}.`;
+  }
+
+  if (assessment.severity === "concern") {
+    const reason = assessment.evidence ?? `Care concern${assessment.category ? `: ${assessment.category}` : ""}.`;
+    return concernEscalates ? `${reason} This concern has repeated across recent calls.` : reason;
+  }
+
+  return null;
+}
+
+function appendCareReportLine(summary: string | null | undefined, assessment: CareAssessment, concernEscalates: boolean) {
+  const base = summary?.trim() || "DailyCall completed the check-in.";
+  if (assessment.severity === "none") return base;
+
+  if (assessment.severity === "urgent") {
+    return `${base} DailyCall also sent an urgent family alert for a possible safety concern.`;
+  }
+
+  if (concernEscalates) {
+    return `${base} DailyCall also sent a care alert because this concern has repeated across recent calls.`;
+  }
+
+  return `${base} DailyCall noticed a gentle wellbeing signal${assessment.category ? ` around ${assessment.category}` : ""}; no urgent alert was sent.`;
 }
 
 export async function syncTranscripts() {
@@ -103,12 +171,24 @@ export async function syncTranscripts() {
           priorRecentTopics: member?.memory?.recentTopics ?? [],
         });
         const isStuckInProgress = call.status === "IN_PROGRESS" && Boolean(call.startedAt) && Date.now() - call.startedAt!.getTime() > 15 * 60 * 1000;
-        const finalStatus = hasConversation
+        const baseStatus = hasConversation
           ? isTerminalCompletedStatus(call.status)
             ? call.status
             : "ANSWERED_OK"
           : isStuckInProgress ? "FAILED" : call.status === "IN_PROGRESS" ? "IN_PROGRESS" : call.status;
-        const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE"].includes(finalStatus) ? call.completedAt ?? new Date() : call.completedAt;
+        const baseCompletedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(baseStatus) ? call.completedAt ?? new Date() : call.completedAt;
+        const careAssessment = member && baseCompletedAt && transcript && hasConversation
+          ? await assessCallConcern({
+              transcript,
+              memberName: member.name,
+            })
+          : null;
+        const concernEscalates = member && careAssessment?.severity === "concern"
+          ? await hasRecurringConcern(member.id, call.id, careAssessment.category)
+          : false;
+        const finalStatus = careAssessment ? applyCareStatus(baseStatus as CallAttemptStatus, careAssessment, concernEscalates) : baseStatus;
+        const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(finalStatus) ? baseCompletedAt ?? new Date() : call.completedAt;
+        const reportSummary = careAssessment ? appendCareReportLine(finalSummary, careAssessment, concernEscalates) : finalSummary;
         const openThreads = member && completedAt && transcript
           ? await extractOpenThreads({
               transcript,
@@ -118,6 +198,32 @@ export async function syncTranscripts() {
           : [];
         let smsResults: Awaited<ReturnType<typeof sendCallReportSmsToAlertContacts>> | null = null;
         let smsError: string | null = null;
+        let careAlertResults: Awaited<ReturnType<typeof sendCareAlertSmsToAlertContacts>> | null = null;
+        let careAlertError: string | null = null;
+        const shouldSendCareAlert = Boolean(
+          member &&
+          completedAt &&
+          careAssessment &&
+          (careAssessment.severity === "urgent" || concernEscalates) &&
+          !call.alertSentAt &&
+          !isDemoCall,
+        );
+
+        if (shouldSendCareAlert && member && careAssessment) {
+          try {
+            careAlertResults = await sendCareAlertSmsToAlertContacts({
+              alertContacts: member.customer.alertContacts,
+              memberName: member.name,
+              severity: careAssessment.severity === "urgent" ? "urgent" : "concern",
+              category: careAssessment.category,
+              evidence: careAssessment.evidence,
+              selfHarm: careAssessment.selfHarm,
+              isDemo: isDemoCall,
+            });
+          } catch (error) {
+            careAlertError = error instanceof Error ? error.message : "Unknown care alert SMS error";
+          }
+        }
 
         if (completedAt && !call.reportSentAt) {
           try {
@@ -125,7 +231,7 @@ export async function syncTranscripts() {
               alertContacts: member?.customer.alertContacts ?? [],
               memberName: member?.name ?? "the call recipient",
               status: finalStatus,
-              summary: finalSummary,
+              summary: reportSummary,
               isDemo: isDemoCall,
             });
           } catch (error) {
@@ -178,15 +284,25 @@ export async function syncTranscripts() {
           data: {
             status: finalStatus,
             completedAt,
-            summary: finalSummary,
+            summary: reportSummary,
             mood: transcript ? insights.mood : call.mood,
             topics: transcript ? insights.topics : call.topics,
             notableMoments: transcript ? insights.notableMoments : call.notableMoments,
-            followUpSuggested: transcript ? insights.followUpSuggested : call.followUpSuggested,
-            followUpReason: transcript ? insights.followUpReason : call.followUpReason,
+            followUpSuggested: transcript ? Boolean(insights.followUpSuggested || (careAssessment && careAssessment.severity !== "none")) : call.followUpSuggested,
+            followUpReason: careAssessment && careAssessment.severity !== "none"
+              ? getCareFollowUpReason(careAssessment, concernEscalates)
+              : transcript ? insights.followUpReason : call.followUpReason,
             memoryUpdates: transcript ? (insights.memoryUpdates as Prisma.InputJsonValue) : call.memoryUpdates ?? undefined,
+            conversationRaw: {
+              ...getRawObject(call.conversationRaw),
+              careAssessment,
+              careAlertSent: Boolean(careAlertResults?.length),
+              careAlertResults,
+              careAlertError,
+            } as Prisma.InputJsonValue,
             syncedAt: new Date(),
             reportSentAt: smsResults?.length ? new Date() : call.reportSentAt,
+            alertSentAt: careAlertResults?.length ? new Date() : call.alertSentAt,
           },
         });
 
@@ -198,8 +314,11 @@ export async function syncTranscripts() {
           timedOut: isStuckInProgress,
           hasTranscript: Boolean(updated.transcript),
           smsSent: Boolean(smsResults?.length),
+          careAlertSent: Boolean(careAlertResults?.length),
           smsResults,
           smsError,
+          careAlertResults,
+          careAlertError,
         });
         continue;
       }
@@ -232,19 +351,31 @@ export async function syncTranscripts() {
       });
       const isStuckInProgress = status === "IN_PROGRESS" && Boolean(call.startedAt) && Date.now() - call.startedAt!.getTime() > 15 * 60 * 1000;
       const isCompletedWithoutUserResponse = status === "ANSWERED_OK" && !hasUserResponse;
-      const finalStatus = hasConversation
-        ? isTerminalCompletedStatus(status)
-          ? status
-          : "ANSWERED_OK"
-        : isStuckInProgress ? "FAILED" : isCompletedWithoutUserResponse ? "NO_RESPONSE" : status;
-      const finalSummary = isStuckInProgress
+        const baseStatus = hasConversation
+          ? isTerminalCompletedStatus(status)
+            ? status
+            : "ANSWERED_OK"
+          : isStuckInProgress ? "FAILED" : isCompletedWithoutUserResponse ? "NO_RESPONSE" : status;
+      const baseSummary = isStuckInProgress
         ? hasConversation
           ? transcriptSummary
           : "Call processing timed out after 15 minutes. DailyCall marked this attempt as failed so it does not linger in progress."
         : isCompletedWithoutUserResponse
           ? "DailyCall reached voicemail or did not capture a live response. No check-in conversation was completed."
-        : transcriptSummary;
-      const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE"].includes(finalStatus) ? timing.completedAt ?? call.completedAt ?? new Date() : call.completedAt;
+          : transcriptSummary;
+      const baseCompletedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(baseStatus) ? timing.completedAt ?? call.completedAt ?? new Date() : call.completedAt;
+      const careAssessment = member && baseCompletedAt && transcript && hasConversation
+        ? await assessCallConcern({
+            transcript,
+            memberName: member.name,
+          })
+        : null;
+      const concernEscalates = member && careAssessment?.severity === "concern"
+        ? await hasRecurringConcern(member.id, call.id, careAssessment.category)
+        : false;
+      const finalStatus = careAssessment ? applyCareStatus(baseStatus as CallAttemptStatus, careAssessment, concernEscalates) : baseStatus;
+      const finalSummary = careAssessment ? appendCareReportLine(baseSummary, careAssessment, concernEscalates) : baseSummary;
+      const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(finalStatus) ? baseCompletedAt ?? new Date() : call.completedAt;
       const openThreads = member && completedAt && transcript
         ? await extractOpenThreads({
             transcript,
@@ -254,6 +385,32 @@ export async function syncTranscripts() {
         : [];
       let smsResults: Awaited<ReturnType<typeof sendCallReportSmsToAlertContacts>> | null = null;
       let smsError: string | null = null;
+      let careAlertResults: Awaited<ReturnType<typeof sendCareAlertSmsToAlertContacts>> | null = null;
+      let careAlertError: string | null = null;
+      const shouldSendCareAlert = Boolean(
+        member &&
+        completedAt &&
+        careAssessment &&
+        (careAssessment.severity === "urgent" || concernEscalates) &&
+        !call.alertSentAt &&
+        !isDemoCall,
+      );
+
+      if (shouldSendCareAlert && member && careAssessment) {
+        try {
+          careAlertResults = await sendCareAlertSmsToAlertContacts({
+            alertContacts: member.customer.alertContacts,
+            memberName: member.name,
+            severity: careAssessment.severity === "urgent" ? "urgent" : "concern",
+            category: careAssessment.category,
+            evidence: careAssessment.evidence,
+            selfHarm: careAssessment.selfHarm,
+            isDemo: isDemoCall,
+          });
+        } catch (error) {
+          careAlertError = error instanceof Error ? error.message : "Unknown care alert SMS error";
+        }
+      }
 
       const shouldSendSms = Boolean(completedAt && !call.reportSentAt);
 
@@ -322,12 +479,22 @@ export async function syncTranscripts() {
           mood: insights.mood,
           topics: insights.topics,
           notableMoments: insights.notableMoments,
-          followUpSuggested: insights.followUpSuggested,
-          followUpReason: insights.followUpReason,
+          followUpSuggested: Boolean(insights.followUpSuggested || (careAssessment && careAssessment.severity !== "none")),
+          followUpReason: careAssessment && careAssessment.severity !== "none"
+            ? getCareFollowUpReason(careAssessment, concernEscalates)
+            : insights.followUpReason,
           memoryUpdates: insights.memoryUpdates as Prisma.InputJsonValue,
-          conversationRaw: details as Prisma.InputJsonValue,
+          conversationRaw: {
+            ...getRawObject(call.conversationRaw),
+            providerDetails: details,
+            careAssessment,
+            careAlertSent: Boolean(careAlertResults?.length),
+            careAlertResults,
+            careAlertError,
+          } as Prisma.InputJsonValue,
           syncedAt: new Date(),
           reportSentAt: smsResults?.length ? new Date() : call.reportSentAt,
+          alertSentAt: careAlertResults?.length ? new Date() : call.alertSentAt,
         },
       });
 
@@ -338,8 +505,11 @@ export async function syncTranscripts() {
         timedOut: isStuckInProgress,
         hasTranscript: Boolean(updated.transcript),
         smsSent: Boolean(smsResults?.length),
+        careAlertSent: Boolean(careAlertResults?.length),
         smsResults,
         smsError,
+        careAlertResults,
+        careAlertError,
       });
     } catch (error) {
       results.push({

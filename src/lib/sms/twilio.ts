@@ -13,6 +13,7 @@ type TwilioMessageResponse = {
 };
 
 type SmsRecipient = Pick<AlertContact, "name" | "phoneNumber" | "receivesAlerts" | "receivesReports">;
+type CareSeverity = "urgent" | "concern";
 
 const exampleReportRecipients = [
   { name: "Matt", phoneNumber: "+16043138398" },
@@ -107,6 +108,45 @@ export async function sendCallReportSmsToAlertContacts(input: {
   if (recipients.length === 0) return [];
 
   return sendSmsToRecipients(recipients, buildCallReportSms(input));
+}
+
+export function buildCareAlertSms(input: {
+  memberName: string;
+  severity: CareSeverity;
+  category?: string | null;
+  evidence?: string | null;
+  selfHarm?: boolean;
+  isDemo?: boolean;
+}) {
+  const env = getServerEnv();
+  const publicAppUrl = env.PUBLIC_APP_URL ?? env.APP_URL ?? "http://dailycall.care";
+  const dashboardUrl = input.isDemo ? `${publicAppUrl}/dashboard/demos` : `${publicAppUrl}/dashboard`;
+  const evidence = input.evidence?.trim() || "DailyCall noticed a possible care concern during the check-in.";
+  const severityLabel = input.severity === "urgent" ? "urgent alert" : "care alert";
+  const crisisLine = input.selfHarm
+    ? " If self-harm may be involved, contact them now; 988 is available in the US and Canada, and 911 should be used for imminent danger."
+    : " If there is imminent danger, call 911.";
+
+  if (input.isDemo) {
+    return `DailyCall DEMO ${severityLabel} for ${input.memberName}: ${evidence} This was a demo call, not a scheduled member check-in.${crisisLine} DailyCall is not an emergency service or medical provider.\n\nDemo logs: ${dashboardUrl}`;
+  }
+
+  return `DailyCall ${severityLabel} for ${input.memberName}: ${evidence} Please contact ${input.memberName} now.${crisisLine} DailyCall is not an emergency service or medical provider.\n\nDashboard: ${dashboardUrl}`;
+}
+
+export async function sendCareAlertSmsToAlertContacts(input: {
+  alertContacts: SmsRecipient[];
+  memberName: string;
+  severity: CareSeverity;
+  category?: string | null;
+  evidence?: string | null;
+  selfHarm?: boolean;
+  isDemo?: boolean;
+}) {
+  const recipients = input.alertContacts.filter((contact) => contact.receivesAlerts);
+  if (recipients.length === 0) return [];
+
+  return sendSmsToRecipients(recipients, buildCareAlertSms(input));
 }
 
 export function buildVoicemailAlertSms(input: {

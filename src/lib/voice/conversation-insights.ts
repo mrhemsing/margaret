@@ -84,15 +84,16 @@ export function summarizeConversationForFamily(input: ConversationInsightsInput)
 
   const memberText = getMemberTranscriptText(transcript, input.memberName);
   const sourceText = memberText || transcript;
-  const sentences = sentenceSplit(sourceText).filter((sentence) => sentence.length > 8);
-  const selected = unique(sentences, 3).join(" ");
+  const topics = unique(topicPatterns.filter(({ pattern }) => pattern.test(sourceText)).map(({ topic }) => topic), 4);
+  const mood = inferMood(sourceText);
 
-  if (!selected) {
+  if (!sourceText.trim()) {
     return `${input.memberName} completed a short check-in conversation.`;
   }
 
-  const clipped = selected.length > 360 ? `${selected.slice(0, 357).trim()}...` : selected;
-  return `${input.memberName} shared: ${clipped}`;
+  const topicLine = topics.length ? ` Topics included ${topics.join(", ")}.` : "";
+  const moodLine = mood && mood !== "Brief / unclear" ? ` Overall mood: ${mood.toLowerCase()}.` : "";
+  return `${input.memberName} completed a check-in conversation.${topicLine}${moodLine}`;
 }
 
 function inferMood(text: string) {

@@ -569,6 +569,26 @@ function getFamilyCallOutcome(call: DashboardMember["callAttempts"][number]) {
     };
   }
 
+  if (call.status === "HELP_REQUESTED") {
+    const summary = call.summary && !isBackendErrorText(call.summary) ? warmFamilySummary(call.summary) : "";
+    return {
+      dotClassName: "bg-red-500",
+      badgeClassName: "bg-red-50 text-red-700 ring-red-100",
+      label: "Help requested",
+      text: summary ? `Care alert · ${summary}` : "Care alert sent. Please check in directly.",
+    };
+  }
+
+  if (call.status === "FOLLOW_UP_NEEDED") {
+    const summary = call.summary && !isBackendErrorText(call.summary) ? warmFamilySummary(call.summary) : "";
+    return {
+      dotClassName: "bg-amber-400",
+      badgeClassName: "bg-amber-50 text-amber-800 ring-amber-100",
+      label: "Follow-up suggested",
+      text: summary ? `Follow-up · ${summary}` : "DailyCall noticed something worth following up on.",
+    };
+  }
+
   if (isCompletedCall(call)) {
     const summary = call.summary && !isBackendErrorText(call.summary) ? warmFamilySummary(call.summary) : "";
     return {
