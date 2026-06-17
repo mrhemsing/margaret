@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getServerEnv } from "@/lib/env";
-import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
+import { buildCompanionContext } from "@/lib/voice/companion-context";
 import { getCachedCallCurrentContext } from "@/lib/voice/current-info";
 import {
   acceptOpenAIRealtimeCall,
@@ -33,6 +33,10 @@ function getInitialPrompt(raw: Prisma.JsonValue | null | undefined) {
 function getRawObject(raw: Prisma.JsonValue | null | undefined) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   return raw as Record<string, unknown>;
+}
+
+function isOpenAIRealtimeTestAttempt(raw: Prisma.JsonValue | null | undefined) {
+  return getRawObject(raw).provider === "openai_realtime";
 }
 
 async function parseOpenAIWebhook(request: Request, rawBody: string) {
@@ -85,45 +89,34 @@ export async function POST(request: Request) {
           where: { providerCallSid: twilioCallSid },
           include: { member: { include: { memory: true } } },
         })
-      : await prisma.callAttempt.findFirst({
-          where: {
-            status: "IN_PROGRESS",
-            providerConversationId: null,
-          },
-          orderBy: { startedAt: "desc" },
-          include: { member: { include: { memory: true } } },
-        });
+      : null;
 
-  const recentCalls = callAttempt
-    ? await prisma.callAttempt.findMany({
-        where: {
-          memberId: callAttempt.memberId,
-          id: { not: callAttempt.id },
-          summary: { not: null },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      })
-    : [];
+  if (!callAttempt || !isOpenAIRealtimeTestAttempt(callAttempt.conversationRaw)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "OpenAI Realtime is restricted to explicit admin test call attempts.",
+      },
+      { status: 403 },
+    );
+  }
+
+  const recentCalls = await prisma.callAttempt.findMany({
+    where: {
+      memberId: callAttempt.memberId,
+      id: { not: callAttempt.id },
+      summary: { not: null },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
   const cachedCurrentContext = await getCachedCallCurrentContext(prisma);
-  const companionContext = callAttempt
-    ? buildCompanionContext({
-        memberName: callAttempt.member.name,
-        memory: callAttempt.member.memory,
-        recentCalls,
-        currentContext: cachedCurrentContext,
-      })
-    : {
-        companionContext: [
-          "Sound like a familiar, warm daily companion, not a clinical checklist.",
-          cachedCurrentContext || buildCurrentConversationContext(),
-          "Open with warmth and variety. Ask one easy, human question.",
-        ].join("\n"),
-        currentContext: cachedCurrentContext || buildCurrentConversationContext(),
-        recentTopics: [],
-        topicsToRevisit: [],
-        avoidRepeating: ["Do not use a generic scripted wellness survey opening."],
-      };
+  const companionContext = buildCompanionContext({
+    memberName: callAttempt.member.name,
+    memory: callAttempt.member.memory,
+    recentCalls,
+    currentContext: cachedCurrentContext,
+  });
 
   await acceptOpenAIRealtimeCall({
     callId,

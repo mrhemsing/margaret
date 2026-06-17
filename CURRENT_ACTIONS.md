@@ -8,40 +8,33 @@ Voice is the product. Monitoring is the buyer hook, but personalization, emotion
 
 ## Active Backlog
 
-### 1. OpenAI Realtime production call path
+### 1. ElevenLabs production call path
 
 Status: **Active**
 
 Shipped:
-- [x] Switched the active local provider to `openai_realtime_twilio`.
-- [x] Kept ElevenLabs settings, docs, and environment variables as fallback.
-- [x] Added Twilio AMD -> OpenAI Realtime SIP TwiML path.
-- [x] Added OpenAI Realtime webhook accept path.
-- [x] Added OpenAI transcript/event persistence path.
-- [x] Injected DailyCall memory, profile context, and pre-call current context into OpenAI instructions.
+- [x] Locked landing-page demo, dashboard/manual, test, and scheduled DailyCall product calls to `elevenlabs_twilio`.
+- [x] Kept OpenAI Realtime routes only for explicit comparison/testing work, not default product traffic.
+- [x] Added Twilio AMD -> ElevenLabs register-call path.
+- [x] Injected DailyCall memory, profile context, pre-call current context, and selected voice into ElevenLabs calls.
 
 Next:
-- [ ] Add `OPENAI_PROJECT_ID` in production.
-- [ ] Add `OPENAI_WEBHOOK_SECRET` in production.
-- [ ] Register the OpenAI dashboard webhook to `/api/openai/realtime-webhook`.
-- [ ] Run full phone-path tests: human answer, voicemail, no-answer, busy, short hangup, and failed call.
-- [ ] Confirm transcript completion and post-call insight extraction from real OpenAI SIP calls.
+- [ ] Run full ElevenLabs phone-path tests: human answer, voicemail, no-answer, busy, short hangup, and failed call.
+- [ ] Continue tuning ElevenLabs turn-taking, first audio, and voice quality.
 
 ### 2. Voice quality operating loop
 
 Status: **Active**
 
 Defaults:
-- `OPENAI_REALTIME_MODEL=gpt-realtime-2`
-- `OPENAI_REALTIME_VOICE=marin`
-- `OPENAI_REALTIME_REASONING_EFFORT=low`
-- `OPENAI_REALTIME_VAD_EAGERNESS=low`
+- `VOICE_PROVIDER=elevenlabs_twilio`
+- ElevenLabs Conversational AI over Twilio
 - soft, caring, understanding senior companion tone
 - snappy turn-taking with short replies
 
 Next:
 - [ ] Run at least five senior-style human test calls and score them with the voice-quality rubric.
-- [ ] Compare Marin vs Cedar for senior comfort and naturalness.
+- [ ] Compare the curated ElevenLabs voices for senior comfort and naturalness.
 - [ ] Capture pause length from Realtime events and flag repeated pauses over two seconds.
 - [ ] Add member/profile-level VAD overrides for slower speakers.
 - [ ] Keep a recurring OpenAI Realtime and senior voice-agent innovation watch.

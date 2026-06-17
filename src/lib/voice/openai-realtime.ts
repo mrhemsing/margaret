@@ -27,13 +27,8 @@ type OpenAIRealtimeTranscriptTurn = {
 
 const OPENAI_REALTIME_CALLS_URL = "https://api.openai.com/v1/realtime/calls";
 const DEFAULT_OPENAI_REALTIME_MODEL = "gpt-realtime-2";
-const DEFAULT_OPENAI_REALTIME_VAD_EAGERNESS = "low";
-const OPENAI_REALTIME_SIP_TURN_MODE = "manual_server_vad_transcript_no_barge";
-const OPENAI_REALTIME_SIP_VAD = {
-  threshold: 0.75,
-  prefixPaddingMs: 300,
-  silenceDurationMs: 650,
-};
+const DEFAULT_OPENAI_REALTIME_VAD_EAGERNESS = "medium";
+const OPENAI_REALTIME_SIP_TURN_MODE = "auto_server_vad_fast_barge";
 
 function xmlEscape(value: string) {
   return value
@@ -88,13 +83,13 @@ export function buildOpenAIRealtimeInstructions(input: BuildRealtimeInstructions
 
   return `
 # Role and Objective
-You are DailyCall, a familiar senior companion voice agent calling ${input.memberName}. If you use a name, use only "${input.memberName}" unless the person corrects you. Do not infer a name from family notes, dates, months, events, or topics. Your job is to have a natural daily check-in conversation and help the family understand how the person is doing.
+You are DailyCall, a warm senior companion voice agent calling ${input.memberName}. If you use a name, use only "${input.memberName}" unless the person corrects you. Do not infer a name from family notes, dates, months, events, or topics. Your job is to have a natural daily check-in conversation and help the family understand how the person is doing.
 
 # Personality and Tone
-Sound caring, clear, familiar, and human. Use a calm companion tone suited for an older adult: familiar, unhurried in delivery, but quick to respond. You are not a clinician, salesperson, support bot, or survey script. Keep responses short, usually one sentence and no more than two.
+Sound soft, caring, understanding, and human. Use a warm companion tone suited for an older adult: gentle, familiar, unhurried in delivery, but quick to respond. You are not a clinician, salesperson, support bot, or survey script. Keep responses short, usually one sentence and no more than two.
 
 # Turn-Taking and Pacing
-Use natural phone turn-taking. Respond after the person is done speaking; do not interrupt them. Avoid filler, verbal hesitations, repeated acknowledgements, stock positivity openers, and long lead-ins. Do not start replies with tone labels, coaching words, canned positivity, bracketed audio tags, emotion tags, or stage directions like "Slow...", "Happy...", "Glad...", "Great...", "[happy]", "[excited]", "[slow]", or "[warm]". Every character you output may be spoken on the phone. Ask one simple question at a time. If the person sounds confused, use clearer wording but keep the response prompt.
+Use natural phone turn-taking. Respond after the person is done speaking; do not interrupt them. Avoid filler, verbal hesitations, repeated acknowledgements, stock positivity openers, and long lead-ins. Do not start replies with repeated canned positivity like "Happy...", "Glad...", or "Great..."; acknowledge plainly and vary the next question. Ask one gentle question at a time. If the person sounds confused, slow down your wording but keep the response prompt.
 
 # Call Length and Ending
 Keep individual replies short, but let the person talk as long as they want. Do not steer the conversation toward ending, wrap up early, or say goodbye just because the basic check-in is complete. Only close when the person clearly says they need to go, does not want to talk, stops responding after appropriate no-response checks, or reaches a demo-specific time limit. Any possible ending must be framed as the person's choice, not as you leaving them. If the conversation naturally pauses, ask: "Do you want me to let you get back to whatever you were doing, or would you like to chat more?" If they want to chat more, keep talking naturally.
@@ -107,9 +102,9 @@ ${input.currentContext}
 
 # Conversation Guidance
 Recent topics already covered: ${recentTopics}.
-Topics to revisit if natural: ${topicsToRevisit}.
+Topics to revisit warmly: ${topicsToRevisit}.
 Avoid repeating: ${avoidRepeating}.
-Open with variety. Start with a brief greeting, then ask one easy, human question. Prefer short, caring responses over long explanations. Use preloaded current context only when it feels natural or when the person asks.
+Open with warmth and variety. Start with a brief greeting, then ask one easy, human question. Prefer short, caring responses over long explanations. Use preloaded current context only when it feels natural or when the person asks.
 
 # Safety
 Do not diagnose, provide medical instructions, or make emergency decisions. If the person describes immediate danger, a medical emergency, or feeling unsafe, calmly tell them to call emergency services or contact ${input.caregiverName} or another trusted person right away.
@@ -258,11 +253,9 @@ export async function acceptOpenAIRealtimeCall(input: AcceptOpenAIRealtimeCallIn
           noise_reduction: null,
           turn_detection: {
             type: "server_vad",
-            threshold: OPENAI_REALTIME_SIP_VAD.threshold,
-            prefix_padding_ms: OPENAI_REALTIME_SIP_VAD.prefixPaddingMs,
-            silence_duration_ms: OPENAI_REALTIME_SIP_VAD.silenceDurationMs,
-            create_response: false,
-            interrupt_response: false,
+            eagerness: config.vadEagerness,
+            create_response: true,
+            interrupt_response: true,
           },
         },
         output: {
@@ -366,11 +359,16 @@ export function startOpenAIRealtimeCallMonitor(input: {
     monitorOpenedAt: null,
     openerSentAt: null,
     firstAudioDeltaAt: null,
+    lastSpeechStoppedAt: null,
+    lastResponseCreatedAt: null,
+    lastAudioDeltaAt: null,
+    speechStopToResponseCreatedMs: [],
+    speechStopToFirstAudioMs: [],
     responseDoneAt: null,
     speechStartedCount: 0,
     speechStoppedCount: 0,
     manualResponseCount: 0,
-    transcriptResponseCount: 0,
+    autoResponseCount: 0,
     ignoredSpeechDuringResponseCount: 0,
     errorCount: 0,
   };
@@ -384,10 +382,8 @@ export function startOpenAIRealtimeCallMonitor(input: {
       });
       let openerSent = false;
       let responseInProgress = false;
-      let openerComplete = false;
-      let activeResponseKind: "opener" | "reply" | null = null;
-      let pendingUserResponse = false;
-      let lastUserTranscript = "";
+      let activeResponseKind: "opener" | "auto" | null = null;
+      let waitingForAudioAfterSpeechStop = false;
 
       function setTurnDetection(enabled: boolean) {
         if (ws.readyState !== WebSocket.OPEN) return;
@@ -401,11 +397,9 @@ export function startOpenAIRealtimeCallMonitor(input: {
                   turn_detection: enabled
                     ? {
                         type: "server_vad",
-                        threshold: OPENAI_REALTIME_SIP_VAD.threshold,
-                        prefix_padding_ms: OPENAI_REALTIME_SIP_VAD.prefixPaddingMs,
-                        silence_duration_ms: OPENAI_REALTIME_SIP_VAD.silenceDurationMs,
-                        create_response: false,
-                        interrupt_response: false,
+                        eagerness: config.vadEagerness,
+                        create_response: true,
+                        interrupt_response: true,
                       }
                     : null,
                 },
@@ -418,7 +412,7 @@ export function startOpenAIRealtimeCallMonitor(input: {
       function createResponse(kind: "opener" | "reply", instructions?: string, maxOutputTokens = 110) {
         if (responseInProgress || ws.readyState !== WebSocket.OPEN) return false;
         responseInProgress = true;
-        activeResponseKind = kind;
+        activeResponseKind = kind === "opener" ? "opener" : "auto";
         metrics.manualResponseCount = Number(metrics.manualResponseCount ?? 0) + 1;
         setTurnDetection(false);
         ws.send(
@@ -446,22 +440,6 @@ export function startOpenAIRealtimeCallMonitor(input: {
         );
       }
 
-      function maybeRespondToUser() {
-        if (!openerComplete || !pendingUserResponse || responseInProgress || ws.readyState !== WebSocket.OPEN) return;
-        pendingUserResponse = false;
-        metrics.transcriptResponseCount = Number(metrics.transcriptResponseCount ?? 0) + 1;
-        createResponse(
-          "reply",
-          [
-            "Reply briefly to the person's last message.",
-            "Use one short sentence.",
-            "Ask one simple follow-up only if it is needed to keep the conversation moving.",
-            `Do not overuse the person's name. Last user transcript: ${lastUserTranscript}`,
-          ].join(" "),
-          110,
-        );
-      }
-
       ws.on("open", () => {
         metrics.monitorOpenedAt = new Date().toISOString();
         setTurnDetection(true);
@@ -475,18 +453,46 @@ export function startOpenAIRealtimeCallMonitor(input: {
           if (event.type === "session.created" || event.type === "session.updated") {
             sendOpener();
           }
+          if (event.type === "response.created") {
+            const now = Date.now();
+            responseInProgress = true;
+            if (!activeResponseKind) {
+              activeResponseKind = "auto";
+              metrics.autoResponseCount = Number(metrics.autoResponseCount ?? 0) + 1;
+            }
+            metrics.lastResponseCreatedAt = new Date(now).toISOString();
+            if (typeof metrics.lastSpeechStoppedAt === "string") {
+              const lastSpeechStoppedAt = Date.parse(metrics.lastSpeechStoppedAt);
+              if (Number.isFinite(lastSpeechStoppedAt)) {
+                metrics.speechStopToResponseCreatedMs = [
+                  ...((Array.isArray(metrics.speechStopToResponseCreatedMs) ? metrics.speechStopToResponseCreatedMs : []) as unknown[]),
+                  now - lastSpeechStoppedAt,
+                ].slice(-10);
+              }
+            }
+          }
           if (event.type === "response.output_audio.delta" && !metrics.firstAudioDeltaAt) {
             metrics.firstAudioDeltaAt = new Date().toISOString();
+          }
+          if (event.type === "response.output_audio.delta") {
+            const now = Date.now();
+            metrics.lastAudioDeltaAt = new Date(now).toISOString();
+            if (waitingForAudioAfterSpeechStop && typeof metrics.lastSpeechStoppedAt === "string") {
+              const lastSpeechStoppedAt = Date.parse(metrics.lastSpeechStoppedAt);
+              if (Number.isFinite(lastSpeechStoppedAt)) {
+                metrics.speechStopToFirstAudioMs = [
+                  ...((Array.isArray(metrics.speechStopToFirstAudioMs) ? metrics.speechStopToFirstAudioMs : []) as unknown[]),
+                  now - lastSpeechStoppedAt,
+                ].slice(-10);
+              }
+              waitingForAudioAfterSpeechStop = false;
+            }
           }
           if (event.type === "response.done") {
             metrics.responseDoneAt = new Date().toISOString();
             responseInProgress = false;
-            if (activeResponseKind === "opener") {
-              openerComplete = true;
-            }
             activeResponseKind = null;
             setTurnDetection(true);
-            maybeRespondToUser();
           }
           if (event.type === "input_audio_buffer.speech_started") {
             metrics.speechStartedCount = Number(metrics.speechStartedCount ?? 0) + 1;
@@ -496,6 +502,8 @@ export function startOpenAIRealtimeCallMonitor(input: {
           }
           if (event.type === "input_audio_buffer.speech_stopped") {
             metrics.speechStoppedCount = Number(metrics.speechStoppedCount ?? 0) + 1;
+            metrics.lastSpeechStoppedAt = new Date().toISOString();
+            waitingForAudioAfterSpeechStop = true;
           }
           if (event.type === "error") {
             metrics.errorCount = Number(metrics.errorCount ?? 0) + 1;
@@ -504,11 +512,6 @@ export function startOpenAIRealtimeCallMonitor(input: {
           const turn = extractEventTranscript(event, input.memberName);
           if (turn?.text) {
             turns.push(turn);
-            if (turn.speaker !== "DailyCall") {
-              lastUserTranscript = turn.text;
-              pendingUserResponse = true;
-              maybeRespondToUser();
-            }
             void updateCallFromRealtimeEvents({
               db: prisma,
               callAttemptId: input.callAttemptId,

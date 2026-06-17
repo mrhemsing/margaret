@@ -17,6 +17,10 @@ function getObject(raw: Prisma.JsonValue | null | undefined) {
   return raw as Record<string, unknown>;
 }
 
+function isOpenAIRealtimeTestAttempt(raw: Prisma.JsonValue | null | undefined) {
+  return getObject(raw).provider === "openai_realtime";
+}
+
 export async function POST(request: Request) {
   const url = new URL(request.url);
   const formData = await request.formData();
@@ -36,6 +40,16 @@ export async function POST(request: Request) {
 
   if (!callAttempt) {
     return NextResponse.json({ ok: false, error: "Call attempt not found." }, { status: 404 });
+  }
+
+  if (!isOpenAIRealtimeTestAttempt(callAttempt.conversationRaw)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "OpenAI Realtime conference callbacks are restricted to explicit admin test call attempts.",
+      },
+      { status: 403 },
+    );
   }
 
   const existingRaw = getObject(callAttempt.conversationRaw);

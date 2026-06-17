@@ -37,6 +37,11 @@ function getPublicBaseUrl(request: Request) {
   return `${url.protocol}//${url.host}`;
 }
 
+function getRawObject(raw: Prisma.JsonValue | null | undefined) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return raw as Record<string, unknown>;
+}
+
 function buildGatherTwiml(input: {
   actionUrl: string;
   audioUrl: string;
@@ -76,6 +81,10 @@ export async function POST(request: Request) {
 
   if (!callAttempt) {
     return twiml("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Say>DailyCall could not find this call. Goodbye.</Say><Hangup /></Response>");
+  }
+
+  if (getRawObject(callAttempt.conversationRaw).provider !== "openai_text_elevenlabs_twilio") {
+    return twiml("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Hangup /></Response>");
   }
 
   const turns: HybridTranscriptTurn[] = getHybridTranscript(callAttempt.conversationRaw);

@@ -122,26 +122,24 @@ Immediate caregiver alert if:
 - If no answer, retry once after 10 minutes.
 - If second attempt fails/no-answer, alert caregiver.
 
-## Selected voice direction
+## Selected Voice Direction
 
-Use OpenAI Realtime for the AI voice agent and Twilio for outbound phone calls.
+Use ElevenLabs Conversational AI for the product voice agent and Twilio for outbound phone calls.
 
 Why:
 
-- OpenAI Realtime keeps listening, reasoning, and speaking in one realtime model loop.
 - Twilio gives us phone number ownership, caller ID, outbound calling, answering-machine detection, and mature telephony logs.
-- The app can inject DailyCall memory, pre-call current context, reasoning effort, voice, and VAD settings directly into each Realtime session.
-- ElevenLabs settings remain available if we decide to switch back.
+- ElevenLabs is the chosen voice provider for landing-page demos, trial calls, subscriber calls, dashboard calls, and scheduled daily calls unless Matt explicitly says otherwise.
+- The app injects DailyCall memory, pre-call current context, first-message overrides, and selected voice into the ElevenLabs conversation.
+- OpenAI Realtime may be used only for explicit comparison/testing, not product traffic.
 
 Current production defaults:
 
-- `VOICE_PROVIDER=openai_realtime_twilio`
-- `OPENAI_REALTIME_MODEL=gpt-realtime-2`
-- `OPENAI_REALTIME_VOICE=marin`
-- `OPENAI_REALTIME_REASONING_EFFORT=low`
-- `OPENAI_REALTIME_VAD_EAGERNESS=low`
-- Turn detection: semantic VAD.
-- Transcription: `gpt-realtime-whisper` events captured for summaries and memory extraction.
+- `VOICE_PROVIDER=elevenlabs_twilio`
+- `ELEVENLABS_AGENT_ID`
+- `ELEVENLABS_AGENT_PHONE_NUMBER_ID`
+- Twilio AMD for voicemail/no-answer handling.
+- ElevenLabs conversation transcripts captured for summaries and memory extraction.
 
 Evaluation criteria before production:
 

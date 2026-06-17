@@ -13,7 +13,7 @@ function list(items?: string[] | null, fallback = "none yet") {
 }
 
 const STOCK_ACKNOWLEDGEMENT_GUARD =
-  "Do not start replies with tone labels, coaching words, canned positivity, bracketed audio tags, emotion tags, or stage directions like \"Slow...\", \"Happy...\", \"Glad...\", \"Great...\", \"[happy]\", \"[excited]\", \"[slow]\", or \"[warm]\". Every character you output may be spoken on the phone.";
+  "Do not start replies with repeated canned positivity like \"Happy...\", \"Glad...\", or \"Great...\". Acknowledge plainly and vary the next question.";
 const CONVERSATION_CONTINUATION_GUARD =
   "Do not steer the call toward ending. Keep individual replies short, but let the person talk as long as they want. Only close when they clearly say they need to go, do not want to talk, stop responding after the no-response checks, or the call is a time-boxed demo.";
 
@@ -56,21 +56,23 @@ export function buildCompanionContext(input: BuildCompanionContextInput) {
     STOCK_ACKNOWLEDGEMENT_GUARD,
     ...recentSummaries.map((summary) => `Do not repeat this prior summary as a new question: ${summary}`),
     ...recentTopics.map((topic) => `Do not ask another generic ${topic} question unless you have a fresh angle.`),
+    ...(memory?.conversationAvoids ?? []).map((topic) => `Respect this boundary: ${topic}.`),
   ].slice(0, 8);
 
   const parts = [
-    `You are calling ${memory?.preferredName || input.memberName}. If you use a name, use only that exact person name. Do not infer a name from family notes, dates, months, events, or topics. Sound like a familiar daily companion, not a clinical checklist.`,
+    `You are calling ${memory?.preferredName || input.memberName}. If you use a name, use only that exact person name. Do not infer a name from family notes, dates, months, events, or topics. Sound like a familiar, warm daily companion, not a clinical checklist.`,
     `Recent mood: ${memory?.recentMood || "unknown"}.`,
     `Known hobbies/interests: ${list(memory?.hobbies)}.`,
     `Known routines: ${list(memory?.routines)}.`,
     `Health/context notes: ${list(memory?.healthNotes)}.`,
-    `Topics to revisit if natural: ${list(memory?.topicsToRevisit)}.`,
+    `Topics or approaches to avoid: ${list(memory?.conversationAvoids)}.`,
+    `Topics to revisit warmly: ${list(memory?.topicsToRevisit)}.`,
     `Recent topics already covered: ${list(recentTopics)}.`,
     `Current small-talk context: ${currentContext}`,
     recentSummaries.length ? `Recent call summaries: ${recentSummaries.join(" | ")}.` : "No recent summaries yet.",
     STOCK_ACKNOWLEDGEMENT_GUARD,
     CONVERSATION_CONTINUATION_GUARD,
-    "Open with variety and one easy, human question. Keep turn spacing responsive; do not add long dead-air pauses unless the senior is truly silent. If the senior seems quiet, offer a simple topic instead of interrogating them.",
+    "Open with warmth and variety. Ask one easy, human question. Keep turn spacing responsive; do not add long dead-air pauses unless the senior is truly silent. If the senior seems quiet, offer a gentle topic instead of interrogating them.",
   ];
 
   return {

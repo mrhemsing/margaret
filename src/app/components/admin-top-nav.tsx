@@ -3,14 +3,14 @@ import Link from "next/link";
 import { AutoCloseDetails } from "@/app/components/auto-close-details";
 
 type AdminTopNavProps = {
-  activePath: "/admin" | "/admin/marketing" | "/call-comparison" | "/elevenlabs-test" | "/realtime-test" | "/bridge-test" | "/cartesia-test";
+  activePath: "/admin" | "/admin/marketing" | "/admin/compare" | "/elevenlabs-test" | "/realtime-test" | "/bridge-test" | "/cartesia-test";
   signOutAction: () => Promise<void>;
 };
 
 const adminLinks = [
   { href: "/admin", label: "Operations" },
   { href: "/admin/marketing", label: "Marketing" },
-  { href: "/call-comparison", label: "Compare" },
+  { href: "/admin/compare", label: "Compare" },
   { href: "/elevenlabs-test", label: "ElevenLabs test" },
   { href: "/realtime-test", label: "Realtime test" },
   { href: "/cartesia-test", label: "Cartesia test" },

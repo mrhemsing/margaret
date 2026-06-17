@@ -124,9 +124,17 @@ function extractNotableMoments(text: string, memberName: string) {
   return [];
 }
 
-function extractPossibleList(text: string, pattern: RegExp, label: string) {
+function extractPossibleList(text: string, pattern: RegExp, fallbackLabel: string) {
   if (!pattern.test(text)) return [];
-  return [label];
+
+  const snippets = sentenceSplit(text)
+    .map(stripSpeakerPrefix)
+    .filter((sentence) => sentence.length >= 12 && sentence.length <= 220)
+    .filter((sentence) => pattern.test(sentence))
+    .filter((sentence) => !isTechnicalSummary(sentence))
+    .map((sentence) => sentence.replace(/\s+/g, " ").trim());
+
+  return unique(snippets.length ? snippets : [fallbackLabel], 5);
 }
 
 export function deriveConversationInsights(input: ConversationInsightsInput): ConversationInsights {

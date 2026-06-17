@@ -6,6 +6,11 @@ import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 export const dynamic = "force-dynamic";
 
+function getRawObject(raw: unknown) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return raw as Record<string, unknown>;
+}
+
 export async function GET(request: Request) {
   const startedAt = Date.now();
   const url = new URL(request.url);
@@ -22,6 +27,11 @@ export async function GET(request: Request) {
     where: { id: callAttemptId },
     select: { conversationRaw: true },
   });
+
+  if (getRawObject(callAttempt?.conversationRaw).provider !== "openai_text_elevenlabs_twilio") {
+    return NextResponse.json({ ok: false, error: "Hybrid audio is restricted to explicit hybrid test calls." }, { status: 403 });
+  }
+
   const turn = getHybridTranscript(callAttempt?.conversationRaw)[turnIndex];
 
   if (!turn || turn.speaker !== "DailyCall") {

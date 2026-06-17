@@ -33,7 +33,7 @@ export async function GET(request: Request) {
           memory: true,
           callAttempts: {
             orderBy: { scheduledFor: "desc" },
-            take: 20,
+            take: 90,
           },
         },
       },
@@ -64,7 +64,7 @@ export async function GET(request: Request) {
       memory: true,
       callAttempts: {
         orderBy: { scheduledFor: "desc" },
-        take: 20,
+        take: 90,
       },
     },
   });

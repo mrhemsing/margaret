@@ -6,14 +6,37 @@ import { defaultVoiceId } from "@/lib/voice/voice-options";
 const comparisonIntroTemplate =
   "Hi {name}, it is DailyCall. How are you doing today?";
 
+const technologySnapshot = [
+  {
+    label: "OpenAI Realtime",
+    value: "GPT-Realtime-2",
+    detail: "128K context, adjustable reasoning effort, stronger interruption recovery, preambles, parallel tools, SIP, live translation, and streaming STT.",
+  },
+  {
+    label: "OpenAI pricing",
+    value: "$32 in / $64 out",
+    detail: "Audio tokens per 1M for GPT-Realtime-2. GPT-Realtime-Translate is $0.034/min; GPT-Realtime-Whisper is $0.017/min.",
+  },
+  {
+    label: "Google Gemini Live",
+    value: "Native audio",
+    detail: "Low-latency voice and vision with barge-in, tools, transcripts, proactive audio, affective dialog, and live translation.",
+  },
+  {
+    label: "ElevenLabs",
+    value: "Operational baseline",
+    detail: "Keep production comparisons centered on Conversational AI plus Twilio while watching SIP logs, trunking, analytics, RAG chunks, and agent controls.",
+  },
+] as const;
+
 const comparisonRows = [
   {
     title: "ElevenLabs Flash v2.5 bridge",
     badge: "Custom Bridge",
     production: false,
-    subtitle: "Latest low-latency ElevenLabs Flash TTS lane available to our comparison stack.",
-    stack: "Twilio Media Stream, OpenAI realtime STT, OpenAI text, ElevenLabs TTS model eleven_flash_v2_5",
-    bestPractice: "Use as the fast TTS bridge baseline: measure first audio, barge-in recovery, and whether the chained STT -> text -> TTS loop feels less caring than native speech-to-speech.",
+    subtitle: "Low-latency ElevenLabs Flash TTS lane for checking whether a chained bridge can beat native agents on speed.",
+    stack: "Twilio Media Stream, OpenAI realtime STT or gpt-4o-transcribe-latest, OpenAI text, ElevenLabs TTS model eleven_flash_v2_5",
+    bestPractice: "Use as the fast TTS bridge baseline: measure first audio, barge-in recovery, phone-band clarity, and whether the chained STT -> text -> TTS loop loses emotional nuance.",
     observability: "Capture Twilio CallSid, media stream start/stop, transcript deltas, OpenAI response timing, ElevenLabs synthesis timing, hangup reason, and summary handoff.",
     endpoint: "/api/bridge-test/call",
     caregiverName: "DailyCall ElevenLabs Flash v2.5 comparison reviewer",
@@ -27,9 +50,9 @@ const comparisonRows = [
     badge: "Native Agent",
     production: true,
     subtitle: "Current production DailyCall lane, optimized for fast connection with no weather/news/sports snapshot.",
-    stack: "Twilio, ElevenLabs native Agent, ElevenLabs ASR/turn-taking, TTS model eleven_v3_conversational, LLM gemini-3.5-flash",
-    bestPractice: "Keep this as the production comfort baseline: judge warmth, expressive voice quality, interruption handling, senior patience, and whether agent settings stay easy to operate.",
-    observability: "Capture Twilio CallSid, ElevenLabs conversation ID, transcript text-only availability, agent version, turn timing, disconnect details, hangup reason, and summary handoff.",
+    stack: "Twilio, ElevenLabs Conversational AI, ElevenLabs ASR/turn-taking, TTS model eleven_v3_conversational, LLM gemini-3.5-flash",
+    bestPractice: "Keep this as the production comfort baseline: judge warmth, expressive voice quality, interruption handling, senior patience, and whether agent settings remain easy to operate.",
+    observability: "Capture Twilio CallSid, ElevenLabs conversation ID, transcript text-only availability, agent version, SIP/trunk logs when available, turn timing, disconnect details, hangup reason, and summary handoff.",
     endpoint: "/api/elevenlabs-test/call",
     caregiverName: "DailyCall ElevenLabs V3 comparison reviewer",
     modelLabel: "eleven_v3_conversational + gemini-3.5-flash",
@@ -44,9 +67,9 @@ const comparisonRows = [
     badge: "Native Agent",
     production: false,
     subtitle: "Same current ElevenLabs/Gemini lane, but preloads weather, light news, and NHL context for this test call.",
-    stack: "Twilio, ElevenLabs native Agent, ElevenLabs ASR/turn-taking, TTS model eleven_v3_conversational, LLM gemini-3.5-flash, pre-call current-context snapshot",
+    stack: "Twilio, ElevenLabs Conversational AI, ElevenLabs ASR/turn-taking, TTS model eleven_v3_conversational, LLM gemini-3.5-flash, pre-call current-context snapshot",
     bestPractice: "Use only for A/B testing: compare connection lag against whether current-event follow-ups improve enough to justify any delay.",
-    observability: "Capture request-to-ring delay, Twilio CallSid, ElevenLabs conversation ID, whether current facts are used correctly, turn timing, disconnect details, and summary handoff.",
+    observability: "Capture request-to-ring delay, Twilio CallSid, ElevenLabs conversation ID, whether current facts are used correctly, SIP/trunk logs when available, turn timing, disconnect details, and summary handoff.",
     endpoint: "/api/elevenlabs-test/call",
     caregiverName: "DailyCall ElevenLabs V3 snapshot comparison reviewer",
     modelLabel: "eleven_v3_conversational + gemini-3.5-flash + current-context snapshot",
@@ -60,13 +83,13 @@ const comparisonRows = [
     title: "OpenAI Realtime SIP",
     badge: "Controlled SIP",
     production: false,
-    subtitle: "Latest OpenAI speech-to-speech Realtime lane for patient senior calls and direct transcript events.",
-    stack: "Twilio SIP, gpt-realtime primary lane, gpt-realtime-2 A/B lane, low reasoning, gpt-4o-transcribe-latest or gpt-4o-transcribe, optional gpt-realtime-whisper comparison, semantic VAD, Marin voice",
-    bestPractice: "Run a 20-call A/B against the production lane before promotion. Start with low reasoning, semantic VAD, short caring replies, warm AI disclosure, and a fixed opener.",
-    observability: "Capture SIP IDs, Twilio CallSid, OpenAI call/session ID, VAD events, transcript deltas, tool calls, response starts/stops, interruptions, hangup reason, escalation outcome, and summary handoff.",
+    subtitle: "Latest OpenAI speech-to-speech lane for patient senior calls, direct transcript events, tools, and production SIP testing.",
+    stack: "Twilio SIP, gpt-realtime production-compatible lane, gpt-realtime-2 A/B lane, low reasoning by default, optional medium/high for harder workflows, server VAD with configurable eagerness, Marin voice",
+    bestPractice: "Run a 20-call A/B against production before promotion. Start with low reasoning, server VAD, short caring replies, warm AI disclosure, and fixed senior-call scripts for interruptions, pauses, corrections, distress, and medication-adjacent refusals.",
+    observability: "Capture SIP IDs, Twilio CallSid, OpenAI call/session ID, reasoning setting, VAD events, transcript deltas, preambles, tool calls, response starts/stops, interruptions, hangup reason, escalation outcome, token/minute cost, and summary handoff.",
     endpoint: "/api/openai/realtime-test-call",
     caregiverName: "DailyCall OpenAI Realtime comparison reviewer",
-    modelLabel: "gpt-realtime / gpt-realtime-2 + gpt-4o-transcribe-latest",
+    modelLabel: "gpt-realtime / GPT-Realtime-2",
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
     }),
@@ -75,13 +98,13 @@ const comparisonRows = [
     title: "Gemini Live native audio",
     badge: "Custom Bridge",
     production: false,
-    subtitle: "Recommended Gemini native-audio lane for model-agnostic comparison.",
-    stack: "Twilio Media Stream, Gemini Live model gemini-2.5-flash-native-audio-preview-12-2025",
-    bestPractice: "Use as the model-diversity check: compare natural turn-taking, long-call stability, and how well native audio handles senior pauses and corrections.",
-    observability: "Capture Twilio CallSid, media stream lifecycle, Gemini session ID if available, transcript/checkpoint events, interruption timing, hangup reason, and summary handoff.",
+    subtitle: "Current Gemini native-audio lane for model-agnostic comparison against OpenAI and ElevenLabs.",
+    stack: "Twilio Media Stream, Gemini Live native-audio model, WebSocket bridge, barge-in, tool use, audio transcripts, proactive audio, affective dialog, live translation",
+    bestPractice: "Use as the model-diversity check: compare natural turn-taking, long-call stability, affective dialog on loneliness, live-translation potential, and how well native audio handles senior pauses and corrections.",
+    observability: "Capture Twilio CallSid, media stream lifecycle, Gemini session ID if available, transcript/checkpoint events, barge-in/interruption timing, tool events, hangup reason, and summary handoff.",
     endpoint: "/api/gemini-live-bridge/call",
     caregiverName: "DailyCall Gemini Live comparison reviewer",
-    modelLabel: "gemini-2.5-flash-native-audio-preview-12-2025",
+    modelLabel: "Gemini Live native audio",
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
     }),
@@ -154,27 +177,30 @@ const comparisonRows = [
 
 const latestRealtimeChecks = [
   "Run 20-call A/B tests: OpenAI Realtime against the current production lane with the same opener, target, and senior scenarios.",
-  "Compare gpt-realtime and gpt-realtime-2 separately before changing default traffic.",
-  "Use gpt-4o-transcribe-latest or gpt-4o-transcribe for transcript-driven safety notes; keep gpt-realtime-whisper as a comparison lane if enabled.",
-  "Evaluate GPT-Realtime-Translate for multilingual families before adding it to production call flows.",
-  "Compare ElevenLabs Flash v2.5 and V3 Conversational separately before judging the native ElevenLabs lane.",
-  "Use low reasoning for normal check-ins; reserve medium/high for harder safety or caregiver workflows.",
-  "Score VAD on long pauses, soft speech, corrections, background TV, and false 'are you still there?' moments.",
+  "Compare gpt-realtime and GPT-Realtime-2 separately before changing default traffic.",
+  "Use Realtime voice-session transcripts for the speech-to-speech lane; test GPT-Realtime-Whisper only in transcription sessions where turn detection is omitted or null.",
+  "Evaluate GPT-Realtime-Translate for multilingual families before adding translation to production call flows.",
+  "Compare ElevenLabs Flash v2.5 bridge and V3 Conversational native agent separately before judging the ElevenLabs lane.",
+  "Use low reasoning for normal check-ins; reserve medium/high/xhigh for harder safety, tool, or caregiver workflows.",
+  "Score VAD on long pauses, soft speech, corrections, background TV, false 'are you still there?' moments, and interruption recovery.",
   "Verify the spoken AI disclosure feels warm but clear.",
-  "Record latency, first-audio time, interruption rate, summary accuracy, escalation correctness, and caller comfort.",
+  "Record latency, first-audio time, interruption rate, summary accuracy, escalation correctness, caller comfort, and estimated cost per 10-minute call.",
 ];
 
 const callTraceChecks = [
   "Twilio CallSid plus SIP/call/session IDs from the voice provider.",
-  "VAD events, transcript deltas, response start/stop timing, interruption events, and tool calls.",
+  "VAD events, transcript deltas, response start/stop timing, interruption events, preambles, reasoning setting, and tool calls.",
   "Hangup reason, failed-call reason, voicemail/AMD result, escalation outcome, and final summary handoff.",
   "Privacy-safe retention: redact sensitive notes where possible and keep raw traces limited to test calls.",
 ];
 
 const seniorScenarioSet = [
-  "Long pause before answering",
+  "Interruption recovery",
+  "Long silence before answering",
+  "Repeated story",
+  "Hearing-confusion repair",
   "Correction of a family name",
-  "Medication mention",
+  "Medication-adjacent refusal",
   "Loneliness or sadness",
   "Background TV/noise",
   "Emergency ambiguity",
@@ -198,6 +224,23 @@ export function CallComparisonClient() {
           </p>
         </div>
       ) : null}
+
+      <section className="rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brandButtonBlue">technology snapshot</p>
+        <h2 className="mt-2 text-2xl font-bold text-ink">Latest watch items to keep in the comparison loop</h2>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {technologySnapshot.map((item) => (
+            <div key={item.label} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-sage">{item.label}</p>
+              <p className="mt-2 text-lg font-bold text-ink">{item.value}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-xs font-semibold leading-5 text-slate-500">
+          Last refreshed Jun 17, 2026 from OpenAI Realtime docs/release/pricing/VAD, ElevenLabs changelog, Google Gemini Live docs, Cartesia docs, and Hume docs.
+        </p>
+      </section>
 
       <div className="rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brandButtonBlue">shared opener</p>

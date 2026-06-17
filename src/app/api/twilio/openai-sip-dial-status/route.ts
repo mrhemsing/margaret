@@ -19,6 +19,10 @@ function getRawObject(raw: Prisma.JsonValue | null | undefined) {
   return raw as Record<string, unknown>;
 }
 
+function isOpenAIRealtimeTestAttempt(raw: Prisma.JsonValue | null | undefined) {
+  return getRawObject(raw).provider === "openai_realtime";
+}
+
 export async function POST(request: Request) {
   const url = new URL(request.url);
   const formData = await request.formData();
@@ -35,6 +39,11 @@ export async function POST(request: Request) {
       where: callAttemptId ? { id: callAttemptId } : { providerCallSid: callSid },
       select: { conversationRaw: true },
     });
+
+    if (!existingCall || !isOpenAIRealtimeTestAttempt(existingCall.conversationRaw)) {
+      return twiml("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response />");
+    }
+
     const existingRaw = getRawObject(existingCall?.conversationRaw);
     const failed = ["failed", "busy", "no-answer", "canceled"].includes(dialCallStatus);
     const connected = ["answered", "completed"].includes(dialCallStatus);
