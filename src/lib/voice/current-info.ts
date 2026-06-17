@@ -48,30 +48,49 @@ type EspnScoreboard = {
 type NhlTeam = { abbreviation: string; name: string };
 
 type NhlGame = {
+  id?: number;
   gameDate: string;
   startTimeUTC?: string;
   gameState: string;
   gameType?: number;
   awayTeam: {
+    id?: number;
     abbrev: string;
     score?: number;
     placeName?: { default: string };
     commonName?: { default: string };
   };
   homeTeam: {
+    id?: number;
     abbrev: string;
     score?: number;
     placeName?: { default: string };
     commonName?: { default: string };
   };
   seriesStatus?: {
+    round?: number;
+    seriesAbbrev?: string;
     seriesTitle?: string;
     gameNumberOfSeries?: number;
+    neededToWin?: number;
     topSeedTeamAbbrev?: string;
     topSeedWins?: number;
     bottomSeedTeamAbbrev?: string;
     bottomSeedWins?: number;
   };
+};
+
+type NhlPlayoffBracket = {
+  series?: Array<{
+    seriesTitle?: string;
+    seriesAbbrev?: string;
+    playoffRound?: number;
+    topSeedWins?: number;
+    bottomSeedWins?: number;
+    winningTeamId?: number;
+    topSeedTeam?: { id?: number; abbrev?: string; name?: { default?: string } };
+    bottomSeedTeam?: { id?: number; abbrev?: string; name?: { default?: string } };
+  }>;
 };
 
 const nhlTeams: Record<string, NhlTeam> = {
@@ -243,13 +262,18 @@ export async function buildNhlInfo(query = "", now = new Date()) {
   const parts = [];
 
   if (completed) {
-    parts.push(
-      `Recent ${team.name} game: ${completed.awayTeam.abbrev} ${completed.awayTeam.score ?? ""} at ${completed.homeTeam.abbrev} ${completed.homeTeam.score ?? ""} on ${completed.gameDate}.`,
-    );
+    parts.push(`Recent ${team.name} game: ${formatNhlGame(completed)}.`);
   }
 
   if (upcoming) {
     parts.push(`Next ${team.name} game: ${formatNhlGame(upcoming)}.`);
+  }
+
+  if (!parts.length) {
+    const champion = await buildNhlChampionInfo(now);
+    if (champion && champion.teamAbbrev === team.abbreviation) {
+      parts.push(champion.summary);
+    }
   }
 
   return {
@@ -740,6 +764,13 @@ async function getLeagueNhlInfo(now: Date, startDate: Date, endDate: Date) {
     parts.push(`Recent NHL game: ${formatNhlGame(completed)}.`);
   }
 
+  if (!parts.length) {
+    const champion = await buildNhlChampionInfo(now);
+    if (champion) {
+      parts.push(champion.summary);
+    }
+  }
+
   return {
     ok: parts.length > 0,
     topic: "sports",
@@ -747,6 +778,37 @@ async function getLeagueNhlInfo(now: Date, startDate: Date, endDate: Date) {
     summary: parts.length
       ? `${parts.join(" ")} Keep it conversational and brief. If the senior sounds interested, ask one simple follow-up.`
       : "No current NHL schedule context was available. Do not guess scores or game dates.",
+  };
+}
+
+function playoffBracketYear(now: Date) {
+  const month = now.getMonth();
+  return month >= 9 ? now.getFullYear() + 1 : now.getFullYear();
+}
+
+async function buildNhlChampionInfo(now: Date) {
+  const url = new URL(`https://api-web.nhle.com/v1/playoff-bracket/${playoffBracketYear(now)}`);
+  const bracket = await fetchJson<NhlPlayoffBracket>(url);
+  const finalSeries = (bracket?.series ?? []).find((series) =>
+    series.playoffRound === 4 ||
+    series.seriesAbbrev === "SCF" ||
+    /\bStanley Cup Final\b/i.test(series.seriesTitle ?? ""),
+  );
+
+  if (!finalSeries?.winningTeamId) return null;
+
+  const winningTeam = [finalSeries.topSeedTeam, finalSeries.bottomSeedTeam].find((team) => team?.id === finalSeries.winningTeamId);
+  const losingTeam = [finalSeries.topSeedTeam, finalSeries.bottomSeedTeam].find((team) => team?.id !== finalSeries.winningTeamId);
+  const winnerName = winningTeam?.name?.default ?? winningTeam?.abbrev;
+  const loserName = losingTeam?.name?.default ?? losingTeam?.abbrev;
+  const winnerWins = winningTeam?.id === finalSeries.topSeedTeam?.id ? finalSeries.topSeedWins : finalSeries.bottomSeedWins;
+  const loserWins = winningTeam?.id === finalSeries.topSeedTeam?.id ? finalSeries.bottomSeedWins : finalSeries.topSeedWins;
+
+  if (!winnerName) return null;
+
+  return {
+    teamAbbrev: winningTeam?.abbrev ?? "",
+    summary: `${winnerName} won the Stanley Cup${loserName ? ` over ${loserName}` : ""}${winnerWins !== undefined && loserWins !== undefined ? `, ${winnerWins}-${loserWins}` : ""}.`,
   };
 }
 
@@ -805,6 +867,9 @@ function formatNhlGame(game: NhlGame) {
   const matchup = `${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}`;
 
   if (isCompletedGame(game)) {
+    const championship = formatCompletedNhlChampionship(game);
+    if (championship) return championship;
+
     return `${matchup}, ${game.awayTeam.abbrev} ${game.awayTeam.score ?? ""} - ${game.homeTeam.abbrev} ${game.homeTeam.score ?? ""} on ${game.gameDate}`;
   }
 
@@ -817,6 +882,35 @@ function formatNhlGame(game: NhlGame) {
   const timeText = game.startTimeUTC ? `, starts ${formatGameTime(game.startTimeUTC)}` : "";
 
   return `${matchup}${seriesText}${timeText}`;
+}
+
+function formatCompletedNhlChampionship(game: NhlGame) {
+  const series = game.seriesStatus;
+  if (!series || game.gameType !== 3) return null;
+
+  const neededToWin = series.neededToWin ?? 4;
+  const isFinal = series.round === 4 || series.seriesAbbrev === "SCF" || /\bStanley Cup Final\b/i.test(series.seriesTitle ?? "");
+  const winnerAbbrev =
+    (series.topSeedWins ?? 0) >= neededToWin
+      ? series.topSeedTeamAbbrev
+      : (series.bottomSeedWins ?? 0) >= neededToWin
+        ? series.bottomSeedTeamAbbrev
+        : null;
+
+  if (!winnerAbbrev) return null;
+
+  const winner = [game.awayTeam, game.homeTeam].find((team) => team.abbrev === winnerAbbrev);
+  const loser = [game.awayTeam, game.homeTeam].find((team) => team.abbrev !== winnerAbbrev);
+  const winnerName = winner ? teamLabel(winner) : winnerAbbrev;
+  const loserName = loser ? teamLabel(loser) : null;
+  const score = `${game.awayTeam.abbrev} ${game.awayTeam.score ?? ""} - ${game.homeTeam.abbrev} ${game.homeTeam.score ?? ""}`;
+
+  if (isFinal) {
+    const gameText = series.gameNumberOfSeries ? ` in Game ${series.gameNumberOfSeries}` : "";
+    return `${winnerName} won the Stanley Cup${loserName ? ` over ${loserName}` : ""}${gameText} on ${game.gameDate}, ${score}`;
+  }
+
+  return `${winnerName} clinched the ${series.seriesTitle ?? "playoff series"}${loserName ? ` over ${loserName}` : ""} on ${game.gameDate}, ${score}`;
 }
 
 function teamLabel(team: NhlGame["awayTeam"]) {
