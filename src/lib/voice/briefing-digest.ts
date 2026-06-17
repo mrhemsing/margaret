@@ -12,7 +12,7 @@ export type BriefingItemDraft = {
   source?: string | null;
 };
 
-const BRIEFING_TTL_MS = 6 * 60 * 60 * 1000;
+const BRIEFING_TTL_MS = 8 * 60 * 60 * 1000;
 const MAX_BRIEFING_ITEMS = 18;
 const upsettingCurrentEventPattern =
   /\b(abuse|attack|bomb|cancer|court|crime|dead|death|died|disaster|disease|earthquake|election|emergency|flood|hurricane|injur|killed|lawsuit|medical|murder|outbreak|politic|shooting|trump|violence|war)\b/i;

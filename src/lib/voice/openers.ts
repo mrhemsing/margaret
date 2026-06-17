@@ -51,6 +51,10 @@ function hasConcreteThread(value: string) {
   return /\b(mentioned|talked|said|told|asked|wanted|planning|visit|birthday|appointment|game|garden|church|music|family|daughter|son|grand|friend|pet)\b/i.test(value);
 }
 
+function isSensitiveThread(value: string) {
+  return /\b(doctor|medicine|medication|pain|sick|fall|fell|hospital|test result|diagnosis|grief|funeral|died|death|loss)\b/i.test(value);
+}
+
 function ensureYesNoQuestion(text: string) {
   const trimmed = text.trim();
   if (/[?]\s*$/.test(trimmed)) return trimmed;
@@ -88,7 +92,7 @@ function continuityOpeners(input: SelectOpenerInput): OpenerCandidate[] {
     ...(input.recentCalls ?? []).flatMap((call) => [call.summary ?? "", ...(call.topics ?? [])]),
   ]
     .map((value) => value.trim())
-    .filter((value) => value.length > 8 && hasConcreteThread(value))
+    .filter((value) => value.length > 8 && hasConcreteThread(value) && !isSensitiveThread(value))
     .slice(0, 3);
 
   for (const thread of threads) {

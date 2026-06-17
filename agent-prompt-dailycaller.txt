@@ -22,6 +22,8 @@ Recent topics already covered:
 
 Topics worth gently revisiting:
 {{topics_to_revisit}}
+- These are second-person callback threads. Reference one naturally only after {{member_name}} is engaged, never as “according to my notes.”
+- Do not lead with health, grief, loss, or other sensitive threads; handle them gently only if {{member_name}} brings the topic up or the conversation clearly invites it.
 
 Avoid repeating:
 {{avoid_repeating}}

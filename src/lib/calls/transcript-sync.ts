@@ -3,8 +3,10 @@ import type { Prisma } from "@prisma/client";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
 import { sendCallReportSmsToAlertContacts } from "@/lib/sms/twilio";
+import { deriveInterestTags } from "@/lib/voice/current-info";
 import { deriveConversationInsights, summarizeConversationForFamily } from "@/lib/voice/conversation-insights";
 import { formatConversationTranscript, getConversationDetails, getConversationTiming, mapConversationStatus } from "@/lib/voice/elevenlabs";
+import { extractOpenThreads } from "@/lib/voice/memory-threads";
 
 function hasUserTranscriptTurn(transcript: Array<{ role?: string; message?: string | null; text?: string | null }> | undefined) {
   return Boolean(
@@ -41,6 +43,10 @@ function hasConversationTranscript(transcript: string | null | undefined) {
 
 function shouldUseTranscriptSummary(summary: string | null | undefined) {
   return !summary || /could not be connected|couldn't connect|carrier issue|did not capture a live response|voicemail|no answer|failed|timed out|being placed|started|chatting with them now/i.test(summary);
+}
+
+function mergeList(existing: string[] | undefined, incoming: string[], limit = 12) {
+  return Array.from(new Set([...(incoming ?? []), ...(existing ?? [])].map((item) => item.trim()).filter(Boolean))).slice(0, limit);
 }
 
 export async function syncTranscripts() {
@@ -103,6 +109,13 @@ export async function syncTranscripts() {
             : "ANSWERED_OK"
           : isStuckInProgress ? "FAILED" : call.status === "IN_PROGRESS" ? "IN_PROGRESS" : call.status;
         const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE"].includes(finalStatus) ? call.completedAt ?? new Date() : call.completedAt;
+        const openThreads = member && completedAt && transcript
+          ? await extractOpenThreads({
+              transcript,
+              memberName: member.name,
+              priorThreads: member.memory?.topicsToRevisit ?? [],
+            })
+          : [];
         let smsResults: Awaited<ReturnType<typeof sendCallReportSmsToAlertContacts>> | null = null;
         let smsError: string | null = null;
 
@@ -122,8 +135,12 @@ export async function syncTranscripts() {
 
         if (member && completedAt && transcript) {
           const existingMemory = member.memory;
-          const mergeList = (existing: string[] | undefined, incoming: string[], limit = 12) =>
-            Array.from(new Set([...(existing ?? []), ...incoming].map((item) => item.trim()).filter(Boolean))).slice(0, limit);
+          const threadTexts = openThreads.map((thread) => thread.text);
+          const interestTags = deriveInterestTags([
+            ...(existingMemory?.interestTags ?? []),
+            ...insights.memoryUpdates.possibleHobbies,
+            ...insights.memoryUpdates.recentTopics,
+          ]);
 
           await prisma.seniorMemory.upsert({
             where: { memberId: member.id },
@@ -131,17 +148,20 @@ export async function syncTranscripts() {
               memberId: member.id,
               preferredName: member.name,
               hobbies: insights.memoryUpdates.possibleHobbies,
+              interestTags,
               routines: insights.memoryUpdates.possibleRoutines,
               healthNotes: insights.memoryUpdates.possibleHealthNotes,
               recentMood: insights.mood,
-              topicsToRevisit: [],
+              topicsToRevisit: mergeList([], threadTexts.length ? threadTexts : insights.memoryUpdates.topicsToRevisit, 6),
               recentTopics: insights.memoryUpdates.recentTopics,
               lastSummary: insights.memoryUpdates.lastSummary,
             },
             update: {
               recentMood: insights.mood,
               recentTopics: { set: mergeList(insights.memoryUpdates.recentTopics, existingMemory?.recentTopics ?? [], 8) },
+              topicsToRevisit: { set: mergeList(existingMemory?.topicsToRevisit, threadTexts.length ? threadTexts : insights.memoryUpdates.topicsToRevisit, 6) },
               lastSummary: insights.memoryUpdates.lastSummary,
+              interestTags: { set: interestTags },
               hobbies: { set: mergeList(existingMemory?.hobbies, insights.memoryUpdates.possibleHobbies) },
               routines: { set: mergeList(existingMemory?.routines, insights.memoryUpdates.possibleRoutines) },
               healthNotes: { set: mergeList(existingMemory?.healthNotes, insights.memoryUpdates.possibleHealthNotes) },
@@ -225,6 +245,13 @@ export async function syncTranscripts() {
           ? "DailyCall reached voicemail or did not capture a live response. No check-in conversation was completed."
         : transcriptSummary;
       const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE"].includes(finalStatus) ? timing.completedAt ?? call.completedAt ?? new Date() : call.completedAt;
+      const openThreads = member && completedAt && transcript
+        ? await extractOpenThreads({
+            transcript,
+            memberName: member.name,
+            priorThreads: member.memory?.topicsToRevisit ?? [],
+          })
+        : [];
       let smsResults: Awaited<ReturnType<typeof sendCallReportSmsToAlertContacts>> | null = null;
       let smsError: string | null = null;
 
@@ -246,8 +273,12 @@ export async function syncTranscripts() {
 
       if (member && completedAt) {
         const existingMemory = member.memory;
-        const mergeList = (existing: string[] | undefined, incoming: string[], limit = 12) =>
-          Array.from(new Set([...(existing ?? []), ...incoming].map((item) => item.trim()).filter(Boolean))).slice(0, limit);
+        const threadTexts = openThreads.map((thread) => thread.text);
+        const interestTags = deriveInterestTags([
+          ...(existingMemory?.interestTags ?? []),
+          ...insights.memoryUpdates.possibleHobbies,
+          ...insights.memoryUpdates.recentTopics,
+        ]);
 
         await prisma.seniorMemory.upsert({
           where: { memberId: member.id },
@@ -255,17 +286,20 @@ export async function syncTranscripts() {
             memberId: member.id,
             preferredName: member.name,
             hobbies: insights.memoryUpdates.possibleHobbies,
+            interestTags,
             routines: insights.memoryUpdates.possibleRoutines,
             healthNotes: insights.memoryUpdates.possibleHealthNotes,
             recentMood: insights.mood,
-            topicsToRevisit: [],
+            topicsToRevisit: mergeList([], threadTexts.length ? threadTexts : insights.memoryUpdates.topicsToRevisit, 6),
             recentTopics: insights.memoryUpdates.recentTopics,
             lastSummary: insights.memoryUpdates.lastSummary,
           },
           update: {
             recentMood: insights.mood,
             recentTopics: { set: mergeList(insights.memoryUpdates.recentTopics, existingMemory?.recentTopics ?? [], 8) },
+            topicsToRevisit: { set: mergeList(existingMemory?.topicsToRevisit, threadTexts.length ? threadTexts : insights.memoryUpdates.topicsToRevisit, 6) },
             lastSummary: insights.memoryUpdates.lastSummary,
+            interestTags: { set: interestTags },
             hobbies: { set: mergeList(existingMemory?.hobbies, insights.memoryUpdates.possibleHobbies) },
             routines: { set: mergeList(existingMemory?.routines, insights.memoryUpdates.possibleRoutines) },
             healthNotes: { set: mergeList(existingMemory?.healthNotes, insights.memoryUpdates.possibleHealthNotes) },

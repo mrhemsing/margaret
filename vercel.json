@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/voice/current-info/refresh",
-      "schedule": "0 1,13,17,21 * * *"
+      "schedule": "0 1,5,9,13,17,21 * * *"
     }
   ]
 }

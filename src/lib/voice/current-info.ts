@@ -8,9 +8,9 @@ const WEATHER_CACHE_KEY = "weather:blaine-wa";
 const NEWS_CACHE_KEY = "news:science-light:npr";
 const DAYFACT_CACHE_KEY = "dayfact:today";
 const NHL_CACHE_TTL_MS = 8 * 60 * 60 * 1000;
-const SPORTS_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
-const WEATHER_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
-const NEWS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const SPORTS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const WEATHER_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const NEWS_CACHE_TTL_MS = 8 * 60 * 60 * 1000;
 const DAYFACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const NPR_SCIENCE_RSS_URL = "https://feeds.npr.org/1007/rss.xml";
 const BBC_NEWS_RSS_URL = "https://feeds.bbci.co.uk/news/rss.xml";
@@ -28,6 +28,32 @@ const sportsLeagueConfigs: SportsLeagueConfig[] = [
   { key: "sports:nba:league", label: "NBA", sport: "basketball", league: "nba", tags: ["basketball", "nba"] },
   { key: "sports:nfl:league", label: "NFL", sport: "football", league: "nfl", tags: ["football", "nfl"] },
 ];
+
+const INTEREST_SYNONYMS: Record<string, string[]> = {
+  hockey: ["hockey", "nhl", "carolina hurricanes", "vancouver canucks", "colorado avalanche", "vegas golden knights"],
+  baseball: ["baseball", "mlb"],
+  football: ["football", "nfl"],
+  basketball: ["basketball", "nba"],
+  gardening: ["gardening", "garden", "yard"],
+  music: ["music", "song", "jazz", "singing"],
+  "classic-films": ["classic-films", "classic films", "movies", "film"],
+  faith: ["faith", "church", "prayer"],
+  cooking: ["cooking", "cook", "bake", "food"],
+  weather: ["weather", "forecast"],
+  family: ["family", "children", "grandchildren", "grandkids"],
+  "birds-nature": ["birds-nature", "birds", "nature", "wildlife"],
+  "puzzles-cards": ["puzzles-cards", "puzzles", "cards", "bridge"],
+  history: ["history", "historical"],
+};
+
+const TEAM_INTERESTS: Record<string, string[]> = {
+  "carolina hurricanes": ["carolina hurricanes", "hockey", "nhl"],
+  "vancouver canucks": ["vancouver canucks", "hockey", "nhl"],
+  "colorado avalanche": ["colorado avalanche", "hockey", "nhl"],
+  "vegas golden knights": ["vegas golden knights", "hockey", "nhl"],
+  "florida panthers": ["florida panthers", "hockey", "nhl"],
+  "toronto maple leafs": ["toronto maple leafs", "hockey", "nhl"],
+};
 
 type EspnScoreboard = {
   events?: Array<{
@@ -128,6 +154,41 @@ const nhlTeams: Record<string, NhlTeam> = {
 
 export function normalizeCurrentInfoQuery(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function normalizeInterestTag(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function canonicalInterestSet(values: Array<string | null | undefined>) {
+  const tokens = new Set<string>();
+  const add = (value: string) => {
+    const normalized = normalizeInterestTag(value);
+    if (normalized.length <= 2) return;
+
+    tokens.add(normalized);
+    const mapped = INTEREST_SYNONYMS[normalized] ?? TEAM_INTERESTS[normalized] ?? [];
+    for (const tag of mapped) {
+      const normalizedMapped = normalizeInterestTag(tag);
+      if (normalizedMapped.length > 2) tokens.add(normalizedMapped);
+    }
+
+    for (const [canonical, synonyms] of Object.entries(INTEREST_SYNONYMS)) {
+      if (synonyms.map(normalizeInterestTag).includes(normalized)) tokens.add(canonical);
+    }
+  };
+
+  for (const value of values) {
+    if (!value) continue;
+    add(value);
+    for (const part of value.split(/[,;/\n]+/)) add(part);
+  }
+
+  return tokens;
+}
+
+export function deriveInterestTags(values: Array<string | null | undefined>, limit = 12) {
+  return Array.from(canonicalInterestSet(values)).slice(0, limit);
 }
 
 function isoDate(date: Date) {
@@ -577,18 +638,17 @@ type CallBriefingInput = {
   maxWords?: number;
 };
 
-function normalizedInterestText(memory?: CallBriefingMemory | null) {
-  return [...(memory?.interestTags ?? []), ...(memory?.hobbies ?? [])].map(normalizeCurrentInfoQuery).filter(Boolean).join(" ");
+function memoryInterestValues(memory?: CallBriefingMemory | null) {
+  return [...(memory?.interestTags ?? []), ...(memory?.hobbies ?? [])].map(normalizeInterestTag).filter(Boolean);
 }
 
-function isInterestMatch(item: Pick<BriefingItem, "interestTags" | "category">, interestText: string) {
-  if (!interestText) return false;
+function isInterestMatch(item: Pick<BriefingItem, "interestTags" | "category">, interestValues: string[]) {
+  if (!interestValues.length) return false;
   if (["weather", "dayfact", "seasonal"].includes(item.category)) return false;
 
-  return item.interestTags.some((tag) => {
-    const normalizedTag = normalizeCurrentInfoQuery(tag);
-    return normalizedTag.length > 2 && (interestText.includes(normalizedTag) || normalizedTag.includes(interestText));
-  });
+  const memberTags = canonicalInterestSet(interestValues);
+  const itemTags = canonicalInterestSet(item.interestTags);
+  return Array.from(memberTags).some((tag) => tag.length > 2 && itemTags.has(tag));
 }
 
 function dedupeBriefingItems(items: BriefingItem[]) {
@@ -601,14 +661,14 @@ function dedupeBriefingItems(items: BriefingItem[]) {
   });
 }
 
-function capBriefingWords(lines: string[], maxWords: number) {
-  const selected: string[] = [];
+function capBriefingItems(items: BriefingItem[], maxWords: number) {
+  const selected: BriefingItem[] = [];
   let count = 0;
 
-  for (const line of lines) {
-    const words = line.split(/\s+/).filter(Boolean).length;
+  for (const item of items) {
+    const words = item.text.split(/\s+/).filter(Boolean).length + 1;
     if (selected.length && count + words > maxWords) break;
-    selected.push(line);
+    selected.push(item);
     count += words;
   }
 
@@ -616,6 +676,10 @@ function capBriefingWords(lines: string[], maxWords: number) {
 }
 
 export async function getCallBriefing(prisma: PrismaClient, input: CallBriefingInput = {}) {
+  return (await getCallBriefingDetails(prisma, input)).context;
+}
+
+export async function getCallBriefingDetails(prisma: PrismaClient, input: CallBriefingInput = {}) {
   const now = input.now ?? new Date();
   const memberTag = input.memberId ? `member:${input.memberId}` : null;
   const items = await prisma.briefingItem.findMany({
@@ -625,14 +689,14 @@ export async function getCallBriefing(prisma: PrismaClient, input: CallBriefingI
   });
 
   if (!items.length) {
-    return getCachedCallCurrentContext(prisma, now);
+    return { context: await getCachedCallCurrentContext(prisma, now), itemIds: [] };
   }
 
   const avoids = input.memory?.conversationAvoids ?? [];
   const safeItems = dedupeBriefingItems(items)
     .filter((item) => !item.interestTags.some((tag) => tag.startsWith("member:") && tag !== memberTag))
     .filter((item) => !matchesBriefingAvoids(item, avoids));
-  const interestText = normalizedInterestText(input.memory);
+  const interestValues = memoryInterestValues(input.memory);
   const memberScoped = memberTag ? safeItems.filter((item) => item.interestTags.includes(memberTag)).slice(0, 1) : [];
   const general = safeItems
     .filter((item) => !memberScoped.some((memberItem) => memberItem.id === item.id) && item.interestTags.includes("general"))
@@ -641,22 +705,26 @@ export async function getCallBriefing(prisma: PrismaClient, input: CallBriefingI
     .filter((item) =>
       !memberScoped.some((memberItem) => memberItem.id === item.id) &&
       !general.some((generalItem) => generalItem.id === item.id) &&
-      isInterestMatch(item, interestText),
+      isInterestMatch(item, interestValues),
     )
     .slice(0, 3);
   const selected = [...memberScoped, ...general, ...matched];
 
   if (!selected.length) {
-    return getCachedCallCurrentContext(prisma, now);
+    return { context: await getCachedCallCurrentContext(prisma, now), itemIds: [] };
   }
 
-  const lines = capBriefingWords(selected.map((item) => `- ${item.text}`), input.maxWords ?? 190);
+  const cappedItems = capBriefingItems(selected, input.maxWords ?? 190);
+  const lines = cappedItems.map((item) => `- ${item.text}`);
 
-  return [
-    "Preloaded current context for this call. Use at most one item only if it naturally fits or the person asks; never perform a live lookup during the call.",
-    ...lines,
-    "If asked about something not listed here, say you have not seen that yet and ask what they heard. Do not invent current facts.",
-  ].join("\n");
+  return {
+    context: [
+      "Preloaded current context for this call. Use at most one item only if it naturally fits or the person asks; never perform a live lookup during the call.",
+      ...lines,
+      "If asked about something not listed here, say you have not seen that yet and ask what they heard. Do not invent current facts.",
+    ].join("\n"),
+    itemIds: cappedItems.map((item) => item.id),
+  };
 }
 
 function summarizeWeatherForBriefing(summary: string) {
@@ -856,7 +924,8 @@ function decodeXmlEntities(value: string) {
 }
 
 export function isSafeLightNewsTitle(title: string) {
-  return !/\b(ebola|war|killed|dead|death|murder|shooting|abuse|disaster|hurricane|earthquake|politic|election|trump|biden|court|lawsuit|damaged|disease|lung|cancer|outbreak)\b/i.test(title);
+  const teamSafeTitle = title.replace(/\b(Carolina Hurricanes|Miami Heat|Oklahoma City Thunder|Colorado Avalanche|Florida Panthers)\b/gi, "");
+  return !/\b(ebola|war|killed|dead|death|murder|shooting|abuse|disaster|hurricane|earthquake|politic|election|trump|biden|court|lawsuit|damaged|disease|lung|cancer|outbreak)\b/i.test(teamSafeTitle);
 }
 
 function isCompletedGame(game: NhlGame) {

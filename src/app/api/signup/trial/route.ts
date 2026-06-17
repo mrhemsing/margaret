@@ -6,6 +6,7 @@ import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
 import { planOptions, supportedBillingCountries, trialLengthDays } from "@/lib/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { deriveInterestTags } from "@/lib/voice/current-info";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
 function splitList(value: string) {
@@ -200,6 +201,7 @@ export async function POST(request: Request) {
   const questionsToAsk = input.plan === SubscriptionPlan.THREE_CALLS_DAILY ? input.questionsToAsk : "";
   const preferredVoiceId = isAllowedVoiceId(input.preferredVoiceId) ? input.preferredVoiceId : defaultVoiceId;
   const trialEndsAt = new Date(Date.now() + trialLengthDays * 24 * 60 * 60 * 1000);
+  const interestTags = deriveInterestTags([input.hobbies, input.favoriteTopics, input.routines]);
 
   try {
     const { customer, member } = await prisma.$transaction(async (tx) => {
@@ -260,6 +262,7 @@ export async function POST(request: Request) {
           family: input.familyContext ? { notes: input.familyContext } : undefined,
           pets: input.pets ? { notes: input.pets } : undefined,
           hobbies: splitList(input.hobbies),
+          interestTags,
           routines: splitList(input.routines),
           preferences: {
             favoriteTopics: input.favoriteTopics,
@@ -278,6 +281,7 @@ export async function POST(request: Request) {
           family: input.familyContext ? { notes: input.familyContext } : undefined,
           pets: input.pets ? { notes: input.pets } : undefined,
           hobbies: { set: splitList(input.hobbies) },
+          interestTags: { set: interestTags },
           routines: { set: splitList(input.routines) },
           preferences: {
             favoriteTopics: input.favoriteTopics,

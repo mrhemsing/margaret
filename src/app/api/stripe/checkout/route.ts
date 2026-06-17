@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getStripePriceIdForPlan, supportedBillingCountries, trialLengthDays } from "@/lib/plans";
 import { getStripeClient } from "@/lib/stripe";
+import { deriveInterestTags } from "@/lib/voice/current-info";
 
 function splitList(value: string) {
   return value
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
   const questionsToAsk = input.plan === SubscriptionPlan.THREE_CALLS_DAILY ? input.questionsToAsk : "";
   const priceId = getStripePriceIdForPlan(input.plan, input.customerCountry);
   const appUrl = process.env.APP_URL ?? "http://localhost:3003";
+  const interestTags = deriveInterestTags([input.hobbies, input.favoriteTopics, input.routines]);
 
   try {
     const stripe = getStripeClient();
@@ -115,6 +117,7 @@ export async function POST(request: Request) {
           family: input.familyContext ? { notes: input.familyContext } : undefined,
           pets: input.pets ? { notes: input.pets } : undefined,
           hobbies: splitList(input.hobbies),
+          interestTags,
           routines: splitList(input.routines),
           preferences: {
             favoriteTopics: input.favoriteTopics,
@@ -133,6 +136,7 @@ export async function POST(request: Request) {
           family: input.familyContext ? { notes: input.familyContext } : undefined,
           pets: input.pets ? { notes: input.pets } : undefined,
           hobbies: { set: splitList(input.hobbies) },
+          interestTags: { set: interestTags },
           routines: { set: splitList(input.routines) },
           preferences: {
             favoriteTopics: input.favoriteTopics,

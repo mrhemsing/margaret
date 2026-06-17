@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { sendVoicemailAlertSmsToAlertContacts } from "@/lib/sms/twilio";
 import { getServerEnv } from "@/lib/env";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
-import { getCallBriefing } from "@/lib/voice/current-info";
+import { getCallBriefingDetails } from "@/lib/voice/current-info";
 import { selectOpener } from "@/lib/voice/openers";
 import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
 
@@ -222,11 +222,11 @@ export async function POST(request: Request) {
         })
       : [];
     const callRaw = getCallRawObject(callAttempt?.conversationRaw ?? null);
-    const currentContext = getRawString(callRaw, "demoCurrentContext") ?? (
-      callAttempt
-        ? await getCallBriefing(prisma, { memberId: callAttempt.memberId, memory: callAttempt.member.memory })
-        : buildCurrentConversationContext()
-    );
+    const demoCurrentContext = getRawString(callRaw, "demoCurrentContext");
+    const briefingDetails = callAttempt && !demoCurrentContext
+      ? await getCallBriefingDetails(prisma, { memberId: callAttempt.memberId, memory: callAttempt.member.memory })
+      : { context: buildCurrentConversationContext(), itemIds: [] };
+    const currentContext = demoCurrentContext ?? briefingDetails.context;
     const companionContext = callAttempt
       ? buildCompanionContext({
           memberName: callAttempt.member.name,
@@ -277,6 +277,11 @@ export async function POST(request: Request) {
           data: {
             providerCallSid: callSid,
             providerConversationId: conversationId,
+            conversationRaw: {
+              ...callRaw,
+              briefingItemIds: briefingDetails.itemIds,
+              openerKey: selectedOpener?.key ?? null,
+            } as Prisma.InputJsonValue,
             syncedAt: new Date(),
           },
         }),
