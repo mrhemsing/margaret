@@ -353,6 +353,17 @@ function MetricCard({ label, value, dark = false }: { label: string; value: stri
   );
 }
 
+function TranscriptDetails({ transcript }: { transcript?: string | null }) {
+  if (!transcript?.trim()) return null;
+
+  return (
+    <details className="mt-3 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+      <summary className="cursor-pointer font-semibold text-ink">Transcript</summary>
+      <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-6">{transcript}</pre>
+    </details>
+  );
+}
+
 export default async function AdminPage({ searchParams }: { searchParams?: Promise<{ auth?: string; next?: string; demoCalls?: string }> }) {
   const authenticated = await isAdminAuthenticated();
   const params = await searchParams;
@@ -389,6 +400,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
         id: attempt.id,
         memberName: attempt.member.name,
         summary: attempt.summary || "No summary yet.",
+        transcript: attempt.transcript,
         status: attempt.status,
       }))
     : sampleCallAttempts;
@@ -529,6 +541,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                     <div>
                       <p className="font-semibold text-ink">{safeAdminDisplayName(attempt.memberName, "Member")}</p>
                       <p className="mt-1 text-sm leading-6 text-slate-600">{safeAdminSummary(attempt.summary)}</p>
+                      <TranscriptDetails transcript={"transcript" in attempt ? attempt.transcript : null} />
                     </div>
                     <span className={statusClassName(attempt.status)}>{attempt.status.replaceAll("_", " ")}</span>
                   </div>
@@ -556,6 +569,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                     <div>
                       <p className="font-semibold text-ink">{safeAdminDisplayName(attempt.memberName)}</p>
                       <p className="mt-1 text-sm leading-6 text-slate-600">{adminDemoSummary(attempt.summary, attempt.transcript)}</p>
+                      <TranscriptDetails transcript={attempt.transcript} />
                     </div>
                     <span className={statusClassName(attempt.status)}>{attempt.status.replaceAll("_", " ")}</span>
                   </div>
