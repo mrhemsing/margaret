@@ -41,7 +41,7 @@ Production ElevenLabs settings to keep aligned in the dashboard:
 - `turn_timeout`: about 7 seconds
 - default `tts.speed`: about `0.95`
 - `conversation_config_override.tts.speed`: enabled, so per-member accessibility speed can work
-- TTS model: `eleven_flash_v2_5` until a measured v3 test beats it without hurting first-audio latency
+- TTS model: `eleven_flash_v2` for the clear English ElevenLabs agent; standalone TTS samples may still use v2.5
 - saved first message: literal `{{opener}}`
 
 OpenAI Realtime comparison defaults:

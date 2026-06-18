@@ -1,5 +1,5 @@
 export const defaultVoiceId = "hpp4J3VqNfWAUOO0d1Us";
-export const productionElevenLabsTtsModel = "eleven_flash_v2_5";
+export const productionElevenLabsTtsModel = "eleven_flash_v2";
 export const evaluationElevenLabsTtsModel = "eleven_v3_conversational";
 export const defaultElevenLabsTtsSpeed = 0.95;
 export const defaultClearSpeed = 0.9;
@@ -17,7 +17,7 @@ export const voiceModeOptions = [
   {
     value: "clear",
     label: "Clear & slower",
-    description: "Best if hearing is difficult. Uses the clearer Flash v2.5 agent at a slower pace.",
+    description: "Best if hearing is difficult. Uses the clearer Flash v2 agent at a slower pace.",
   },
 ] as const satisfies Array<{ value: VoiceMode; label: string; description: string }>;
 
