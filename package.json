@@ -9,7 +9,9 @@
     "build": "prisma migrate deploy && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "elevenlabs:set-clear-agent-model": "node scripts/set-clear-agent-model.mjs",
+    "sync:agents": "node scripts/sync-elevenlabs-agents.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
