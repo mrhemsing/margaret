@@ -1387,7 +1387,7 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
           <p className="mt-2 text-base font-bold text-ink">Preferred time: {formatPreferredCallTime(member.preferredCallTime)}</p>
           <p className="mt-1 break-words text-sm leading-6 text-slate-600">
             {formatVoiceMode(member.voiceMode)} · {selectedVoice.name} voice ({selectedVoice.gender})
-            {normalizeVoiceMode(member.voiceMode) === "clear" ? ` · ${(member.speechSpeed ?? defaultClearSpeed).toFixed(2)}x speech` : ""}
+            {normalizeVoiceMode(member.voiceMode) === "clear" ? " · slower speech" : ""}
           </p>
           <p className="mt-1 break-words text-sm leading-6 text-slate-600">{formatRetrySettings(member)}</p>
           <div className="mt-4 grid gap-2">
@@ -1575,38 +1575,40 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
                     <span className="mt-2 block text-sm leading-6 text-slate-600">{voice.description}</span>
                   </span>
                 </span>
-                <audio controls controlsList="nodownload noplaybackrate" preload="none" className="h-10 w-full">
+                <audio controls controlsList="nodownload noplaybackrate" preload="metadata" className="h-10 w-full">
                   <source src={"/api/voice/sample?voiceId=" + encodeURIComponent(voice.id)} type="audio/mpeg" />
                 </audio>
               </label>
             ))}
           </div>
-          <label className="grid gap-2 text-sm font-semibold text-slate-700 lg:col-span-2">
-            Speech speed
-            <input
-              type="range"
-              min={minMemberSpeechSpeed}
-              max={maxMemberSpeechSpeed}
-              step="0.05"
-              value={profileForm.speechSpeed ?? defaultClearSpeed}
-              disabled={profileForm.voiceMode !== "clear"}
-              onChange={(event) => setProfileForm((current) => ({ ...current, speechSpeed: Number(event.target.value) }))}
-              className="w-full accent-brandButtonBlue disabled:opacity-40"
-            />
-            <span className="text-xs font-normal leading-5 text-slate-500">
-              {profileForm.voiceMode === "clear"
-                ? `${(profileForm.speechSpeed ?? defaultClearSpeed).toFixed(2)}x for future clear-mode calls.`
-                : "Expressive mode uses the V3 agent; speed is controlled by the agent prompt, not this slider."}
-            </span>
-            <button
-              type="button"
-              onClick={() => setProfileForm((current) => ({ ...current, speechSpeed: null }))}
-              disabled={profileForm.voiceMode !== "clear"}
-              className="w-fit rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-600 ring-1 ring-black/10 hover:text-ink"
-            >
-              Use clear-mode default
-            </button>
-          </label>
+          {profileForm.voiceMode === "clear" ? (
+            <label className="grid gap-2 text-sm font-semibold text-slate-700 lg:col-span-2">
+              Speech speed
+              <input
+                type="range"
+                min={minMemberSpeechSpeed}
+                max={maxMemberSpeechSpeed}
+                step="0.05"
+                value={profileForm.speechSpeed ?? defaultClearSpeed}
+                onChange={(event) => setProfileForm((current) => ({ ...current, speechSpeed: Number(event.target.value) }))}
+                className="w-full accent-brandButtonBlue"
+              />
+              <span className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-slate-400" aria-hidden="true">
+                <span>Slower</span>
+                <span>Faster</span>
+              </span>
+              <span className="text-xs font-normal leading-5 text-slate-500">
+                Speaks more slowly so it&apos;s easier to follow. Applies to the &quot;Clear &amp; slower&quot; style.
+              </span>
+              <button
+                type="button"
+                onClick={() => setProfileForm((current) => ({ ...current, speechSpeed: null }))}
+                className="w-fit rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-600 ring-1 ring-black/10 hover:text-ink"
+              >
+                Reset to recommended
+              </button>
+            </label>
+          ) : null}
           <div className="flex gap-2 lg:col-span-2">
             <button type="submit" disabled={saving === "voice"} className="rounded-full bg-brandButtonBlue px-5 py-2 text-sm font-bold text-cream shadow-sm hover:bg-brandButtonBlueHover disabled:opacity-60">
               {saving === "voice" ? "Saving..." : "Save voice"}

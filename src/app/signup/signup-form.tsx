@@ -590,7 +590,7 @@ export function SignupForm() {
                     <span className="mt-2 block text-sm leading-6 text-slate-600">{voice.description}</span>
                   </span>
                 </span>
-                <audio controls controlsList="nodownload noplaybackrate" preload="none" className="h-10 w-full">
+                <audio controls controlsList="nodownload noplaybackrate" preload="metadata" className="h-10 w-full">
                   <source src={"/api/voice/sample?voiceId=" + encodeURIComponent(voice.id)} type="audio/mpeg" />
                 </audio>
               </label>

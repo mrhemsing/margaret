@@ -12,12 +12,12 @@ export const voiceModeOptions = [
   {
     value: "expressive",
     label: "Warm & expressive",
-    description: "Recommended for most people. Uses the expressive V3 conversation agent.",
+    description: "A natural, lively voice that responds with warmth and personality. Best for most people.",
   },
   {
     value: "clear",
     label: "Clear & slower",
-    description: "Best if hearing is difficult. Uses the clearer Flash v2 agent at a slower pace.",
+    description: "A calm voice that speaks slowly and clearly. Best if your loved one has trouble hearing.",
   },
 ] as const satisfies Array<{ value: VoiceMode; label: string; description: string }>;
 
