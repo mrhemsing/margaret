@@ -252,6 +252,7 @@ export async function POST(request: Request) {
           memberName: callAttempt.member.name,
           memory: callAttempt.member.memory,
           recentCalls,
+          timeZone: callAttempt.member.timezone,
         })
       : null;
     const requestedVoiceProvider = url.searchParams.get("voiceProvider");

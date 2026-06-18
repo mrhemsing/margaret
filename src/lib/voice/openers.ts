@@ -17,6 +17,7 @@ type SelectOpenerInput = {
   memberName: string;
   memory?: SeniorMemory | null;
   recentCalls?: RecentCall[];
+  timeZone?: string | null;
   now?: Date;
 };
 
@@ -61,11 +62,22 @@ function ensureYesNoQuestion(text: string) {
   return `${trimmed} Is that something you would like to talk about?`;
 }
 
-function dateOpener(now: Date, memberName: string): OpenerCandidate | null {
-  const month = now.getMonth();
-  const date = now.getDate();
+function datePartsInTimeZone(now: Date, timeZone: string) {
+  const values = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(now);
+  const month = Number(values.find((part) => part.type === "month")?.value);
+  const day = Number(values.find((part) => part.type === "day")?.value);
 
-  if (month === 0 && date === 1) {
+  return { month, day };
+}
+
+function dateOpener(now: Date, memberName: string, timeZone: string): OpenerCandidate | null {
+  const { month, day } = datePartsInTimeZone(now, timeZone);
+
+  if (month === 1 && day === 1) {
     return {
       key: "special-new-year",
       text: `Hi ${memberName}, it's your scheduled check-in from Dailycall. Would you like to talk for a minute on this first day of the year?`,
@@ -73,7 +85,7 @@ function dateOpener(now: Date, memberName: string): OpenerCandidate | null {
     };
   }
 
-  if (month === 11 && date === 25) {
+  if (month === 12 && day === 25) {
     return {
       key: "special-christmas",
       text: `Hi ${memberName}, it's your scheduled check-in from Dailycall. Would a short Christmas Day chat feel nice right now?`,
@@ -107,8 +119,8 @@ function continuityOpeners(input: SelectOpenerInput): OpenerCandidate[] {
   return candidates;
 }
 
-function dayOpener(now: Date, memberName: string): OpenerCandidate {
-  const weekday = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(now);
+function dayOpener(now: Date, memberName: string, timeZone: string): OpenerCandidate {
+  const weekday = new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone }).format(now);
   return {
     key: `day-${weekday.toLowerCase()}`,
     text: `Hi ${memberName}, it's your scheduled check-in from Dailycall. Since it's ${weekday}, would you like a quick check-in before the day gets away?`,
@@ -126,11 +138,12 @@ function neutralCandidates(memberName: string): OpenerCandidate[] {
 
 export function selectOpener(input: SelectOpenerInput): SelectedOpener | null {
   const now = input.now ?? new Date();
+  const timeZone = input.timeZone ?? "America/Los_Angeles";
   const recentKeys = new Set((input.memory?.recentOpenerKeys ?? []).slice(0, 5));
   const candidates = [
-    dateOpener(now, input.memberName),
+    dateOpener(now, input.memberName, timeZone),
     ...continuityOpeners(input),
-    dayOpener(now, input.memberName),
+    dayOpener(now, input.memberName, timeZone),
     ...neutralCandidates(input.memberName),
   ]
     .filter((candidate): candidate is OpenerCandidate => Boolean(candidate))
