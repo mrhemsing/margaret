@@ -4,6 +4,7 @@ type StartAmdProtectedCallInput = {
   memberName?: string;
   caregiverName?: string;
   voiceProvider?: "elevenlabs_twilio";
+  voiceModeOverride?: "expressive" | "clear";
   machineDetection?: boolean;
   /** @deprecated Current-info refresh is disabled for live calls to avoid pickup lag. */
   refreshCurrentContext?: boolean;
@@ -38,6 +39,9 @@ export async function startAmdProtectedCheckInCall(input: StartAmdProtectedCallI
   voiceUrl.searchParams.set("memberName", input.memberName ?? "there");
   voiceUrl.searchParams.set("caregiverName", input.caregiverName ?? "your caregiver");
   voiceUrl.searchParams.set("voiceProvider", "elevenlabs_twilio");
+  if (input.voiceModeOverride) {
+    voiceUrl.searchParams.set("voiceModeOverride", input.voiceModeOverride);
+  }
 
   const body = new URLSearchParams({
     To: input.toNumber,

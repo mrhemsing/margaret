@@ -3,11 +3,13 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { refreshMemberWeatherBriefing } from "@/lib/voice/current-info";
 import { startAmdProtectedCheckInCall } from "@/lib/voice/twilio";
+import { normalizeVoiceMode } from "@/lib/voice/voice-options";
 
 const requestSchema = z.object({
   toNumber: z.string().min(8),
   memberName: z.string().min(1).optional(),
   caregiverName: z.string().min(1).optional(),
+  voiceMode: z.enum(["expressive", "clear"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -73,7 +75,13 @@ export async function POST(request: Request) {
 
     await refreshMemberWeatherBriefing(prisma, member);
 
-    const result = await startAmdProtectedCheckInCall({ ...parsed.data, callAttemptId: callAttempt.id, memberName: member.name });
+    const voiceModeOverride = parsed.data.voiceMode ? normalizeVoiceMode(parsed.data.voiceMode) : undefined;
+    const result = await startAmdProtectedCheckInCall({
+      ...parsed.data,
+      callAttemptId: callAttempt.id,
+      memberName: member.name,
+      voiceModeOverride,
+    });
 
     if (!result) {
       throw new Error("Voice provider did not return a call result.");

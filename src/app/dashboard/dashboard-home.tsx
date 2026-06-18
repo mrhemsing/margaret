@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { defaultElevenLabsTtsSpeed, getVoiceOption, maxMemberSpeechSpeed, minMemberSpeechSpeed, voiceOptions } from "@/lib/voice/voice-options";
+import { defaultClearSpeed, getVoiceOption, maxMemberSpeechSpeed, minMemberSpeechSpeed, normalizeVoiceMode, voiceModeOptions, voiceOptions, type VoiceMode } from "@/lib/voice/voice-options";
 
 type DashboardCustomer = {
   id: string;
@@ -21,6 +21,7 @@ type DashboardCustomer = {
     weatherLocation: string | null;
     preferredCallTime: string;
     preferredVoiceId: string;
+    voiceMode: VoiceMode;
     speechSpeed: number | null;
     voicemailRetryCount: number;
     voicemailRetryDelayMins: number;
@@ -196,6 +197,10 @@ function formatRetrySettings(member: DashboardMember) {
   if (member.voicemailRetryCount <= 0) return "No retry after missed calls";
 
   return `${member.voicemailRetryCount} ${member.voicemailRetryCount === 1 ? "retry" : "retries"} (${member.voicemailRetryDelayMins} min delay)`;
+}
+
+function formatVoiceMode(value: string | null | undefined) {
+  return normalizeVoiceMode(value) === "clear" ? "Clear & slower" : "Warm & expressive";
 }
 
 function getCallPauseUntil(member: DashboardMember) {
@@ -1135,6 +1140,7 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
     weatherLocation: member.weatherLocation ?? "",
     preferredCallTime: member.preferredCallTime,
     preferredVoiceId: member.preferredVoiceId,
+    voiceMode: normalizeVoiceMode(member.voiceMode),
     speechSpeed: member.speechSpeed,
   });
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
@@ -1168,11 +1174,12 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
       weatherLocation: member.weatherLocation ?? "",
       preferredCallTime: member.preferredCallTime,
       preferredVoiceId: member.preferredVoiceId,
+      voiceMode: normalizeVoiceMode(member.voiceMode),
       speechSpeed: member.speechSpeed,
     });
     setSelectedPhotoFile(null);
     setRemovePhoto(false);
-  }, [member.name, member.phoneNumber, member.photoUrl, member.weatherLocation, member.preferredCallTime, member.preferredVoiceId, member.speechSpeed]);
+  }, [member.name, member.phoneNumber, member.photoUrl, member.weatherLocation, member.preferredCallTime, member.preferredVoiceId, member.voiceMode, member.speechSpeed]);
 
   useEffect(() => {
     setRetryForm({
@@ -1378,7 +1385,10 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Preferences</p>
           <p className="mt-2 text-base font-bold text-ink">Status: {formatCallStatus(member)}</p>
           <p className="mt-2 text-base font-bold text-ink">Preferred time: {formatPreferredCallTime(member.preferredCallTime)}</p>
-          <p className="mt-1 break-words text-sm leading-6 text-slate-600">{selectedVoice.name} voice ({selectedVoice.gender}) · {profileForm.speechSpeed ? `${profileForm.speechSpeed.toFixed(2)}x speech` : "default speech speed"}</p>
+          <p className="mt-1 break-words text-sm leading-6 text-slate-600">
+            {formatVoiceMode(member.voiceMode)} · {selectedVoice.name} voice ({selectedVoice.gender})
+            {normalizeVoiceMode(member.voiceMode) === "clear" ? ` · ${(member.speechSpeed ?? defaultClearSpeed).toFixed(2)}x speech` : ""}
+          </p>
           <p className="mt-1 break-words text-sm leading-6 text-slate-600">{formatRetrySettings(member)}</p>
           <div className="mt-4 grid gap-2">
             <button
@@ -1420,7 +1430,7 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
         </div>
         <div className="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-black/5">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Conversation focus</p>
-          <p className="mt-2 break-words text-sm leading-6 text-slate-600">{selectedVoice.name} voice ({selectedVoice.gender}) · {member.memory?.topicsToRevisit?.[0] ?? "Warm daily check-in and family reassurance."}</p>
+          <p className="mt-2 break-words text-sm leading-6 text-slate-600">{formatVoiceMode(member.voiceMode)} · {member.memory?.topicsToRevisit?.[0] ?? "Warm daily check-in and family reassurance."}</p>
         </div>
       </div>
 
@@ -1500,12 +1510,38 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
           className="mt-5 grid gap-4 rounded-2xl bg-slate-50 p-4 lg:grid-cols-3"
           onSubmit={(event) => {
             event.preventDefault();
-            void saveMember({ profile: { preferredVoiceId: profileForm.preferredVoiceId, speechSpeed: profileForm.speechSpeed } }, "voice");
+            void saveMember({ profile: { preferredVoiceId: profileForm.preferredVoiceId, voiceMode: profileForm.voiceMode, speechSpeed: profileForm.speechSpeed } }, "voice");
           }}
         >
           <div className="lg:col-span-2">
             <p className="text-sm font-semibold text-slate-700">DailyCall voice</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">Choose the companion voice your loved one hears on future calls.</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Choose the speech style and companion voice your loved one hears on future calls.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 lg:col-span-2">
+            {voiceModeOptions.map((mode) => (
+              <label
+                key={mode.value}
+                className={
+                  "rounded-2xl border bg-white p-4 text-sm font-semibold text-ink transition " +
+                  (profileForm.voiceMode === mode.value ? "border-brandButtonBlue ring-4 ring-brandBlue/20" : "border-slate-200")
+                }
+              >
+                <span className="flex items-start gap-3">
+                  <input
+                    name="voiceMode"
+                    type="radio"
+                    value={mode.value}
+                    checked={profileForm.voiceMode === mode.value}
+                    onChange={() => setProfileForm((current) => ({ ...current, voiceMode: mode.value }))}
+                    className="mt-1 h-4 w-4 shrink-0"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-ink">{mode.value === "expressive" ? "Warm & expressive" : "Clear & slower"}</span>
+                    <span className="mt-2 block text-sm font-normal leading-6 text-slate-600">{mode.description}</span>
+                  </span>
+                </span>
+              </label>
+            ))}
           </div>
           <div className="grid gap-3 md:grid-cols-2 lg:col-span-2">
             {voiceOptions.map((voice) => (
@@ -1552,19 +1588,23 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
               min={minMemberSpeechSpeed}
               max={maxMemberSpeechSpeed}
               step="0.05"
-              value={profileForm.speechSpeed ?? defaultElevenLabsTtsSpeed}
+              value={profileForm.speechSpeed ?? defaultClearSpeed}
+              disabled={profileForm.voiceMode !== "clear"}
               onChange={(event) => setProfileForm((current) => ({ ...current, speechSpeed: Number(event.target.value) }))}
-              className="w-full accent-brandButtonBlue"
+              className="w-full accent-brandButtonBlue disabled:opacity-40"
             />
             <span className="text-xs font-normal leading-5 text-slate-500">
-              {profileForm.speechSpeed ? `${profileForm.speechSpeed.toFixed(2)}x for future calls.` : `Using the agent default, currently ${defaultElevenLabsTtsSpeed.toFixed(2)}x.`}
+              {profileForm.voiceMode === "clear"
+                ? `${(profileForm.speechSpeed ?? defaultClearSpeed).toFixed(2)}x for future clear-mode calls.`
+                : "Expressive mode uses the V3 agent; speed is controlled by the agent prompt, not this slider."}
             </span>
             <button
               type="button"
               onClick={() => setProfileForm((current) => ({ ...current, speechSpeed: null }))}
+              disabled={profileForm.voiceMode !== "clear"}
               className="w-fit rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-600 ring-1 ring-black/10 hover:text-ink"
             >
-              Use default speed
+              Use clear-mode default
             </button>
           </label>
           <div className="flex gap-2 lg:col-span-2">

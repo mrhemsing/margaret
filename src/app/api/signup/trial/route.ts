@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 import { planOptions, supportedBillingCountries, trialLengthDays } from "@/lib/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { deriveInterestTags } from "@/lib/voice/current-info";
-import { defaultVoiceId, isAllowedVoiceId } from "@/lib/voice/voice-options";
+import { defaultVoiceId, isAllowedVoiceId, normalizeVoiceMode } from "@/lib/voice/voice-options";
 
 function splitList(value: string) {
   return value
@@ -38,6 +38,7 @@ const trialSchema = z.object({
   importantEvents: z.string().optional().default(""),
   questionsToAsk: z.string().optional().default(""),
   preferredTone: z.string().optional().default("warm_patient"),
+  voiceMode: z.enum(["expressive", "clear"]).optional().default("expressive"),
   preferredVoiceId: z.string().optional().default(defaultVoiceId),
   ritualPreference: z.string().optional().default("morning_chat"),
   plan: z.nativeEnum(SubscriptionPlan),
@@ -200,6 +201,7 @@ export async function POST(request: Request) {
   const preferredCallSchedule = callTimes.join(", ");
   const questionsToAsk = input.plan === SubscriptionPlan.THREE_CALLS_DAILY ? input.questionsToAsk : "";
   const preferredVoiceId = isAllowedVoiceId(input.preferredVoiceId) ? input.preferredVoiceId : defaultVoiceId;
+  const voiceMode = normalizeVoiceMode(input.voiceMode);
   const trialEndsAt = new Date(Date.now() + trialLengthDays * 24 * 60 * 60 * 1000);
   const interestTags = deriveInterestTags([input.hobbies, input.favoriteTopics, input.routines]);
 
@@ -239,6 +241,7 @@ export async function POST(request: Request) {
         weatherLocation: input.weatherLocation,
         preferredCallTime: preferredCallSchedule,
         preferredVoiceId,
+        voiceMode,
       } as Prisma.MemberUncheckedCreateInput & { weatherLocation: string };
 
       const member = await tx.member.create({

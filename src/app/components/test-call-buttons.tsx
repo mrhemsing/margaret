@@ -7,6 +7,10 @@ export const testCallTargets = [
   { label: "Chuck", number: "+13068802055" },
 ];
 
+type TestVoiceMode = { value: "expressive" | "clear"; label: string };
+
+const defaultVoiceModes = [{ value: "expressive", label: "" }] as const satisfies readonly TestVoiceMode[];
+
 export type TestCallTarget = (typeof testCallTargets)[number];
 
 type CallState = {
@@ -20,7 +24,8 @@ type TestCallButtonsProps = {
   disabled?: boolean;
   disabledMessage?: string;
   onLog?: (message: string) => void;
-  buildPayload?: (target: TestCallTarget) => Record<string, unknown>;
+  buildPayload?: (target: TestCallTarget, voiceMode: TestVoiceMode) => Record<string, unknown>;
+  voiceModes?: readonly TestVoiceMode[];
   buttonClassName?: string;
 };
 
@@ -31,16 +36,19 @@ export function TestCallButtons({
   disabledMessage,
   onLog,
   buildPayload,
+  voiceModes = defaultVoiceModes,
   buttonClassName,
 }: TestCallButtonsProps) {
   const [callStates, setCallStates] = useState<Record<string, CallState>>({});
 
-  async function startTestCall(target: TestCallTarget) {
-    const buttonLabel = `Test Call (${target.label})`;
+  async function startTestCall(target: TestCallTarget, voiceMode: TestVoiceMode) {
+    const stateKey = `${target.number}:${voiceMode.value}`;
+    const labelSuffix = voiceMode.label ? ` - ${voiceMode.label}` : "";
+    const buttonLabel = `Test Call (${target.label})${labelSuffix}`;
 
     setCallStates((current) => ({
       ...current,
-      [target.number]: { status: "calling", message: `Calling ${target.label}...` },
+      [stateKey]: { status: "calling", message: `Calling ${target.label}${voiceMode.label ? ` ${voiceMode.label}` : ""}...` },
     }));
     onLog?.(`starting ${buttonLabel}`);
 
@@ -52,7 +60,8 @@ export function TestCallButtons({
           toNumber: target.number,
           memberName: target.label,
           caregiverName,
-          ...(buildPayload ? buildPayload(target) : {}),
+          voiceMode: voiceMode.value,
+          ...(buildPayload ? buildPayload(target, voiceMode) : {}),
         }),
       });
       const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string; result?: { sid?: string | null } } | null;
@@ -64,14 +73,14 @@ export function TestCallButtons({
       const message = `${buttonLabel} started${payload.result?.sid ? ` (${payload.result.sid})` : ""}.`;
       setCallStates((current) => ({
         ...current,
-        [target.number]: { status: "success", message },
+        [stateKey]: { status: "success", message },
       }));
       onLog?.(message);
     } catch (error) {
       const message = error instanceof Error ? error.message : `${buttonLabel} failed.`;
       setCallStates((current) => ({
         ...current,
-        [target.number]: { status: "error", message },
+        [stateKey]: { status: "error", message },
       }));
       onLog?.(message);
     }
@@ -79,22 +88,23 @@ export function TestCallButtons({
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {testCallTargets.map((target) => {
-        const state = callStates[target.number] ?? { status: "idle" };
+      {testCallTargets.flatMap((target) => voiceModes.map((voiceMode) => {
+        const stateKey = `${target.number}:${voiceMode.value}`;
+        const state = callStates[stateKey] ?? { status: "idle" };
         const isCalling = state.status === "calling";
 
         return (
-          <div key={target.number}>
+          <div key={stateKey}>
             <button
               type="button"
-              onClick={() => startTestCall(target)}
+              onClick={() => startTestCall(target, voiceMode)}
               disabled={disabled || isCalling}
               className={
                 buttonClassName ??
                 "h-11 w-full whitespace-nowrap rounded-xl bg-brandPink px-4 text-sm font-semibold text-white shadow-sm hover:bg-brandPink/90 disabled:cursor-not-allowed disabled:opacity-50"
               }
             >
-              {isCalling ? `Calling ${target.label}...` : `Test Call (${target.label})`}
+              {isCalling ? `Calling ${target.label}...` : `Test Call (${target.label})${voiceMode.label ? ` - ${voiceMode.label}` : ""}`}
             </button>
             {disabled && disabledMessage ? <p className="mt-2 text-xs text-slate-500">{disabledMessage}</p> : null}
             {state.message ? (
@@ -104,7 +114,7 @@ export function TestCallButtons({
             ) : null}
           </div>
         );
-      })}
+      }))}
     </div>
   );
 }

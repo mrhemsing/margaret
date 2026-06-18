@@ -104,6 +104,76 @@ async function hasRecurringConcern(memberId: string, currentCallId: string, cate
   return priorMatches >= 2;
 }
 
+const strongStrugglePattern = /\b(slow down|too fast|talking too fast|speak slower|say that again|repeat that|hard to hear|can't hear|cannot hear|didn't catch that|did not catch that)\b/i;
+const weakStruggleCountPattern = /\b(what\?|what was that|huh\?|pardon\?|confused|don't understand|do not understand)\b/gi;
+
+function getScoreValue(value: unknown, key: string) {
+  const raw = getRawObject(value);
+  const score = raw[key];
+  return typeof score === "number" && Number.isFinite(score) ? score : null;
+}
+
+function detectStruggleSignal(input: { transcript?: string | null; summary?: string | null; qualityScores?: unknown }) {
+  const text = [input.transcript, input.summary].filter(Boolean).join("\n");
+  const repeatedWeakSignals = (text.match(weakStruggleCountPattern) ?? []).length >= 2;
+  const lowTurnTaking = (getScoreValue(input.qualityScores, "turnTaking") ?? 5) <= 2;
+  const lowComfort = (getScoreValue(input.qualityScores, "seniorComfort") ?? 5) <= 2;
+
+  if (strongStrugglePattern.test(text)) return "strong";
+  if (repeatedWeakSignals || lowTurnTaking || lowComfort) return "recurring";
+  return null;
+}
+
+async function hasRecentStruggle(memberId: string, currentCallId: string) {
+  const recentCalls = await prisma.callAttempt.findMany({
+    where: {
+      memberId,
+      id: { not: currentCallId },
+      struggleSignal: { not: null },
+    },
+    orderBy: { completedAt: "desc" },
+    take: 3,
+    select: { id: true },
+  });
+
+  return recentCalls.length > 0;
+}
+
+function appendClearModeReportNote(summary: string | null | undefined, memberName: string) {
+  const base = summary?.trim() || "DailyCall completed the check-in.";
+  return `${base} We switched ${memberName} to the clearer, slower voice because they seemed to have trouble following. You can change this anytime in the dashboard.`;
+}
+
+async function adaptVoiceModeForStruggle(input: {
+  member: { id: string; name: string; voiceMode: string };
+  callId: string;
+  transcript?: string | null;
+  summary?: string | null;
+  qualityScores?: unknown;
+}) {
+  const signal = detectStruggleSignal({
+    transcript: input.transcript,
+    summary: input.summary,
+    qualityScores: input.qualityScores,
+  });
+  if (!signal) return { struggleSignal: null, switchedToClear: false };
+
+  const recurring = signal === "strong" ? false : await hasRecentStruggle(input.member.id, input.callId);
+  const shouldSwitch = input.member.voiceMode !== "clear" && (signal === "strong" || recurring);
+
+  if (shouldSwitch) {
+    await prisma.member.update({
+      where: { id: input.member.id },
+      data: { voiceMode: "clear" },
+    });
+  }
+
+  return {
+    struggleSignal: signal,
+    switchedToClear: shouldSwitch,
+  };
+}
+
 function applyCareStatus(baseStatus: CallAttemptStatus, assessment: CareAssessment, concernEscalates: boolean): CallAttemptStatus {
   if (assessment.severity === "urgent") return "HELP_REQUESTED";
   if (assessment.severity === "concern" || concernEscalates) return "FOLLOW_UP_NEEDED";
@@ -213,7 +283,7 @@ export async function syncTranscripts() {
           : false;
         const finalStatus = careAssessment ? applyCareStatus(baseStatus as CallAttemptStatus, careAssessment, concernEscalates) : baseStatus;
         const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(finalStatus) ? baseCompletedAt ?? new Date() : call.completedAt;
-        const finalReportSummary = careAssessment ? appendCareReportLine(reportSummary, careAssessment, concernEscalates) : reportSummary;
+        let finalReportSummary = careAssessment ? appendCareReportLine(reportSummary, careAssessment, concernEscalates) : reportSummary;
         const openThreads = member && completedAt && transcript && hasConversation
           ? await extractOpenThreads({
               transcript,
@@ -225,6 +295,26 @@ export async function syncTranscripts() {
         let smsError: string | null = null;
         let careAlertResults: Awaited<ReturnType<typeof sendCareAlertSmsToAlertContacts>> | null = null;
         let careAlertError: string | null = null;
+        const qualityScores = member && completedAt && transcript && hasConversation
+          ? await scoreCallQuality({
+              memberName: member.name,
+              status: finalStatus,
+              summary: finalReportSummary,
+              transcript,
+            })
+          : null;
+        const voiceAdaptation = member && completedAt && hasConversation
+          ? await adaptVoiceModeForStruggle({
+              member,
+              callId: call.id,
+              transcript,
+              summary: finalReportSummary,
+              qualityScores,
+            })
+          : { struggleSignal: null, switchedToClear: false };
+        if (voiceAdaptation.switchedToClear && member) {
+          finalReportSummary = appendClearModeReportNote(finalReportSummary, member.name);
+        }
         const shouldSendCareAlert = Boolean(
           member &&
           completedAt &&
@@ -304,15 +394,6 @@ export async function syncTranscripts() {
         await ensureUpcomingScheduledCalls(prisma, [member]);
       }
 
-        const qualityScores = member && completedAt && transcript && hasConversation
-          ? await scoreCallQuality({
-              memberName: member.name,
-              status: finalStatus,
-              summary: finalReportSummary,
-              transcript,
-            })
-          : null;
-
         const updated = await prisma.callAttempt.update({
           where: { id: call.id },
           data: {
@@ -328,11 +409,13 @@ export async function syncTranscripts() {
               : hasConversation ? insights.followUpReason : null,
             memoryUpdates: hasConversation ? (insights.memoryUpdates as Prisma.InputJsonValue) : Prisma.DbNull,
             qualityScores: qualityScores ? qualityScores as Prisma.InputJsonValue : call.qualityScores ?? undefined,
+            struggleSignal: voiceAdaptation.struggleSignal,
             conversationRaw: {
               ...getRawObject(call.conversationRaw),
               voicemailDetected,
               careAssessment,
               qualityScores,
+              voiceAdaptation,
               careAlertSent: Boolean(careAlertResults?.length),
               careAlertResults,
               careAlertError,
@@ -414,7 +497,7 @@ export async function syncTranscripts() {
         ? await hasRecurringConcern(member.id, call.id, careAssessment.category)
         : false;
       const finalStatus = careAssessment ? applyCareStatus(baseStatus as CallAttemptStatus, careAssessment, concernEscalates) : baseStatus;
-      const finalSummary = careAssessment ? appendCareReportLine(baseSummary, careAssessment, concernEscalates) : baseSummary;
+      let finalSummary = careAssessment ? appendCareReportLine(baseSummary, careAssessment, concernEscalates) : baseSummary;
       const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(finalStatus) ? baseCompletedAt ?? new Date() : call.completedAt;
       const openThreads = member && completedAt && transcript && hasConversation
         ? await extractOpenThreads({
@@ -427,6 +510,26 @@ export async function syncTranscripts() {
       let smsError: string | null = null;
       let careAlertResults: Awaited<ReturnType<typeof sendCareAlertSmsToAlertContacts>> | null = null;
       let careAlertError: string | null = null;
+      const qualityScores = member && completedAt && transcript && hasConversation
+        ? await scoreCallQuality({
+            memberName: member.name,
+            status: finalStatus,
+            summary: finalSummary,
+            transcript,
+          })
+        : null;
+      const voiceAdaptation = member && completedAt && hasConversation
+        ? await adaptVoiceModeForStruggle({
+            member,
+            callId: call.id,
+            transcript,
+            summary: finalSummary,
+            qualityScores,
+          })
+        : { struggleSignal: null, switchedToClear: false };
+      if (voiceAdaptation.switchedToClear && member) {
+        finalSummary = appendClearModeReportNote(finalSummary, member.name);
+      }
       const shouldSendCareAlert = Boolean(
         member &&
         completedAt &&
@@ -508,15 +611,6 @@ export async function syncTranscripts() {
           await ensureUpcomingScheduledCalls(prisma, [member]);
         }
 
-      const qualityScores = member && completedAt && transcript && hasConversation
-        ? await scoreCallQuality({
-            memberName: member.name,
-            status: finalStatus,
-            summary: finalSummary,
-            transcript,
-          })
-        : null;
-
       const updated = await prisma.callAttempt.update({
         where: { id: call.id },
         data: {
@@ -534,12 +628,14 @@ export async function syncTranscripts() {
             : hasConversation ? insights.followUpReason : null,
           memoryUpdates: hasConversation ? insights.memoryUpdates as Prisma.InputJsonValue : Prisma.DbNull,
           qualityScores: qualityScores ? qualityScores as Prisma.InputJsonValue : call.qualityScores ?? undefined,
+          struggleSignal: voiceAdaptation.struggleSignal,
           conversationRaw: {
             ...getRawObject(call.conversationRaw),
             providerDetails: details,
             voicemailDetected,
             careAssessment,
             qualityScores,
+            voiceAdaptation,
             careAlertSent: Boolean(careAlertResults?.length),
             careAlertResults,
             careAlertError,

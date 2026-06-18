@@ -17,6 +17,10 @@ export function CallTestPanel() {
         <TestCallButtons
           endpoint="/api/calls/outbound-test"
           caregiverName="DailyCall test reviewer"
+          voiceModes={[
+            { value: "expressive", label: "Expressive (V3)" },
+            { value: "clear", label: "Clear (v2.5)" },
+          ]}
           buttonClassName="w-full rounded-full bg-brandButtonBlue px-5 py-3 text-sm font-semibold text-cream shadow-sm transition hover:bg-brandButtonBlueHover disabled:cursor-not-allowed disabled:bg-slate-400"
         />
       </div>

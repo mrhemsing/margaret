@@ -7,7 +7,7 @@ import { getServerEnv } from "@/lib/env";
 import { buildCompanionContext, buildCurrentConversationContext } from "@/lib/voice/companion-context";
 import { getCallBriefingDetails } from "@/lib/voice/current-info";
 import { selectOpener } from "@/lib/voice/openers";
-import { defaultVoiceId, isAllowedVoiceId, normalizeSpeechSpeed } from "@/lib/voice/voice-options";
+import { defaultVoiceId, isAllowedVoiceId, normalizeVoiceMode, resolveAgentConfig, type VoiceMode } from "@/lib/voice/voice-options";
 
 function twiml(xml: string) {
   return new NextResponse(xml, {
@@ -31,6 +31,7 @@ async function registerElevenLabsTwilioCall(input: {
   avoidRepeating: string[];
   preferredVoiceId?: string | null;
   speechSpeed?: number | null;
+  voiceMode?: VoiceMode;
   opener?: string | null;
   firstMessage?: string | null;
   demoMaxDurationSeconds?: number | null;
@@ -41,6 +42,15 @@ async function registerElevenLabsTwilioCall(input: {
     throw new Error("ElevenLabs Twilio bridge is not configured.");
   }
 
+  const voiceMode = input.voiceMode ?? "expressive";
+  const agentConfig = resolveAgentConfig(voiceMode, input.speechSpeed, env);
+  if (!agentConfig.agentId) {
+    throw new Error("ElevenLabs Twilio bridge is not configured.");
+  }
+  if (agentConfig.clearAgentMissing) {
+    console.warn("ELEVENLABS_AGENT_ID_CLEAR is not configured; clear voice mode is falling back to expressive agent.");
+  }
+
   const response = await fetch("https://api.elevenlabs.io/v1/convai/twilio/register-call", {
     method: "POST",
     headers: {
@@ -48,7 +58,7 @@ async function registerElevenLabsTwilioCall(input: {
       "xi-api-key": env.ELEVENLABS_API_KEY,
     },
     body: JSON.stringify({
-      agent_id: env.ELEVENLABS_AGENT_ID,
+      agent_id: agentConfig.agentId,
       from_number: input.fromNumber,
       to_number: input.toNumber,
       direction: "outbound",
@@ -74,7 +84,7 @@ async function registerElevenLabsTwilioCall(input: {
             : {}),
           tts: {
             voice_id: isAllowedVoiceId(input.preferredVoiceId ?? "") ? input.preferredVoiceId : defaultVoiceId,
-            ...(normalizeSpeechSpeed(input.speechSpeed) ? { speed: normalizeSpeechSpeed(input.speechSpeed) } : {}),
+            ...(voiceMode === "clear" && agentConfig.ttsSpeed ? { speed: agentConfig.ttsSpeed } : {}),
           },
         },
       },
@@ -133,6 +143,8 @@ export async function POST(request: Request) {
   const callAttemptId = url.searchParams.get("callAttemptId");
   const memberName = url.searchParams.get("memberName") ?? "there";
   const caregiverName = url.searchParams.get("caregiverName") ?? "your caregiver";
+  const rawVoiceModeOverride = url.searchParams.get("voiceModeOverride");
+  const voiceModeOverride = rawVoiceModeOverride ? normalizeVoiceMode(rawVoiceModeOverride) : null;
   const callAttemptWhere = callAttemptId
     ? { id: callAttemptId }
     : callSid
@@ -267,6 +279,7 @@ export async function POST(request: Request) {
       caregiverName,
       preferredVoiceId: callAttempt?.member.preferredVoiceId,
       speechSpeed: callAttempt?.member.speechSpeed,
+      voiceMode: callAttempt ? voiceModeOverride ?? normalizeVoiceMode(callAttempt.member.voiceMode) : voiceModeOverride ?? undefined,
       opener: selectedOpener?.text,
       firstMessage: getRawString(callRaw, "firstMessage"),
       demoMaxDurationSeconds: getRawNumber(callRaw, "demoMaxDurationSeconds"),

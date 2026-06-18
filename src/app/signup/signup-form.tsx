@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { planOptions, trialLengthDays } from "@/lib/plans";
 import { formatNorthAmericanPhoneInput, normalizeNorthAmericanPhone } from "@/lib/phone";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { defaultVoiceId, voiceOptions } from "@/lib/voice/voice-options";
+import { defaultVoiceId, normalizeVoiceMode, voiceModeOptions, voiceOptions, type VoiceMode } from "@/lib/voice/voice-options";
 import { SocialSigninButtons } from "./social-signin-buttons";
 
 type CheckoutState = {
@@ -146,6 +146,7 @@ export function SignupForm() {
   const [selectedTimezone, setSelectedTimezone] = useState("America/Los_Angeles");
   const [timezoneEdited, setTimezoneEdited] = useState(false);
   const [selectedVoiceId, setSelectedVoiceId] = useState(defaultVoiceId);
+  const [selectedVoiceMode, setSelectedVoiceMode] = useState<VoiceMode>("expressive");
 
   useEffect(() => {
     let cancelled = false;
@@ -208,7 +209,7 @@ export function SignupForm() {
   const wizardSteps = [
     { eyebrow: "Step 1 of 4", title: "Your account", fields: accountEmail ? ["customerName", "customerPhone", "customerCountry"] : ["customerEmail", "accountPassword", "customerName", "customerPhone", "customerCountry"] },
     { eyebrow: "Step 2 of 4", title: "Plan and schedule", fields: ["plan", "parentName", "parentPhone", "weatherLocation", "timezone", "preferredCallTimes"] },
-    { eyebrow: "Step 3 of 4", title: "Make calls feel familiar", fields: ["preferredVoiceId", "preferredTone"] },
+    { eyebrow: "Step 3 of 4", title: "Make calls feel familiar", fields: ["voiceMode", "preferredVoiceId", "preferredTone"] },
     { eyebrow: "Step 4 of 4", title: "Review and start trial", fields: [] },
   ];
 
@@ -219,7 +220,7 @@ export function SignupForm() {
     const fields = wizardSteps[currentStep]?.fields ?? [];
     for (const field of fields) {
       const controls = Array.from(form.elements.namedItem(field) instanceof RadioNodeList ? (form.elements.namedItem(field) as RadioNodeList) : [form.elements.namedItem(field)]).filter(Boolean) as HTMLInputElement[];
-      if (field === "plan" || field === "preferredVoiceId" || field === "preferredCallTimes") {
+      if (field === "plan" || field === "voiceMode" || field === "preferredVoiceId" || field === "preferredCallTimes") {
         if (!controls.some((control) => !control.disabled && ((control.type === "radio" || control.type === "checkbox") ? control.checked : Boolean(control.value)))) {
           setStepError("Choose an option before continuing.");
           return false;
@@ -330,6 +331,7 @@ export function SignupForm() {
       importantEvents: String(formData.get("importantEvents") ?? ""),
       questionsToAsk: String(formData.get("questionsToAsk") ?? ""),
       preferredTone: String(formData.get("preferredTone") ?? "warm_patient"),
+      voiceMode: normalizeVoiceMode(String(formData.get("voiceMode") ?? selectedVoiceMode)),
       preferredVoiceId: String(formData.get("preferredVoiceId") ?? selectedVoiceId),
       ritualPreference: formData
         .getAll("ritualPreference")
@@ -518,6 +520,38 @@ export function SignupForm() {
         </fieldset>
 
         <fieldset className={`${currentStep === 2 ? "grid" : "hidden"} gap-4`}>
+          <div>
+            <legend className="mb-2 text-xl font-bold text-ink">Choose voice style</legend>
+            <p className="text-sm leading-6 text-slate-600">
+              Pick the speech style that will be easiest for your loved one to follow. You can change this later in <strong className="font-bold text-ink">My Dashboard</strong>.
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {voiceModeOptions.map((mode) => (
+              <label
+                key={mode.value}
+                className={
+                  "rounded-2xl border bg-white p-4 text-sm font-semibold text-ink transition " +
+                  (selectedVoiceMode === mode.value ? "border-brandButtonBlue ring-4 ring-brandBlue/20" : "border-slate-200")
+                }
+              >
+                <span className="flex items-start gap-3">
+                  <input
+                    name="voiceMode"
+                    type="radio"
+                    value={mode.value}
+                    checked={selectedVoiceMode === mode.value}
+                    onChange={() => setSelectedVoiceMode(mode.value)}
+                    className="mt-1 h-4 w-4 shrink-0"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-ink">{mode.value === "expressive" ? "Warm & expressive (recommended)" : "Clear & slower - best if hearing is difficult"}</span>
+                    <span className="mt-2 block text-sm font-normal leading-6 text-slate-600">{mode.description}</span>
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
           <div>
             <legend className="mb-2 text-xl font-bold text-ink">Choose a voice</legend>
             <p className="text-sm leading-6 text-slate-600">

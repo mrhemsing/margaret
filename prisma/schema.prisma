@@ -57,6 +57,7 @@ model Member {
   weatherLocation     String?
   preferredCallTime   String
   preferredVoiceId    String        @default("hpp4J3VqNfWAUOO0d1Us")
+  voiceMode           String        @default("expressive")
   speechSpeed         Float?
   active              Boolean       @default(true)
   callPausedUntil     DateTime?
@@ -115,6 +116,7 @@ model CallAttempt {
   memoryUpdates          Json?
   conversationRaw        Json?
   qualityScores          Json?
+  struggleSignal         String?
   openerKey              String?
   briefingItemIds        String[]          @default([])
   syncedAt               DateTime?
@@ -128,6 +130,7 @@ model CallAttempt {
 
   @@index([memberId, scheduledFor])
   @@index([status, scheduledFor])
+  @@index([struggleSignal])
 }
 
 model SeniorMemory {
