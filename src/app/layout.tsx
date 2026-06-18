@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 
 import { AnalyticsScripts } from "@/app/components/analytics-scripts";
 import { RouteChrome } from "@/app/components/route-chrome";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <AnalyticsScripts />
         <RouteChrome>{children}</RouteChrome>
+        <Analytics />
       </body>
     </html>
   );
