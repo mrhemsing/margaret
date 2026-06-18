@@ -2,8 +2,8 @@ export const defaultVoiceId = "hpp4J3VqNfWAUOO0d1Us";
 export const productionElevenLabsTtsModel = "eleven_flash_v2";
 export const evaluationElevenLabsTtsModel = "eleven_v3_conversational";
 export const defaultElevenLabsTtsSpeed = 0.95;
-export const defaultClearSpeed = 0.9;
-export const minMemberSpeechSpeed = 0.85;
+export const defaultClearSpeed = 0.75;
+export const minMemberSpeechSpeed = 0.7;
 export const maxMemberSpeechSpeed = 1.05;
 
 export type VoiceMode = "expressive" | "clear";
