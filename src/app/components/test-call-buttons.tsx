@@ -29,6 +29,19 @@ type TestCallButtonsProps = {
   buttonClassName?: string;
 };
 
+function TestCallButtonLabel({ target, voiceMode, isCalling }: { target: TestCallTarget; voiceMode: TestVoiceMode; isCalling: boolean }) {
+  if (isCalling) return <>Calling {target.label}...</>;
+
+  if (!voiceMode.label) return <>Test Call ({target.label})</>;
+
+  return (
+    <span className="leading-tight">
+      <span className="block">Test Call ({target.label})</span>
+      <span className="block">{voiceMode.label}</span>
+    </span>
+  );
+}
+
 export function TestCallButtons({
   endpoint,
   caregiverName,
@@ -104,7 +117,7 @@ export function TestCallButtons({
                 "h-11 w-full whitespace-nowrap rounded-xl bg-brandPink px-4 text-sm font-semibold text-white shadow-sm hover:bg-brandPink/90 disabled:cursor-not-allowed disabled:opacity-50"
               }
             >
-              {isCalling ? `Calling ${target.label}...` : `Test Call (${target.label})${voiceMode.label ? ` - ${voiceMode.label}` : ""}`}
+              <TestCallButtonLabel target={target} voiceMode={voiceMode} isCalling={isCalling} />
             </button>
             {disabled && disabledMessage ? <p className="mt-2 text-xs text-slate-500">{disabledMessage}</p> : null}
             {state.message ? (
