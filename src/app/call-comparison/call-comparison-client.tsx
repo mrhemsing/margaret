@@ -29,6 +29,73 @@ const technologySnapshot = [
   },
 ] as const;
 
+const marketCompetitors = [
+  {
+    name: "JoyCalls",
+    category: "Direct phone companion",
+    offer: "Nationwide AI phone companion from ONSCREEN with daily or weekly check-ins, reminders, games, summaries, alerts, and caregiver web-app insights.",
+    pricing: "$9.99/$19.99/$29.99 per month with a 7-day trial; Premium includes up to five active scheduled calls and 180 minutes/month.",
+    watch: "Strongest direct benchmark for public launch clarity, plan ladder, and family peace-of-mind copy.",
+    source: "JoyCalls / ONSCREEN, refreshed Jun 18, 2026",
+  },
+  {
+    name: "AloneAssist",
+    category: "Direct phone check-in",
+    offer: "Daily wellness call plus shared family dashboard, care circle, SMS/email summaries, and escalation rules.",
+    pricing: "Plans from $9.99/mo; public launch coverage also cites $14.99/mo or $120/year with 14-day no-card trial.",
+    watch: "New low-price, family-dashboard competitor. Pressure point: DailyCall must feel warmer and more complete.",
+    source: "AloneAssist, refreshed Jun 18, 2026",
+  },
+  {
+    name: "CareCall",
+    category: "Daily safety check-in",
+    offer: "Automated daily check-in calls, friendly conversations, care-circle notifications, reminders, local info, and multilingual support.",
+    pricing: "$20/mo after a 14-day no-card trial.",
+    watch: "Most safety/check-in oriented. DailyCall should beat it on warmth, memory, and caregiver trust.",
+    source: "CareCall, refreshed Jun 18, 2026",
+  },
+  {
+    name: "ElderVoice",
+    category: "Direct phone companion",
+    offer: "AI companion calls and check-ins with weekly summaries, reminders, and transparent consumer plans.",
+    pricing: "$19/mo weekly check-in plan; 7-day free trial; no contracts.",
+    watch: "Clear pricing and setup copy. Use as the benchmark for explaining missed calls and family summaries.",
+    source: "ElderVoice, refreshed Jun 18, 2026",
+  },
+  {
+    name: "inTouch Family",
+    category: "Direct family companion",
+    offer: "Daily AI phone conversations, 24/7 availability, family insights, mood/engagement signals, and story/legacy positioning.",
+    pricing: "Public coverage still points to about $29.90/mo.",
+    watch: "Strong emotional buyer framing. DailyCall needs equal warmth without sounding like outsourced family contact.",
+    source: "inTouch Family, refreshed Jun 18, 2026",
+  },
+  {
+    name: "Meela",
+    category: "Phone companion / care teams",
+    offer: "Phone-based AI companion for older adults with no app or hardware, scheduled or on-demand conversation, memory, and caregiver insights.",
+    pricing: "Pricing not clearly public; current positioning leans care organizations plus family trust.",
+    watch: "Best FAQ/privacy benchmark. Match its clarity on consent, limits, and what families do or do not see.",
+    source: "Meela, refreshed Jun 18, 2026",
+  },
+  {
+    name: "SeniorTalk",
+    category: "Multichannel companion",
+    offer: "Phone, smart-speaker beta, SMS, WhatsApp, and Messenger companions with persona choice and multilingual support.",
+    pricing: "$14.90/mo for messengers; $24.90/mo for calls + SMS with 180 voice minutes; 30-day trial.",
+    watch: "Good persona and multichannel pressure, but less purely family-check-in focused than DailyCall.",
+    source: "SeniorTalk, refreshed Jun 18, 2026",
+  },
+  {
+    name: "Ato",
+    category: "Hardware companion",
+    offer: "Screen-free voice-first AI companion device with family app, cognitive engagement, connection, and worldwide shipping.",
+    pricing: "$179 device, shown against $200, plus 1-month free membership then $29/mo.",
+    watch: "Hardware makes it a different buying motion. DailyCall should win on no device, fast setup, and any phone.",
+    source: "Ato, refreshed Jun 18, 2026",
+  },
+] as const;
+
 const comparisonRows = [
   {
     title: "ElevenLabs Flash v2.5 bridge",
@@ -238,8 +305,36 @@ export function CallComparisonClient() {
           ))}
         </div>
         <p className="mt-4 text-xs font-semibold leading-5 text-slate-500">
-          Last refreshed Jun 17, 2026 from OpenAI Realtime docs/release/pricing/VAD, ElevenLabs changelog, Google Gemini Live docs, Cartesia docs, and Hume docs.
+          Last refreshed Jun 18, 2026 from OpenAI Realtime docs/release/pricing/VAD, ElevenLabs changelog, Google Gemini Live docs, Cartesia docs, and Hume docs.
         </p>
+      </section>
+
+      <section className="rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brandButtonBlue">market competitors</p>
+        <h2 className="mt-2 text-2xl font-bold text-ink">Senior companion products to keep in view</h2>
+        <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">
+          Use this as the positioning scoreboard. These cards do not start calls or change any production/demo voice path.
+        </p>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {marketCompetitors.map((competitor) => (
+            <article key={competitor.name} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-lg font-bold text-ink">{competitor.name}</h3>
+                <span className="rounded-full bg-brandButtonBlue/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-brandButtonBlue">
+                  {competitor.category}
+                </span>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-slate-600">{competitor.offer}</p>
+              <p className="mt-3 rounded-xl bg-white p-3 text-xs font-semibold leading-5 text-slate-700 ring-1 ring-slate-200">
+                Pricing: {competitor.pricing}
+              </p>
+              <p className="mt-2 rounded-xl bg-sage/10 p-3 text-xs font-semibold leading-5 text-slate-700 ring-1 ring-sage/25">
+                Watch: {competitor.watch}
+              </p>
+              <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">{competitor.source}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <div className="rounded-[2rem] bg-white/85 p-6 shadow-sm ring-1 ring-black/5 md:p-8">
