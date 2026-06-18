@@ -26,7 +26,11 @@ type DashboardCustomer = {
     voicemailRetryCount: number;
     voicemailRetryDelayMins: number;
     active: boolean;
+    callsPaused: boolean;
     callPausedUntil: string | null;
+    optOutRequestedAt: string | null;
+    optOutEvidence: string | null;
+    optOutCount: number;
     memory: {
       topicsToRevisit: string[];
     } | null;
@@ -216,10 +220,11 @@ function isTemporarilyPaused(member: DashboardMember) {
 }
 
 function isCallingEnabled(member: DashboardMember) {
-  return member.active && !isTemporarilyPaused(member);
+  return member.active && !member.callsPaused && !isTemporarilyPaused(member);
 }
 
 function formatCallStatus(member: DashboardMember) {
+  if (member.callsPaused) return "Paused by request";
   if (!member.active) return "Paused indefinitely";
 
   const pauseUntil = getCallPauseUntil(member);
@@ -231,6 +236,7 @@ function formatCallStatus(member: DashboardMember) {
 }
 
 function formatCallActivityLine(member: DashboardMember) {
+  if (member.callsPaused) return `${member.name} asked DailyCall to pause calls`;
   return isCallingEnabled(member) ? "Receiving daily calls" : formatCallStatus(member);
 }
 
@@ -1157,6 +1163,7 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
     const pauseUntil = getCallPauseUntil(member);
     return pauseUntil && pauseUntil.getTime() > Date.now() ? pauseUntil.toISOString().slice(0, 10) : defaultPauseUntilDate();
   });
+  const [resumeAcknowledged, setResumeAcknowledged] = useState(false);
   const [saving, setSaving] = useState<EditPanel>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1191,7 +1198,8 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
   useEffect(() => {
     const pauseUntil = getCallPauseUntil(member);
     setPauseUntilDate(pauseUntil && pauseUntil.getTime() > Date.now() ? pauseUntil.toISOString().slice(0, 10) : defaultPauseUntilDate());
-  }, [member.callPausedUntil]);
+    setResumeAcknowledged(false);
+  }, [member.callPausedUntil, member.callsPaused]);
 
   const lastCompletedCall = getLastCompletedCall(member);
   const selectedVoice = getVoiceOption(member.preferredVoiceId);
@@ -1287,7 +1295,7 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
   async function saveMember(
     payload: {
       profile?: Partial<typeof profileForm>;
-      callStatus?: { mode: "active" | "pause_until" | "pause_indefinitely"; pauseUntil?: string };
+      callStatus?: { mode: "active" | "pause_until" | "pause_indefinitely"; pauseUntil?: string; resumeAcknowledged?: boolean };
       retrySettings?: Partial<typeof retryForm>;
       questionsToAsk?: string[];
     },
@@ -1632,11 +1640,35 @@ function SettingsMemberCard({ member, onUpdated }: { member: DashboardMember; on
             <p className="text-sm font-semibold text-slate-700">Upcoming daily calls</p>
             <p className="mt-1 text-xs leading-5 text-slate-500">Pause calls during a short break, turn them off indefinitely, or resume the normal daily schedule.</p>
           </div>
+          {member.callsPaused ? (
+            <div className="rounded-2xl bg-red-50 p-4 text-sm leading-6 text-red-800 ring-1 ring-red-100">
+              <p className="font-bold text-red-900">{member.name} asked DailyCall to pause calls.</p>
+              <p className="mt-1">
+                Future calls are stopped. Resume only after you have talked with {member.name} and they are comfortable receiving DailyCall again.
+              </p>
+              {member.optOutEvidence ? <p className="mt-2 font-semibold">Heard: &quot;{member.optOutEvidence}&quot;</p> : null}
+              {member.optOutRequestedAt ? <p className="mt-1 text-xs font-bold uppercase tracking-wide text-red-700">Paused {formatDateTime(member.optOutRequestedAt)}</p> : null}
+              {member.optOutCount >= 2 ? (
+                <p className="mt-2 rounded-xl bg-white p-3 font-semibold text-red-900 ring-1 ring-red-100">
+                  This has happened more than once. Treat repeated opt-outs as a strong signal before resuming.
+                </p>
+              ) : null}
+              <label className="mt-3 flex items-start gap-3 rounded-xl bg-white p-3 text-sm font-semibold text-red-900 ring-1 ring-red-100">
+                <input
+                  type="checkbox"
+                  checked={resumeAcknowledged}
+                  onChange={(event) => setResumeAcknowledged(event.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0"
+                />
+                <span>I&apos;ve spoken with {member.name} and they&apos;re comfortable resuming calls.</span>
+              </label>
+            </div>
+          ) : null}
           <div className="grid gap-3 md:grid-cols-3">
             <button
               type="button"
-              onClick={() => void saveMember({ callStatus: { mode: "active" } }, "schedule")}
-              disabled={saving === "schedule" || isCallingEnabled(member)}
+              onClick={() => void saveMember({ callStatus: { mode: "active", resumeAcknowledged: member.callsPaused ? resumeAcknowledged : undefined } }, "schedule")}
+              disabled={saving === "schedule" || isCallingEnabled(member) || (member.callsPaused && !resumeAcknowledged)}
               className="rounded-2xl bg-white p-4 text-left ring-1 ring-black/10 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="block text-sm font-bold text-ink">Resume daily calls</span>
@@ -1988,6 +2020,15 @@ function MemberCard({ member, onUpdated, showSummary = true }: { member: Dashboa
           </Link>
         </div>
       </div> : null}
+
+      {member.callsPaused ? (
+        <section className="mt-4 rounded-2xl bg-red-50 p-4 ring-1 ring-red-100">
+          <p className="text-sm font-bold uppercase tracking-wide text-red-700">Calls paused by request</p>
+          <p className="mt-2 text-sm leading-6 text-red-800">
+            {member.name} asked DailyCall to stop calling. Future calls are paused until the family confirms in Settings that {member.name} is comfortable resuming.
+          </p>
+        </section>
+      ) : null}
 
       {noConnectAlert ? (
         <section className="mt-4 rounded-2xl bg-red-50 p-4 ring-1 ring-red-100">

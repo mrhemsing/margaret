@@ -152,7 +152,7 @@ export function nextScheduledCallAt(preferredCallTime: string, timeZone: string,
 
 export async function ensureUpcomingScheduledCalls(
   prisma: PrismaClient,
-  members: Array<{ id: string; active: boolean; callPausedUntil?: Date | string | null; preferredCallTime: string; timezone: string }>,
+  members: Array<{ id: string; active: boolean; callsPaused?: boolean; callPausedUntil?: Date | string | null; preferredCallTime: string; timezone: string }>,
 ) {
   const now = new Date();
   let cancelledStaleCalls = 0;
@@ -162,12 +162,14 @@ export async function ensureUpcomingScheduledCalls(
     const pauseUntil = member.callPausedUntil ? new Date(member.callPausedUntil) : null;
     const isTemporarilyPaused = Boolean(pauseUntil && pauseUntil.getTime() > now.getTime());
 
-    if (!member.active || isTemporarilyPaused) {
+    if (member.callsPaused || !member.active || isTemporarilyPaused) {
       cancelledPausedCalls += await cancelUpcomingScheduledCalls(
         prisma,
         member.id,
         now,
-        !member.active ? "Canceled scheduled call because daily calls are paused." : `Canceled scheduled call because daily calls are paused until ${pauseUntil?.toISOString()}.`,
+        member.callsPaused
+          ? "Canceled scheduled call because the member asked DailyCall to stop calling."
+          : !member.active ? "Canceled scheduled call because daily calls are paused." : `Canceled scheduled call because daily calls are paused until ${pauseUntil?.toISOString()}.`,
       );
       continue;
     }

@@ -39,11 +39,13 @@ model Customer {
   fullName         String
   phoneNumber      String
   stripeCustomerId String?        @unique
+  consentLastRefreshedAt DateTime?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   members          Member[]
   subscriptions    Subscription[]
   alertContacts    AlertContact[]
+  consentEvents    ConsentEvent[]
 }
 
 model Member {
@@ -60,7 +62,11 @@ model Member {
   voiceMode           String        @default("expressive")
   speechSpeed         Float?
   active              Boolean       @default(true)
+  callsPaused         Boolean       @default(false)
   callPausedUntil     DateTime?
+  optOutRequestedAt   DateTime?
+  optOutEvidence      String?
+  optOutCount         Int           @default(0)
   noResponseAlertMins     Int           @default(15)
   voicemailRetryCount     Int           @default(1)
   voicemailRetryDelayMins Int           @default(15)
@@ -69,6 +75,23 @@ model Member {
   customer            Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   callAttempts        CallAttempt[]
   memory              SeniorMemory?
+  consentEvents       ConsentEvent[]
+}
+
+model ConsentEvent {
+  id         String   @id @default(cuid())
+  customerId String
+  memberId   String?
+  type       String
+  actor      String
+  note       String?
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  member     Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@index([customerId, createdAt])
+  @@index([memberId, createdAt])
+  @@index([type, createdAt])
 }
 
 model AlertContact {

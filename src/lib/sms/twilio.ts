@@ -149,6 +149,28 @@ export async function sendCareAlertSmsToAlertContacts(input: {
   return sendSmsToRecipients(recipients, buildCareAlertSms(input));
 }
 
+export function buildMemberOptOutSms(input: {
+  memberName: string;
+  evidence?: string | null;
+}) {
+  const env = getServerEnv();
+  const publicAppUrl = env.PUBLIC_APP_URL ?? env.APP_URL ?? "http://dailycall.care";
+  const evidence = input.evidence?.trim() ? ` They said: "${input.evidence.trim()}".` : "";
+
+  return `${input.memberName} asked us to pause their DailyCall check-ins today. We've stopped future calls.${evidence} Please talk with them before resuming from the dashboard.\n\nDashboard: ${publicAppUrl}/dashboard/settings`;
+}
+
+export async function sendMemberOptOutSmsToAlertContacts(input: {
+  alertContacts: SmsRecipient[];
+  memberName: string;
+  evidence?: string | null;
+}) {
+  const recipients = input.alertContacts.filter((contact) => contact.receivesAlerts || contact.receivesReports);
+  if (recipients.length === 0) return [];
+
+  return sendSmsToRecipients(recipients, buildMemberOptOutSms(input));
+}
+
 export function buildVoicemailAlertSms(input: {
   memberName: string;
   summary?: string | null;

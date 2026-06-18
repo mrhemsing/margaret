@@ -28,6 +28,7 @@ async function processScheduledCalls() {
   const now = new Date();
   const callableMemberWhere = {
     active: true,
+    callsPaused: false,
     AND: [
       { OR: [{ callPausedUntil: null }, { callPausedUntil: { lte: now } }] },
       cronEligibleMemberWhere,
@@ -38,7 +39,7 @@ async function processScheduledCalls() {
   const processingWindowStart = new Date(now.getTime() - PROCESSING_WINDOW_MS);
   const activeMembers = await prisma.member.findMany({
     where: callableMemberWhere,
-    select: { id: true, active: true, callPausedUntil: true, preferredCallTime: true, timezone: true },
+    select: { id: true, active: true, callsPaused: true, callPausedUntil: true, preferredCallTime: true, timezone: true },
   });
 
   const scheduledMaintenance = await ensureUpcomingScheduledCalls(prisma, activeMembers);

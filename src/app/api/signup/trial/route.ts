@@ -204,6 +204,7 @@ export async function POST(request: Request) {
   const voiceMode = normalizeVoiceMode(input.voiceMode);
   const trialEndsAt = new Date(Date.now() + trialLengthDays * 24 * 60 * 60 * 1000);
   const interestTags = deriveInterestTags([input.hobbies, input.favoriteTopics, input.routines]);
+  const consentGrantedAt = new Date();
 
   try {
     const { customer, member } = await prisma.$transaction(async (tx) => {
@@ -222,6 +223,7 @@ export async function POST(request: Request) {
               email: customerEmail,
               phoneNumber: input.customerPhone,
               supabaseUserId: authUserId,
+              consentLastRefreshedAt: consentGrantedAt,
             },
           })
         : await tx.customer.create({
@@ -230,6 +232,7 @@ export async function POST(request: Request) {
               email: customerEmail,
               phoneNumber: input.customerPhone,
               supabaseUserId: authUserId,
+              consentLastRefreshedAt: consentGrantedAt,
             },
           });
 
@@ -246,6 +249,17 @@ export async function POST(request: Request) {
 
       const member = await tx.member.create({
         data: memberCreateData,
+      });
+
+      await tx.consentEvent.create({
+        data: {
+          customerId: customer.id,
+          memberId: member.id,
+          type: "granted",
+          actor: "family_signup",
+          note: "Family started DailyCall trial and accepted the service disclosures.",
+          createdAt: consentGrantedAt,
+        },
       });
 
       await tx.alertContact.create({

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Prisma, type CallAttemptStatus } from "@prisma/client";
+import { detectMemberOptOut, pauseMemberForVoiceOptOut } from "@/lib/calls/opt-out";
 import { ensureUpcomingScheduledCalls } from "@/lib/calls/scheduling";
 import { prisma } from "@/lib/db";
 import { sendCallReportSmsToAlertContacts, sendCareAlertSmsToAlertContacts } from "@/lib/sms/twilio";
@@ -315,6 +316,18 @@ export async function syncTranscripts() {
         if (voiceAdaptation.switchedToClear && member) {
           finalReportSummary = appendClearModeReportNote(finalReportSummary, member.name);
         }
+        const optOutDetection = member && completedAt && hasConversation && !isDemoCall
+          ? detectMemberOptOut({ transcript, memberName: member.name })
+          : null;
+        const optOutResult = member && optOutDetection
+          ? await pauseMemberForVoiceOptOut(prisma, {
+              memberId: member.id,
+              evidence: optOutDetection.evidence,
+            })
+          : null;
+        if (optOutResult?.paused && member) {
+          finalReportSummary = `${finalReportSummary?.trim() || "DailyCall completed the check-in."} ${member.name} asked DailyCall to pause future calls, so DailyCall stopped scheduled calls and notified the family.`;
+        }
         const shouldSendCareAlert = Boolean(
           member &&
           completedAt &&
@@ -390,7 +403,7 @@ export async function syncTranscripts() {
           });
         }
 
-      if (member && completedAt && !isDemoCall) {
+      if (member && completedAt && !isDemoCall && !optOutResult?.paused) {
         await ensureUpcomingScheduledCalls(prisma, [member]);
       }
 
@@ -419,6 +432,16 @@ export async function syncTranscripts() {
               careAlertSent: Boolean(careAlertResults?.length),
               careAlertResults,
               careAlertError,
+              voiceOptOut: optOutDetection
+                ? {
+                    detected: true,
+                    evidence: optOutDetection.evidence,
+                    paused: Boolean(optOutResult?.paused),
+                    smsSent: Boolean(optOutResult?.smsResults.length),
+                    smsResults: optOutResult?.smsResults ?? [],
+                    smsError: optOutResult?.smsError ?? null,
+                  }
+                : { detected: false },
             } as Prisma.InputJsonValue,
             syncedAt: new Date(),
             reportSentAt: smsResults?.length ? new Date() : call.reportSentAt,
@@ -435,6 +458,7 @@ export async function syncTranscripts() {
           hasTranscript: Boolean(updated.transcript),
           smsSent: Boolean(smsResults?.length),
           careAlertSent: Boolean(careAlertResults?.length),
+          optOutPaused: Boolean(optOutResult?.paused),
           smsResults,
           smsError,
           careAlertResults,
@@ -530,6 +554,18 @@ export async function syncTranscripts() {
       if (voiceAdaptation.switchedToClear && member) {
         finalSummary = appendClearModeReportNote(finalSummary, member.name);
       }
+      const optOutDetection = member && completedAt && hasConversation && !isDemoCall
+        ? detectMemberOptOut({ transcript, memberName: member.name })
+        : null;
+      const optOutResult = member && optOutDetection
+        ? await pauseMemberForVoiceOptOut(prisma, {
+            memberId: member.id,
+            evidence: optOutDetection.evidence,
+          })
+        : null;
+      if (optOutResult?.paused && member) {
+        finalSummary = `${finalSummary?.trim() || "DailyCall completed the check-in."} ${member.name} asked DailyCall to pause future calls, so DailyCall stopped scheduled calls and notified the family.`;
+      }
       const shouldSendCareAlert = Boolean(
         member &&
         completedAt &&
@@ -607,7 +643,7 @@ export async function syncTranscripts() {
         });
       }
 
-        if (member && completedAt && !isDemoCall) {
+        if (member && completedAt && !isDemoCall && !optOutResult?.paused) {
           await ensureUpcomingScheduledCalls(prisma, [member]);
         }
 
@@ -639,6 +675,16 @@ export async function syncTranscripts() {
             careAlertSent: Boolean(careAlertResults?.length),
             careAlertResults,
             careAlertError,
+            voiceOptOut: optOutDetection
+              ? {
+                  detected: true,
+                  evidence: optOutDetection.evidence,
+                  paused: Boolean(optOutResult?.paused),
+                  smsSent: Boolean(optOutResult?.smsResults.length),
+                  smsResults: optOutResult?.smsResults ?? [],
+                  smsError: optOutResult?.smsError ?? null,
+                }
+              : { detected: false },
           } as Prisma.InputJsonValue,
           syncedAt: new Date(),
           reportSentAt: smsResults?.length ? new Date() : call.reportSentAt,
@@ -654,6 +700,7 @@ export async function syncTranscripts() {
         hasTranscript: Boolean(updated.transcript),
         smsSent: Boolean(smsResults?.length),
         careAlertSent: Boolean(careAlertResults?.length),
+        optOutPaused: Boolean(optOutResult?.paused),
         smsResults,
         smsError,
         careAlertResults,

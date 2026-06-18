@@ -54,6 +54,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ mem
     return NextResponse.json({ ok: false, error: "Loved one not found." }, { status: 404 });
   }
 
+  if (member.callsPaused) {
+    return NextResponse.json({ ok: false, error: "This loved one asked DailyCall to pause calls. Resume only after confirming they are comfortable receiving calls again." }, { status: 409 });
+  }
+
   if (!member.active) {
     return NextResponse.json({ ok: false, error: "This loved one is paused. Reactivate them before starting a call." }, { status: 409 });
   }

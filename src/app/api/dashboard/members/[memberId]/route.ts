@@ -23,6 +23,7 @@ const updateMemberSchema = z.object({
     .object({
       mode: z.enum(["active", "pause_until", "pause_indefinitely"]),
       pauseUntil: z.string().trim().optional(),
+      resumeAcknowledged: z.boolean().optional(),
     })
     .optional(),
   retrySettings: z
@@ -75,7 +76,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
 
   const member = await prisma.member.findFirst({
     where: { id: memberId, customerId },
-    select: { id: true },
+    select: { id: true, name: true, customerId: true, callsPaused: true, optOutCount: true },
   });
 
   if (!member) {
@@ -95,7 +96,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
     if (parsed.data.profile.preferredCallTime) {
       const scheduledMember = await prisma.member.findUnique({
         where: { id: memberId },
-        select: { id: true, active: true, callPausedUntil: true, preferredCallTime: true, timezone: true },
+        select: { id: true, active: true, callsPaused: true, callPausedUntil: true, preferredCallTime: true, timezone: true },
       });
 
       if (scheduledMember) {
@@ -105,8 +106,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
   }
 
   if (parsed.data.callStatus) {
-    const { mode, pauseUntil } = parsed.data.callStatus;
+    const { mode, pauseUntil, resumeAcknowledged } = parsed.data.callStatus;
     let callPausedUntil: Date | null = null;
+
+    if (mode === "active" && member.callsPaused && !resumeAcknowledged) {
+      return NextResponse.json(
+        { ok: false, error: `Please confirm you've spoken with ${member.name} and they are comfortable resuming calls.` },
+        { status: 400 },
+      );
+    }
 
     if (mode === "pause_until") {
       if (!pauseUntil) {
@@ -124,10 +132,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
       where: { id: memberId },
       data: {
         active: mode !== "pause_indefinitely",
+        callsPaused: mode === "active" ? false : member.callsPaused,
         callPausedUntil: mode === "pause_until" ? callPausedUntil : null,
+        ...(mode === "active" && member.callsPaused ? { optOutRequestedAt: null, optOutEvidence: null } : {}),
       },
-      select: { id: true, active: true, callPausedUntil: true, preferredCallTime: true, timezone: true },
+      select: { id: true, active: true, callsPaused: true, callPausedUntil: true, preferredCallTime: true, timezone: true },
     });
+
+    if (mode === "active" && member.callsPaused) {
+      await prisma.consentEvent.create({
+        data: {
+          customerId: member.customerId,
+          memberId: member.id,
+          type: "resumed",
+          actor: "family_dashboard",
+          note: resumeAcknowledged
+            ? `Family acknowledged speaking with ${member.name} before resuming calls. Prior opt-out count: ${member.optOutCount}.`
+            : null,
+        },
+      });
+    }
 
     await ensureUpcomingScheduledCalls(prisma, [scheduledMember]);
   }
