@@ -44,6 +44,26 @@ function hasConversationTranscript(transcript: string | null | undefined) {
   return hasDailyCallTurn && hasMemberTurn;
 }
 
+const voicemailPattern =
+  /\b(voicemail|voice mail|mailbox|answering machine|not available|unavailable|can't take (your )?call|cannot take (your )?call|leave (a )?(message|voicemail)|at the (tone|beep)|after the (tone|beep)|record (your )?message|number you have reached|subscriber you have dialed|wireless customer|please try again later|message system)\b/i;
+
+function isLikelyVoicemailText(text: string | null | undefined) {
+  return Boolean(text?.trim() && voicemailPattern.test(text));
+}
+
+function hasVoicemailTranscriptTurn(transcript: Array<{ role?: string; message?: string | null; text?: string | null }> | undefined) {
+  return Boolean(
+    transcript?.some((turn) => {
+      const text = turn.message ?? turn.text ?? "";
+      return turn.role === "user" && isLikelyVoicemailText(text);
+    }),
+  );
+}
+
+function getNoResponseSummary() {
+  return "DailyCall reached voicemail or did not capture a live response. No check-in conversation was completed.";
+}
+
 function shouldUseTranscriptSummary(summary: string | null | undefined) {
   return !summary || /could not be connected|couldn't connect|carrier issue|did not capture a live response|voicemail|no answer|failed|timed out|being placed|started|chatting with them now/i.test(summary);
 }
@@ -157,7 +177,8 @@ export async function syncTranscripts() {
         });
         const isDemoCall = member?.customer.email === "demo-family@dailycall.local" || member?.preferredCallTime === "Landing page demo";
         const transcript = call.transcript ?? "";
-        const hasConversation = hasConversationTranscript(transcript);
+        const voicemailDetected = isLikelyVoicemailText(transcript) || isLikelyVoicemailText(call.summary);
+        const hasConversation = !voicemailDetected && hasConversationTranscript(transcript);
         const finalSummary = transcript
           ? summarizeConversationForFamily({
               memberName: member?.name ?? "the call recipient",
@@ -172,11 +193,14 @@ export async function syncTranscripts() {
           priorRecentTopics: member?.memory?.recentTopics ?? [],
         });
         const isStuckInProgress = call.status === "IN_PROGRESS" && Boolean(call.startedAt) && Date.now() - call.startedAt!.getTime() > 15 * 60 * 1000;
-        const baseStatus = hasConversation
+        const baseStatus = voicemailDetected
+          ? "NO_RESPONSE"
+          : hasConversation
           ? isTerminalCompletedStatus(call.status)
             ? call.status
             : "ANSWERED_OK"
           : isStuckInProgress ? "FAILED" : call.status === "IN_PROGRESS" ? "IN_PROGRESS" : call.status;
+        const reportSummary = voicemailDetected ? getNoResponseSummary() : finalSummary;
         const baseCompletedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(baseStatus) ? call.completedAt ?? new Date() : call.completedAt;
         const careAssessment = member && baseCompletedAt && transcript && hasConversation
           ? await assessCallConcern({
@@ -189,8 +213,8 @@ export async function syncTranscripts() {
           : false;
         const finalStatus = careAssessment ? applyCareStatus(baseStatus as CallAttemptStatus, careAssessment, concernEscalates) : baseStatus;
         const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(finalStatus) ? baseCompletedAt ?? new Date() : call.completedAt;
-        const reportSummary = careAssessment ? appendCareReportLine(finalSummary, careAssessment, concernEscalates) : finalSummary;
-        const openThreads = member && completedAt && transcript
+        const finalReportSummary = careAssessment ? appendCareReportLine(reportSummary, careAssessment, concernEscalates) : reportSummary;
+        const openThreads = member && completedAt && transcript && hasConversation
           ? await extractOpenThreads({
               transcript,
               memberName: member.name,
@@ -232,7 +256,7 @@ export async function syncTranscripts() {
               alertContacts: member?.customer.alertContacts ?? [],
               memberName: member?.name ?? "the call recipient",
               status: finalStatus,
-              summary: reportSummary,
+              summary: finalReportSummary,
               isDemo: isDemoCall,
             });
           } catch (error) {
@@ -240,7 +264,7 @@ export async function syncTranscripts() {
           }
         }
 
-        if (member && completedAt && transcript) {
+        if (member && completedAt && transcript && hasConversation) {
           const existingMemory = member.memory;
           const threadTexts = openThreads.map((thread) => thread.text);
           const interestTags = deriveInterestTags([
@@ -284,7 +308,7 @@ export async function syncTranscripts() {
           ? await scoreCallQuality({
               memberName: member.name,
               status: finalStatus,
-              summary: reportSummary,
+              summary: finalReportSummary,
               transcript,
             })
           : null;
@@ -294,18 +318,19 @@ export async function syncTranscripts() {
           data: {
             status: finalStatus,
             completedAt,
-            summary: reportSummary,
-            mood: transcript ? insights.mood : call.mood,
-            topics: transcript ? insights.topics : call.topics,
-            notableMoments: transcript ? insights.notableMoments : call.notableMoments,
-            followUpSuggested: transcript ? Boolean(insights.followUpSuggested || (careAssessment && careAssessment.severity !== "none")) : call.followUpSuggested,
+            summary: finalReportSummary,
+            mood: hasConversation ? insights.mood : null,
+            topics: hasConversation ? insights.topics : [],
+            notableMoments: hasConversation ? insights.notableMoments : [],
+            followUpSuggested: hasConversation ? Boolean(insights.followUpSuggested || (careAssessment && careAssessment.severity !== "none")) : false,
             followUpReason: careAssessment && careAssessment.severity !== "none"
               ? getCareFollowUpReason(careAssessment, concernEscalates)
-              : transcript ? insights.followUpReason : call.followUpReason,
-            memoryUpdates: transcript ? (insights.memoryUpdates as Prisma.InputJsonValue) : call.memoryUpdates ?? undefined,
+              : hasConversation ? insights.followUpReason : null,
+            memoryUpdates: hasConversation ? (insights.memoryUpdates as Prisma.InputJsonValue) : Prisma.DbNull,
             qualityScores: qualityScores ? qualityScores as Prisma.InputJsonValue : call.qualityScores ?? undefined,
             conversationRaw: {
               ...getRawObject(call.conversationRaw),
+              voicemailDetected,
               careAssessment,
               qualityScores,
               careAlertSent: Boolean(careAlertResults?.length),
@@ -340,6 +365,7 @@ export async function syncTranscripts() {
       const status = mapConversationStatus(details.status);
       const timing = getConversationTiming(details);
       const hasUserResponse = hasUserTranscriptTurn(details.transcript) || hasUserAudio(details);
+      const voicemailDetected = hasVoicemailTranscriptTurn(details.transcript) || isLikelyVoicemailText(summary);
 
       const member = await prisma.member.findUnique({
         where: { id: call.memberId },
@@ -347,8 +373,8 @@ export async function syncTranscripts() {
       });
       const isDemoCall = member?.customer.email === "demo-family@dailycall.local" || member?.preferredCallTime === "Landing page demo";
       const transcript = formatConversationTranscript(details.transcript, member?.name ?? "Member");
-      const hasConversation = Boolean(hasUserResponse && hasConversationTranscript(transcript));
-      const transcriptSummary = transcript && (hasConversation || shouldUseTranscriptSummary(summary))
+      const hasConversation = Boolean(hasUserResponse && !voicemailDetected && hasConversationTranscript(transcript));
+      const transcriptSummary = transcript && !voicemailDetected && (hasConversation || shouldUseTranscriptSummary(summary))
         ? summarizeConversationForFamily({
             memberName: member?.name ?? "the call recipient",
             summary,
@@ -363,7 +389,9 @@ export async function syncTranscripts() {
       });
       const isStuckInProgress = status === "IN_PROGRESS" && Boolean(call.startedAt) && Date.now() - call.startedAt!.getTime() > 15 * 60 * 1000;
       const isCompletedWithoutUserResponse = status === "ANSWERED_OK" && !hasUserResponse;
-        const baseStatus = hasConversation
+        const baseStatus = voicemailDetected
+          ? "NO_RESPONSE"
+          : hasConversation
           ? isTerminalCompletedStatus(status)
             ? status
             : "ANSWERED_OK"
@@ -372,8 +400,8 @@ export async function syncTranscripts() {
         ? hasConversation
           ? transcriptSummary
           : "Call processing timed out after 15 minutes. DailyCall marked this attempt as failed so it does not linger in progress."
-        : isCompletedWithoutUserResponse
-          ? "DailyCall reached voicemail or did not capture a live response. No check-in conversation was completed."
+        : voicemailDetected || isCompletedWithoutUserResponse
+          ? getNoResponseSummary()
           : transcriptSummary;
       const baseCompletedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(baseStatus) ? timing.completedAt ?? call.completedAt ?? new Date() : call.completedAt;
       const careAssessment = member && baseCompletedAt && transcript && hasConversation
@@ -388,7 +416,7 @@ export async function syncTranscripts() {
       const finalStatus = careAssessment ? applyCareStatus(baseStatus as CallAttemptStatus, careAssessment, concernEscalates) : baseStatus;
       const finalSummary = careAssessment ? appendCareReportLine(baseSummary, careAssessment, concernEscalates) : baseSummary;
       const completedAt = ["ANSWERED_OK", "FAILED", "NO_RESPONSE", "HELP_REQUESTED", "FOLLOW_UP_NEEDED"].includes(finalStatus) ? baseCompletedAt ?? new Date() : call.completedAt;
-      const openThreads = member && completedAt && transcript
+      const openThreads = member && completedAt && transcript && hasConversation
         ? await extractOpenThreads({
             transcript,
             memberName: member.name,
@@ -440,7 +468,7 @@ export async function syncTranscripts() {
         }
       }
 
-      if (member && completedAt) {
+      if (member && completedAt && hasConversation) {
         const existingMemory = member.memory;
         const threadTexts = openThreads.map((thread) => thread.text);
         const interestTags = deriveInterestTags([
@@ -497,18 +525,19 @@ export async function syncTranscripts() {
           completedAt,
           summary: finalSummary,
           transcript,
-          mood: insights.mood,
-          topics: insights.topics,
-          notableMoments: insights.notableMoments,
-          followUpSuggested: Boolean(insights.followUpSuggested || (careAssessment && careAssessment.severity !== "none")),
+          mood: hasConversation ? insights.mood : null,
+          topics: hasConversation ? insights.topics : [],
+          notableMoments: hasConversation ? insights.notableMoments : [],
+          followUpSuggested: hasConversation ? Boolean(insights.followUpSuggested || (careAssessment && careAssessment.severity !== "none")) : false,
           followUpReason: careAssessment && careAssessment.severity !== "none"
             ? getCareFollowUpReason(careAssessment, concernEscalates)
-            : insights.followUpReason,
-          memoryUpdates: insights.memoryUpdates as Prisma.InputJsonValue,
+            : hasConversation ? insights.followUpReason : null,
+          memoryUpdates: hasConversation ? insights.memoryUpdates as Prisma.InputJsonValue : Prisma.DbNull,
           qualityScores: qualityScores ? qualityScores as Prisma.InputJsonValue : call.qualityScores ?? undefined,
           conversationRaw: {
             ...getRawObject(call.conversationRaw),
             providerDetails: details,
+            voicemailDetected,
             careAssessment,
             qualityScores,
             careAlertSent: Boolean(careAlertResults?.length),
