@@ -130,6 +130,7 @@ function SelectControl({
 
 export function RealtimeTestClient() {
   const [status, setStatus] = useState<Status>("idle");
+  const [model, setModel] = useState("gpt-realtime-2");
   const [voice, setVoice] = useState("marin");
   const [pacingProfile, setPacingProfile] = useState<PacingProfile>("snappy");
   const [reasoningEffort, setReasoningEffort] = useState("low");
@@ -294,6 +295,7 @@ export function RealtimeTestClient() {
       }
 
       const tokenFormData = new FormData();
+      tokenFormData.set("model", model);
       tokenFormData.set("voice", voice);
       tokenFormData.set("reasoningEffort", reasoningEffort);
       tokenFormData.set("instructions", `${instructions}\n\n# Pacing Profile\n${pacingInstructions(pacingProfile)}`);
@@ -372,6 +374,15 @@ export function RealtimeTestClient() {
         <audio ref={remoteAudioRef} autoPlay />
 
         <div className="grid gap-3 sm:grid-cols-2">
+          <SelectControl
+            label="Model"
+            value={model}
+            onChange={setModel}
+            options={[
+              { value: "gpt-realtime-2", label: "GPT-Realtime-2" },
+              { value: "gpt-realtime", label: "gpt-realtime" },
+            ]}
+          />
           <SelectControl
             label="Voice"
             value={voice}

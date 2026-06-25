@@ -18,6 +18,7 @@ type BuildRealtimeInstructionsInput = {
 type AcceptOpenAIRealtimeCallInput = BuildRealtimeInstructionsInput & {
   callId: string;
   voice: string;
+  model?: string | null;
 };
 
 type OpenAIRealtimeTranscriptTurn = {
@@ -237,7 +238,7 @@ export async function acceptOpenAIRealtimeCall(input: AcceptOpenAIRealtimeCallIn
     },
     body: JSON.stringify({
       type: "realtime",
-      model: config.model,
+      model: input.model || config.model,
       instructions,
       reasoning: {
         effort: config.reasoningEffort,

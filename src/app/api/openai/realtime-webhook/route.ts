@@ -30,6 +30,12 @@ function getInitialPrompt(raw: Prisma.JsonValue | null | undefined) {
   return typeof prompt === "string" && prompt.trim() ? prompt.trim() : null;
 }
 
+function getRealtimeModel(raw: Prisma.JsonValue | null | undefined) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const model = (raw as Record<string, unknown>).realtimeModel;
+  return typeof model === "string" && model.trim() ? model.trim() : null;
+}
+
 function getRawObject(raw: Prisma.JsonValue | null | undefined) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   return raw as Record<string, unknown>;
@@ -123,6 +129,7 @@ export async function POST(request: Request) {
     memberName: callAttempt?.member.name ?? "there",
     caregiverName: "your caregiver",
     voice: getOpenAIRealtimeVoice(callAttempt?.member.preferredVoiceId),
+    model: getRealtimeModel(callAttempt.conversationRaw),
     ...companionContext,
   });
 

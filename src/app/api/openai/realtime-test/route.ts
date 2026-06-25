@@ -45,6 +45,7 @@ export async function POST(request: Request) {
   }
 
   const incomingForm = await request.formData();
+  const model = getString(incomingForm.get("model"), process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2");
   const voice = getString(incomingForm.get("voice"), "marin");
   const reasoningEffort = getString(incomingForm.get("reasoningEffort"), "low");
   const instructions = getString(incomingForm.get("instructions"), DEFAULT_INSTRUCTIONS);
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       session: {
         type: "realtime",
-        model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2",
+        model,
         instructions,
         reasoning: {
           effort: reasoningEffort,

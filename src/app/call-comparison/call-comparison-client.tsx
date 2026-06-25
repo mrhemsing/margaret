@@ -24,8 +24,8 @@ const technologySnapshot = [
   },
   {
     label: "ElevenLabs",
-    value: "Operational baseline",
-    detail: "Keep production comparisons centered on Conversational AI plus Twilio while watching SIP logs, trunking, analytics, RAG chunks, and agent controls.",
+    value: "Jun 22 agent controls",
+    detail: "Newer changelog items add branch rebasing, topic discovery, background sound, turn interruption ignore terms, randomized soft-timeout fillers, and richer conversation filters.",
   },
 ] as const;
 
@@ -147,18 +147,35 @@ const comparisonRows = [
     }),
   },
   {
-    title: "OpenAI Realtime SIP",
+    title: "OpenAI Realtime SIP - gpt-realtime",
     badge: "Controlled SIP",
     production: false,
-    subtitle: "Latest OpenAI speech-to-speech lane for patient senior calls, direct transcript events, tools, and production SIP testing.",
-    stack: "Twilio SIP, gpt-realtime production-compatible lane, gpt-realtime-2 A/B lane, low reasoning by default, optional medium/high for harder workflows, server VAD with configurable eagerness, Marin voice",
-    bestPractice: "Run a 20-call A/B against production before promotion. Start with low reasoning, server VAD, short caring replies, warm AI disclosure, and fixed senior-call scripts for interruptions, pauses, corrections, distress, and medication-adjacent refusals.",
+    subtitle: "Baseline OpenAI speech-to-speech lane for comparing against the newer Realtime model.",
+    stack: "Twilio SIP, gpt-realtime, low reasoning by default, server VAD with configurable eagerness, Marin voice",
+    bestPractice: "Use as the OpenAI baseline when measuring whether GPT-Realtime-2 improves senior comfort, correction handling, and latency enough to replace the older Realtime lane.",
     observability: "Capture SIP IDs, Twilio CallSid, OpenAI call/session ID, reasoning setting, VAD events, transcript deltas, preambles, tool calls, response starts/stops, interruptions, hangup reason, escalation outcome, token/minute cost, and summary handoff.",
     endpoint: "/api/openai/realtime-test-call",
     caregiverName: "DailyCall OpenAI Realtime comparison reviewer",
-    modelLabel: "gpt-realtime / GPT-Realtime-2",
+    modelLabel: "gpt-realtime",
     buildPayload: (target: TestCallTarget) => ({
       firstMessage: buildIntro(target.label),
+      realtimeModel: "gpt-realtime",
+    }),
+  },
+  {
+    title: "OpenAI Realtime SIP - gpt-realtime-2",
+    badge: "Controlled SIP",
+    production: false,
+    subtitle: "Current OpenAI speech-to-speech lane for patient senior calls, direct transcript events, tools, and production SIP testing.",
+    stack: "Twilio SIP, gpt-realtime-2, low reasoning by default, optional medium/high for harder workflows, server VAD with configurable eagerness, Marin voice",
+    bestPractice: "Run this as the main 20-call candidate against production. Start with low reasoning, server VAD, short caring replies, warm AI disclosure, and fixed senior-call scripts for interruptions, pauses, corrections, distress, and medication-adjacent refusals.",
+    observability: "Capture SIP IDs, Twilio CallSid, OpenAI call/session ID, reasoning setting, VAD events, transcript deltas, preambles, tool calls, response starts/stops, interruptions, hangup reason, escalation outcome, token/minute cost, and summary handoff.",
+    endpoint: "/api/openai/realtime-test-call",
+    caregiverName: "DailyCall GPT-Realtime-2 comparison reviewer",
+    modelLabel: "gpt-realtime-2",
+    buildPayload: (target: TestCallTarget) => ({
+      firstMessage: buildIntro(target.label),
+      realtimeModel: "gpt-realtime-2",
     }),
   },
   {
@@ -244,7 +261,7 @@ const comparisonRows = [
 
 const latestRealtimeChecks = [
   "Run 20-call A/B tests: OpenAI Realtime against the current production lane with the same opener, target, and senior scenarios.",
-  "Compare gpt-realtime and GPT-Realtime-2 separately before changing default traffic.",
+  "Use the separate gpt-realtime and gpt-realtime-2 compare buttons so each OpenAI SIP test call pins the model in the accept payload.",
   "Use Realtime voice-session transcripts for the speech-to-speech lane; test GPT-Realtime-Whisper only in transcription sessions where turn detection is omitted or null.",
   "Evaluate GPT-Realtime-Translate for multilingual families before adding translation to production call flows.",
   `Compare ElevenLabs Flash v2.5 bridge and ${evaluationElevenLabsTtsModel} separately before judging the ElevenLabs lane.`,
@@ -305,7 +322,7 @@ export function CallComparisonClient() {
           ))}
         </div>
         <p className="mt-4 text-xs font-semibold leading-5 text-slate-500">
-          Last refreshed Jun 18, 2026 from OpenAI Realtime docs/release/pricing/VAD, ElevenLabs changelog, Google Gemini Live docs, Cartesia docs, and Hume docs.
+          Last refreshed Jun 25, 2026 from OpenAI Realtime docs/release/pricing/VAD, ElevenLabs changelog, Google Gemini Live docs, Cartesia docs, and Hume docs.
         </p>
       </section>
 

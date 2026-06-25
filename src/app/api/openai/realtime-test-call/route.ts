@@ -13,6 +13,7 @@ const requestSchema = z.object({
   memberName: z.string().min(1).optional(),
   caregiverName: z.string().min(1).optional(),
   firstMessage: z.string().trim().min(1).max(500).optional(),
+  realtimeModel: z.enum(["gpt-realtime", "gpt-realtime-2"]).optional(),
 });
 
 type TwilioCallResponse = {
@@ -129,6 +130,7 @@ export async function POST(request: Request) {
           provider: "openai_realtime",
           openAISipMode: "direct_sip_clean",
           initialPrompt: parsed.data.firstMessage ?? null,
+          realtimeModel: parsed.data.realtimeModel ?? null,
         },
       },
     });
@@ -145,6 +147,7 @@ export async function POST(request: Request) {
           provider: "openai_realtime",
           openAISipMode: "direct_sip_clean",
           initialPrompt: parsed.data.firstMessage ?? null,
+          realtimeModel: parsed.data.realtimeModel ?? null,
         },
       },
     });
